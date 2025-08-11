@@ -4,29 +4,26 @@
   <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
   <style>
-    /* Spinner styling */
+    /* Spinner styling (zelfde als eerder) */
     #spinner {
       display: none;
       margin: 20px auto;
-      border: 60px solid #f3f3f3;       /* 10x dikker */
-      border-top: 60px solid #3498db;   /* 10x dikker */
+      border: 60px solid #f3f3f3;
+      border-top: 60px solid #3498db;
       border-radius: 50%;
-      width: 400px;                      /* 10x groter */
-      height: 400px;                     /* 10x groter */
+      width: 400px;
+      height: 400px;
       animation: spin 1s linear infinite;
     }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
     body {
       text-align: center;
       font-family: Arial, sans-serif;
       padding: 30px;
     }
-
     button {
       margin-bottom: 20px;
       padding: 10px 15px;
@@ -46,9 +43,14 @@
     function showSpinner() {
       spinner.style.display = "block";
     }
-
     function hideSpinner() {
       spinner.style.display = "none";
+    }
+
+    // Functie om URL-parameter te lezen
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
     }
 
     // Functie om scan te versturen
@@ -66,7 +68,7 @@
       .then(res => res.text())
       .then(text => {
         hideSpinner();
-        alert(`Gelukt! Je heb 1 munt gegeven aan: ${text}`);
+        alert(`Gelukt! Je hebt 1 munt gegeven aan: ${text}`);
       })
       .catch(err => {
         hideSpinner();
@@ -75,19 +77,28 @@
       });
     }
 
-    // Check en vraag namen
+    // Hoofd init functie
     function init() {
-      let chipOwner = localStorage.getItem("chipOwner");
+      // Lees chipId uit url
+      const chipId = getQueryParam("chipId");
+      if (!chipId) {
+        alert("Geen chipId in URL gevonden!");
+        throw new Error("Geen chipId");
+      }
+
+      // Per chipId chipOwner opslaan in localStorage, key wordt bv 'chipOwner_12345'
+      let chipOwner = localStorage.getItem("chipOwner_" + chipId);
       if (!chipOwner) {
         chipOwner = prompt("Van wie is de chip die je scande?");
         if (chipOwner) {
-          localStorage.setItem("chipOwner", chipOwner);
+          localStorage.setItem("chipOwner_" + chipId, chipOwner);
         } else {
           alert("Naam chiphouder is verplicht!");
           throw new Error("Geen chiphoudernaam ingevuld");
         }
       }
 
+      // Scannernaam is voor de gebruiker persoonlijk (onafhankelijk van chip), dus gewoon 1 key
       let scannerName = localStorage.getItem("scannerName");
       if (!scannerName) {
         scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
@@ -104,12 +115,15 @@
 
     // Reset knop event listener
     document.getElementById("resetNamesBtn").addEventListener("click", () => {
-      localStorage.removeItem("chipOwner");
-      localStorage.removeItem("scannerName");
+      // Reset voor alle chip owners en scanner
+      Object.keys(localStorage).forEach(key => {
+        if(key.startsWith("chipOwner_") || key === "scannerName") {
+          localStorage.removeItem(key);
+        }
+      });
       alert("Opgeslagen namen zijn verwijderd. Herlaad de pagina om opnieuw te starten.");
     });
 
-    // Start het proces
     init();
   </script>
 </body>
