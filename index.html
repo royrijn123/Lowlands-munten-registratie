@@ -1,20 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Lowlands muntregistratie</title>
   <script>
-    // Zet hier de NAAM van de persoon aan wie deze NFC-chip hoort
-    const naam = Roy; 
+    // Vul hier de naam in van de vriend die deze NFC-chip gebruikt
+    const naam = "Jomme"; 
 
-    // Zet hier je Google Apps Script Web App link
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbxq-VsFdMT1rle5Pufh1XLUurcRTkakR7RTjaw-rsjU-GmmjYMk8xNHeGJcJ_YCOmWR5w/exec";
+    // Vul hier de URL van jouw Google Apps Script Web App in
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbz594DTm0NRVWS2t1Tnzn371CYoPwSuiseNBlvoPmA_lsA_9EzchNiKHZRtR7NywLmPjg/exec";
 
-    // Stuur direct door
-    window.location.href = `${scriptUrl}?naam=${encodeURIComponent(naam)}`;
+    // Maak een POST request om de naam door te sturen
+    async function stuurNaam() {
+      try {
+        const response = await fetch(scriptUrl + '?naam=' + encodeURIComponent(naam), {
+          method: 'POST',
+        });
+        const text = await response.text();
+        document.getElementById('status').textContent = text;
+      } catch (err) {
+        document.getElementById('status').textContent = 'Fout bij verzenden: ' + err.message;
+      }
+    }
+
+    // Stuur de naam zodra de pagina laadt
+    window.onload = stuurNaam;
   </script>
 </head>
 <body>
-  <p>Bezig met registreren...</p>
+  <h2>Lowlands muntregistratie</h2>
+  <p id="status">Bezig met registreren...</p>
 </body>
 </html>
