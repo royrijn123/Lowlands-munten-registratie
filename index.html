@@ -4,61 +4,55 @@
   <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
   <style>
+    /* Spinner styling (zelfde als eerder) */
     #spinner {
       display: none;
-      margin: 50px auto;
-      width: 80px;
-      height: 80px;
-      border: 10px solid #f3f3f3;
-      border-top: 10px solid #3498db;
+      margin: 20px auto;
+      border: 60px solid #f3f3f3;
+      border-top: 60px solid #3498db;
       border-radius: 50%;
+      width: 400px;
+      height: 400px;
       animation: spin 1s linear infinite;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    #message {
+    body {
       text-align: center;
-      font-size: 18px;
-      margin-top: 20px;
-      color: green;
+      font-family: Arial, sans-serif;
+      padding: 30px;
     }
   </style>
 </head>
 <body>
   <div id="spinner"></div>
-  <div id="message"></div>
 
   <script>
     const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
     const spinner = document.getElementById("spinner");
-    const messageDiv = document.getElementById("message");
 
     function showSpinner() {
       spinner.style.display = "block";
-      messageDiv.textContent = "";
     }
-
     function hideSpinner() {
       spinner.style.display = "none";
     }
 
-    function showMessage(text, isError = false) {
-      messageDiv.textContent = text;
-      messageDiv.style.color = isError ? "red" : "green";
-      setTimeout(() => {
-        messageDiv.textContent = "";
-      }, 2000);
+    // Functie om URL-parameter te lezen
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
     }
 
     // Functie om scan te versturen
     function sendScan(chipOwner, scannerName) {
-      showSpinner();
-
       const data = new URLSearchParams();
       data.append("chipOwner", chipOwner);
       data.append("scanner", scannerName);
+
+      showSpinner();
 
       fetch(apiUrl, {
         method: "POST",
@@ -67,28 +61,37 @@
       .then(res => res.text())
       .then(text => {
         hideSpinner();
-        showMessage(`Gelukt! Je hebt 1 munt gegeven aan: ${text}`);
+        alert(`Gelukt! Je hebt 1 munt gegeven aan: ${text}`);
       })
       .catch(err => {
         hideSpinner();
         console.error(err);
-        showMessage("Mislukt... probeer opnieuw!", true);
+        alert("Mislukt... probeer opnieuw!");
       });
     }
 
-    // Check en vraag namen
+    // Hoofd init functie
     function init() {
-      let chipOwner = localStorage.getItem("chipOwner");
+      // Lees chipId uit url
+      const chipId = getQueryParam("chipId");
+      if (!chipId) {
+        alert("Geen chipId in URL gevonden!");
+        throw new Error("Geen chipId");
+      }
+
+      // Per chipId chipOwner opslaan in localStorage, key wordt bv 'chipOwner_12345'
+      let chipOwner = localStorage.getItem("chipOwner_" + chipId);
       if (!chipOwner) {
         chipOwner = prompt("Van wie is de chip die je scande?");
         if (chipOwner) {
-          localStorage.setItem("chipOwner", chipOwner);
+          localStorage.setItem("chipOwner_" + chipId, chipOwner);
         } else {
           alert("Naam chiphouder is verplicht!");
           throw new Error("Geen chiphoudernaam ingevuld");
         }
       }
 
+      // Scannernaam is voor de gebruiker persoonlijk (onafhankelijk van chip), dus gewoon 1 key
       let scannerName = localStorage.getItem("scannerName");
       if (!scannerName) {
         scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
