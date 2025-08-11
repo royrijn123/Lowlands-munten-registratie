@@ -3,11 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
+  <style>
+    /* Spinner styling */
+    #spinner {
+      display: none;
+      margin: 20px auto;
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
+
+    button {
+      margin-bottom: 20px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <button id="resetNamesBtn">Reset opgeslagen namen</button>
+  <div id="spinner"></div>
+
   <script>
     const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
+    const spinner = document.getElementById("spinner");
+
+    function showSpinner() {
+      spinner.style.display = "block";
+    }
+
+    function hideSpinner() {
+      spinner.style.display = "none";
+    }
 
     // Functie om scan te versturen
     function sendScan(chipOwner, scannerName) {
@@ -15,17 +57,21 @@
       data.append("chipOwner", chipOwner);
       data.append("scanner", scannerName);
 
+      showSpinner();
+
       fetch(apiUrl, {
         method: "POST",
         body: data
       })
       .then(res => res.text())
       .then(text => {
-        alert(`Scan geregistreerd: ${text}`);
+        hideSpinner();
+        alert(`Gelukt! Je heb 1 munt gegeven aan: ${text}`);
       })
       .catch(err => {
+        hideSpinner();
         console.error(err);
-        alert("Fout bij registreren scan!");
+        alert("Mislukt... probeer opnieuw!");
       });
     }
 
