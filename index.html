@@ -1,51 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
 </head>
 <body>
-<script>
-  const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
+  <button id="resetNamesBtn">Reset opgeslagen namen</button>
+  <script>
+    const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
 
-  let chipOwner = localStorage.getItem("chipOwner");
-  if (!chipOwner) {
-    chipOwner = prompt("Wiens chip scande je?");
-    if (chipOwner) {
-      localStorage.setItem("chipOwner", chipOwner);
-    } else {
-      alert("Naam chiphouder is verplicht!");
-      throw new Error("Geen chiphoudernaam ingevuld");
+    // Functie om scan te versturen
+    function sendScan(chipOwner, scannerName) {
+      const data = new URLSearchParams();
+      data.append("chipOwner", chipOwner);
+      data.append("scanner", scannerName);
+
+      fetch(apiUrl, {
+        method: "POST",
+        body: data
+      })
+      .then(res => res.text())
+      .then(text => {
+        alert(`Scan geregistreerd: ${text}`);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Fout bij registreren scan!");
+      });
     }
-  }
 
-  let scannerName = localStorage.getItem("scannerName");
-  if (!scannerName) {
-    scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-    if (scannerName) {
-      localStorage.setItem("scannerName", scannerName);
-    } else {
-      alert("Naam scanner is verplicht!");
-      throw new Error("Geen scannernaam ingevuld");
+    // Check en vraag namen
+    function init() {
+      let chipOwner = localStorage.getItem("chipOwner");
+      if (!chipOwner) {
+        chipOwner = prompt("Van wie is de chip die je scande?");
+        if (chipOwner) {
+          localStorage.setItem("chipOwner", chipOwner);
+        } else {
+          alert("Naam chiphouder is verplicht!");
+          throw new Error("Geen chiphoudernaam ingevuld");
+        }
+      }
+
+      let scannerName = localStorage.getItem("scannerName");
+      if (!scannerName) {
+        scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
+        if (scannerName) {
+          localStorage.setItem("scannerName", scannerName);
+        } else {
+          alert("Naam scanner is verplicht!");
+          throw new Error("Geen scannernaam ingevuld");
+        }
+      }
+
+      sendScan(chipOwner, scannerName);
     }
-  }
 
-  const data = new URLSearchParams();
-  data.append("chipOwner", chipOwner);
-  data.append("scanner", scannerName);
+    // Reset knop event listener
+    document.getElementById("resetNamesBtn").addEventListener("click", () => {
+      localStorage.removeItem("chipOwner");
+      localStorage.removeItem("scannerName");
+      alert("Opgeslagen namen zijn verwijderd. Herlaad de pagina om opnieuw te starten.");
+    });
 
-  fetch(apiUrl, {
-    method: "POST",
-    body: data
-  })
-  .then(res => res.text())
-  .then(text => {
-    alert(`Gelukt! Je hebt een munt gegeven aan: ${text}`);
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Niet voltooid, probeer opnieuw");
-  });
-</script>
+    // Start het proces
+    init();
+  </script>
 </body>
 </html>
