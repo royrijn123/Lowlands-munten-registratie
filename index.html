@@ -1,26 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Lowlands Scan</title>
+  <meta charset="UTF-8">
+  <title>Lowlands muntregistratie</title>
+  <script>
+    // Zet hier de NAAM van de persoon aan wie deze NFC-chip hoort
+    const naam = Roy; 
+
+    // Zet hier je Google Apps Script Web App link
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbxq-VsFdMT1rle5Pufh1XLUurcRTkakR7RTjaw-rsjU-GmmjYMk8xNHeGJcJ_YCOmWR5w/exec";
+
+    // Stuur direct door
+    window.location.href = `${scriptUrl}?naam=${encodeURIComponent(naam)}`;
+  </script>
 </head>
 <body>
-  <h1>Scan geregistreerd!</h1>
-  <script>
-    // Haal deviceId uit URL, bijv: ?deviceId=naamvanvriend
-    const params = new URLSearchParams(window.location.search);
-    const deviceId = params.get('deviceId') || 'Onbekend';
-
-    // Vervang hieronder met jouw Google Apps Script Webapp URL
-    const googleScriptUrl = https://script.google.com/macros/s/AKfycbzlkLadLWCxBGMj_i7IM4g_0OzEizv5q6t0laPY2b_g5QfXe6R9i4DNrSzeeIqvt_6Oug/exec;
-
-    fetch(googleScriptUrl, {
-      method: 'POST',
-      body: JSON.stringify({ deviceId }),
-      headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.text())
-    .then(data => console.log(data))
-    .catch(error => console.error(error));
-  </script>
+  <p>Bezig met registreren...</p>
 </body>
 </html>
