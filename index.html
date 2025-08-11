@@ -40,11 +40,11 @@
   })
   .then(res => res.text())
   .then(text => {
-    alert(`Scan geregistreerd: ${text}`);
+    alert(`Gelukt! Je hebt een munt gegeven aan: ${text}`);
   })
   .catch(err => {
     console.error(err);
-    alert("Fout bij registreren scan!");
+    alert("Niet voltooid, probeer opnieuw");
   });
 </script>
 </body>
