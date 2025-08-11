@@ -8,10 +8,9 @@
 <script>
   const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
 
-  // Chiphoudernaam ophalen of vragen
   let chipOwner = localStorage.getItem("chipOwner");
   if (!chipOwner) {
-    chipOwner = prompt("Wat is jouw naam als chiphouder?");
+    chipOwner = prompt("Wiens chip scande je?");
     if (chipOwner) {
       localStorage.setItem("chipOwner", chipOwner);
     } else {
@@ -20,10 +19,9 @@
     }
   }
 
-  // Scannernaam ophalen of vragen
   let scannerName = localStorage.getItem("scannerName");
   if (!scannerName) {
-    scannerName = prompt(`Je scant nu de chip van ${chipOwner}. Wat is jouw naam?`);
+    scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
     if (scannerName) {
       localStorage.setItem("scannerName", scannerName);
     } else {
@@ -32,18 +30,22 @@
     }
   }
 
-  // Data naar Google Sheet sturen
-  const fullUrl = `${apiUrl}?chipOwner=${encodeURIComponent(chipOwner)}&scanner=${encodeURIComponent(scannerName)}`;
+  const data = new URLSearchParams();
+  data.append("chipOwner", chipOwner);
+  data.append("scanner", scannerName);
 
-  fetch(fullUrl, { method: "POST" })
-    .then(res => res.text())
-    .then(text => {
-      alert(`Scan geregistreerd: ${text}`);
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Fout bij registreren scan!");
-    });
+  fetch(apiUrl, {
+    method: "POST",
+    body: data
+  })
+  .then(res => res.text())
+  .then(text => {
+    alert(`Scan geregistreerd: ${text}`);
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Fout bij registreren scan!");
+  });
 </script>
 </body>
 </html>
