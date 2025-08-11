@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lowlands Scan</title>
+</head>
+<body>
+  <h1>Scan geregistreerd!</h1>
+  <script>
+    // Haal deviceId uit URL, bijv: ?deviceId=naamvanvriend
+    const params = new URLSearchParams(window.location.search);
+    const deviceId = params.get('deviceId') || 'Onbekend';
+
+    // Vervang hieronder met jouw Google Apps Script Webapp URL
+    const googleScriptUrl = 'JOUW_GOOGLE_APPS_SCRIPT_WEBAPP_URL';
+
+    fetch(googleScriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({ deviceId }),
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .catch(error => console.error(error));
+  </script>
+</body>
+</html>
