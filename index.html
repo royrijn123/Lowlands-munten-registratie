@@ -99,6 +99,10 @@
         });
         const resTxt = await resp.text();
         alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${resTxt}`);
+
+        // Hier verberg ik de knoppen
+        document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
+
       } catch (err) {
         console.error(err);
         alert("❌ Mislukt… probeer opnieuw!");
