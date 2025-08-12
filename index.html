@@ -98,10 +98,17 @@
           })
         });
         const resTxt = await resp.text();
-        alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${chipOwner}`);
+alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${chipOwner}`);
 
-        // Hier verberg ik de knoppen
-        document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
+document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
+
+const msg = document.createElement("div");
+msg.style.fontSize = "3em";
+msg.style.marginTop = "20vh";
+msg.style.color = "#3498db";
+msg.textContent = "Topper! Geniet van je bestelling!🍻";
+document.body.appendChild(msg);
+
 
       } catch (err) {
         console.error(err);
