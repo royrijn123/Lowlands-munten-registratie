@@ -4,105 +4,81 @@
   <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
   <style>
-    html, body {
+    body {
       margin: 0;
       padding: 0;
-      font-family: sans-serif;
-      height: 100%;
+      font-family: Arial, sans-serif;
+      text-align: center;
     }
     .btn {
       width: 100%;
-      height: calc((100vh - 60px) / 3); /* ruimte voor zoekbalk */
-      font-size: 2rem;
-      font-weight: bold;
-      color: white;
+      height: 33.33vh;
+      font-size: 5em;
       border: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      color: white;
       cursor: pointer;
     }
-    .btn-1 { background-color: #2ecc71; }
-    .btn-1-5 { background-color: #f39c12; }
+    .btn-1 { background-color: #3498db; }
+    .btn-15 { background-color: #f1c40f; }
     .btn-2 { background-color: #e74c3c; }
-    .hidden { display: none; }
-    .message {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-size: 2rem;
-      font-weight: bold;
-      text-align: center;
-      padding: 20px;
-    }
   </style>
 </head>
 <body>
-  <div id="buttons">
-    <button class="btn btn-1" onclick="chooseAmount(1)">1 munt</button>
-    <button class="btn btn-1-5" onclick="chooseAmount(1.5)">1,5 munt</button>
-    <button class="btn btn-2" onclick="chooseAmount(2)">2 munten</button>
-  </div>
-  <div id="message" class="message hidden"></div>
+  <button class="btn btn-1" onclick="sendAmount(1)">1 munt</button>
+  <button class="btn btn-15" onclick="sendAmount(1.5)">1,5 munt</button>
+  <button class="btn btn-2" onclick="sendAmount(2)">2 munten</button>
 
   <script>
     const apiUrl = "https://script.google.com/macros/s/AKfycbwE6EBlHX9Y6BYJSeUBRJNuENMssdpy2MBta3j540nqns8jbgNuQKVcd_aau0Z9OkWZsA/exec";
+    const chipId = new URLSearchParams(window.location.search).get("chipId");
 
-    function sendScan(chipOwner, scannerName, amount) {
-      const data = new URLSearchParams();
-      data.append("chipOwner", chipOwner);
-      data.append("scanner", scannerName);
-      data.append("amount", amount);
-
-      fetch(apiUrl, { method: "POST", body: data })
-      .then(res => res.text())
-      .then(text => {
-        document.getElementById("buttons").classList.add("hidden");
-        const msg = document.getElementById("message");
-        msg.textContent = `Gelukt! Je hebt ${amount} munt${amount > 1 ? 'en' : ''} gegeven aan ${text}`;
-        msg.classList.remove("hidden");
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Mislukt... probeer opnieuw!");
-      });
+    if (!chipId) {
+      alert("Geen chipId gevonden in de URL");
+      throw new Error("Geen chipId");
     }
 
-    function initNames() {
-      let chipOwner = localStorage.getItem("chipOwner");
-      if (!chipOwner) {
-        chipOwner = prompt("Van wie is de chip die je scande?");
-        if (chipOwner) {
-          localStorage.setItem("chipOwner", chipOwner);
-        } else {
-          alert("Naam chiphouder is verplicht!");
-          throw new Error("Geen chiphoudernaam ingevuld");
-        }
+    let chipOwner = "";
+    let scannerName = localStorage.getItem("scannerName");
+
+    async function init() {
+      // Ophalen eigenaar
+      let res = await fetch(`${apiUrl}?action=getOwner&chipId=${chipId}`);
+      let owner = await res.text();
+      if (owner) {
+        chipOwner = owner;
+      } else {
+        chipOwner = prompt("Van wie is deze chip?");
+        await fetch(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
+        });
       }
 
-      let scannerName = localStorage.getItem("scannerName");
+      // Scannernaam opslaan als nog niet bekend
       if (!scannerName) {
         scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-        if (scannerName) {
-          localStorage.setItem("scannerName", scannerName);
-        } else {
-          alert("Naam scanner is verplicht!");
-          throw new Error("Geen scannernaam ingevuld");
-        }
+        localStorage.setItem("scannerName", scannerName);
       }
     }
 
-    function chooseAmount(amount) {
-      const chipOwner = localStorage.getItem("chipOwner");
-      const scannerName = localStorage.getItem("scannerName");
-      if (!chipOwner || !scannerName) {
-        initNames();
-      }
-      sendScan(chipOwner, scannerName, amount);
+    async function sendAmount(amount) {
+      document.querySelectorAll(".btn").forEach(btn => btn.disabled = true);
+
+      let res = await fetch(apiUrl, {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "scan",
+          chipId,
+          owner: chipOwner,
+          scanner: scannerName,
+          amount
+        })
+      });
+      let text = await res.text();
+      alert(`Gelukt! Je hebt ${amount} munt(en) gegeven aan ${text}`);
     }
 
-    initNames();
+    init();
   </script>
 </body>
 </html>
