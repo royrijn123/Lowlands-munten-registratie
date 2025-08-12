@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
-    body {
+    html, body {
       margin: 0;
       padding: 0;
+      height: 100%;
+      overflow: hidden;
       font-family: Arial, sans-serif;
       text-align: center;
     }
     .btn {
       width: 100%;
-      height: 33.33vh;
+      height: calc((100vh - 60px) / 3); /* Houd rekening met Safari zoekbalk */
       font-size: 5em;
       border: none;
       color: white;
@@ -21,29 +24,48 @@
     .btn-1 { background-color: #3498db; }
     .btn-15 { background-color: #f1c40f; }
     .btn-2 { background-color: #e74c3c; }
+    #spinner {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 80px;
+      height: 80px;
+      margin: -40px 0 0 -40px;
+      border: 10px solid #f3f3f3;
+      border-top: 10px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      z-index: 999;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
+  <div id="spinner"></div>
   <button class="btn btn-1" onclick="sendAmount(1)">1 munt</button>
   <button class="btn btn-15" onclick="sendAmount(1.5)">1,5 munt</button>
   <button class="btn btn-2" onclick="sendAmount(2)">2 munten</button>
 
   <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbw9szwKf03ViF9LPPBsXFWp8k15zNonOWu3wZbyDPbIm-ePJP8Rt1-MeH8zhRjVf-bJog/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbwE6EBlHX9Y6BYJSeUBRJNuENMssdpy2MBta3j540nqns8jbgNuQKVcd_aau0Z9OkWZsA/exec";
     const chipId = new URLSearchParams(window.location.search).get("chipId");
-
-    if (!chipId) {
-      alert("Geen chipId gevonden in de URL");
-      throw new Error("Geen chipId");
-    }
+    if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
 
     let chipOwner = "";
     let scannerName = localStorage.getItem("scannerName");
 
+    function showSpinner() { document.getElementById("spinner").style.display = "block"; }
+    function hideSpinner() { document.getElementById("spinner").style.display = "none"; }
+
     async function init() {
-      // Ophalen eigenaar
-      let res = await fetch(`${apiUrl}?action=getOwner&chipId=${chipId}`);
-      let owner = await res.text();
+      // Ophalen chiphouder via GET
+      const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
+      const owner = await resp.text();
+
       if (owner) {
         chipOwner = owner;
       } else {
@@ -54,7 +76,6 @@
         });
       }
 
-      // Scannernaam opslaan als nog niet bekend
       if (!scannerName) {
         scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
         localStorage.setItem("scannerName", scannerName);
@@ -62,23 +83,31 @@
     }
 
     async function sendAmount(amount) {
-      document.querySelectorAll(".btn").forEach(btn => btn.disabled = true);
+      document.querySelectorAll(".btn").forEach(b => b.disabled = true);
+      showSpinner();
 
-      let res = await fetch(apiUrl, {
-        method: "POST",
-        body: new URLSearchParams({
-          action: "scan",
-          chipId,
-          owner: chipOwner,
-          scanner: scannerName,
-          amount
-        })
-      });
-      let text = await res.text();
-      alert(`Gelukt! Je hebt ${amount} munt(en) gegeven aan ${text}`);
+      try {
+        const resp = await fetch(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({
+            action: "scan",
+            chipId,
+            owner: chipOwner,
+            scanner: scannerName,
+            amount
+          })
+        });
+        const resTxt = await resp.text();
+        alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${resTxt}`);
+      } catch (err) {
+        console.error(err);
+        alert("❌ Mislukt… probeer opnieuw!");
+      } finally {
+        hideSpinner();
+      }
     }
 
-    init();
+    window.addEventListener('load', init);
   </script>
 </body>
 </html>
