@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
   <style>
-    /* Spinner styling (zelfde als eerder) */
+    /* Spinner styling */
     #spinner {
       display: none;
       margin: 20px auto;
@@ -24,10 +24,24 @@
       font-family: Arial, sans-serif;
       padding: 30px;
     }
+    #resetBtn {
+      margin-top: 30px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #resetBtn:hover {
+      background-color: #c0392b;
+    }
   </style>
 </head>
 <body>
   <div id="spinner"></div>
+  <button id="resetBtn">Reset opgeslagen namen</button>
 
   <script>
     const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
@@ -72,41 +86,16 @@
 
     // Hoofd init functie
     function init() {
-      // Lees chipId uit url
       const chipId = getQueryParam("chipId");
       if (!chipId) {
         alert("Geen chipId in URL gevonden!");
         throw new Error("Geen chipId");
       }
 
-      // Per chipId chipOwner opslaan in localStorage, key wordt bv 'chipOwner_12345'
       let chipOwner = localStorage.getItem("chipOwner_" + chipId);
       if (!chipOwner) {
         chipOwner = prompt("Van wie is de chip die je scande?");
         if (chipOwner) {
           localStorage.setItem("chipOwner_" + chipId, chipOwner);
         } else {
-          alert("Naam chiphouder is verplicht!");
-          throw new Error("Geen chiphoudernaam ingevuld");
-        }
-      }
-
-      // Scannernaam is voor de gebruiker persoonlijk (onafhankelijk van chip), dus gewoon 1 key
-      let scannerName = localStorage.getItem("scannerName");
-      if (!scannerName) {
-        scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-        if (scannerName) {
-          localStorage.setItem("scannerName", scannerName);
-        } else {
-          alert("Naam scanner is verplicht!");
-          throw new Error("Geen scannernaam ingevuld");
-        }
-      }
-
-      sendScan(chipOwner, scannerName);
-    }
-
-    init();
-  </script>
-</body>
-</html>
+          alert("Naam chi
