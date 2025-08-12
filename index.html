@@ -4,120 +4,105 @@
   <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
   <style>
-    body {
+    html, body {
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+      font-family: sans-serif;
+      height: 100%;
     }
-
-    /* Spinner */
-    #spinner {
-      display: none;
-      margin: auto;
-      border: 20px solid #f3f3f3;
-      border-top: 20px solid #3498db;
-      border-radius: 50%;
-      width: 150px;
-      height: 150px;
-      animation: spin 1s linear infinite;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 999;
-    }
-    @keyframes spin {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-
-    /* Knoppen die het scherm vullen */
-    .coin-btn {
-      flex: 1;
-      font-size: 3rem;
+    .btn {
+      width: 100%;
+      height: calc((100vh - 60px) / 3); /* ruimte voor zoekbalk */
+      font-size: 2rem;
       font-weight: bold;
-      border: none;
       color: white;
+      border: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       cursor: pointer;
     }
-    .btn-1 { background-color: #27ae60; }
-    .btn-1_5 { background-color: #f39c12; }
+    .btn-1 { background-color: #2ecc71; }
+    .btn-1-5 { background-color: #f39c12; }
     .btn-2 { background-color: #e74c3c; }
+    .hidden { display: none; }
+    .message {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
-  <div id="spinner"></div>
-
-  <!-- Drie grote keuze-knoppen -->
-  <button class="coin-btn btn-1" onclick="sendCoins(1)">1 munt</button>
-  <button class="coin-btn btn-1_5" onclick="sendCoins(1.5)">1,5 munt</button>
-  <button class="coin-btn btn-2" onclick="sendCoins(2)">2 munten</button>
+  <div id="buttons">
+    <button class="btn btn-1" onclick="chooseAmount(1)">1 munt</button>
+    <button class="btn btn-1-5" onclick="chooseAmount(1.5)">1,5 munt</button>
+    <button class="btn btn-2" onclick="chooseAmount(2)">2 munten</button>
+  </div>
+  <div id="message" class="message hidden"></div>
 
   <script>
     const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
-    const spinner = document.getElementById("spinner");
 
-    function showSpinner() { spinner.style.display = "block"; }
-    function hideSpinner() { spinner.style.display = "none"; }
-
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-
-    // Stuur scan naar server
-    function sendCoins(amount) {
-      showSpinner();
+    function sendScan(chipOwner, scannerName, amount) {
       const data = new URLSearchParams();
       data.append("chipOwner", chipOwner);
       data.append("scanner", scannerName);
-      data.append("coins", amount);
+      data.append("amount", amount);
 
       fetch(apiUrl, { method: "POST", body: data })
-        .then(res => res.text())
-        .then(text => {
-          hideSpinner();
-          alert(`✅ Je hebt ${amount} munt(en) gegeven aan: ${chipOwner}`);
-        })
-        .catch(err => {
-          hideSpinner();
-          console.error(err);
-          alert("❌ Mislukt... probeer opnieuw!");
-        });
+      .then(res => res.text())
+      .then(text => {
+        document.getElementById("buttons").classList.add("hidden");
+        const msg = document.getElementById("message");
+        msg.textContent = `Gelukt! Je hebt ${amount} munt${amount > 1 ? 'en' : ''} gegeven aan ${text}`;
+        msg.classList.remove("hidden");
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Mislukt... probeer opnieuw!");
+      });
     }
 
-    // Init: vraag namen 1x op
-    const chipId = getQueryParam("chipId");
-    if (!chipId) {
-      alert("Geen chipId in URL gevonden!");
-      throw new Error("Geen chipId");
-    }
+    function initNames() {
+      let chipOwner = localStorage.getItem("chipOwner");
+      if (!chipOwner) {
+        chipOwner = prompt("Van wie is de chip die je scande?");
+        if (chipOwner) {
+          localStorage.setItem("chipOwner", chipOwner);
+        } else {
+          alert("Naam chiphouder is verplicht!");
+          throw new Error("Geen chiphoudernaam ingevuld");
+        }
+      }
 
-    let chipOwner = localStorage.getItem("chipOwner_" + chipId);
-    if (!chipOwner) {
-      chipOwner = prompt("Van wie is de chip die je scande?");
-      if (chipOwner) {
-        localStorage.setItem("chipOwner_" + chipId, chipOwner);
-      } else {
-        alert("Naam chiphouder is verplicht!");
-        throw new Error("Geen chiphoudernaam ingevuld");
+      let scannerName = localStorage.getItem("scannerName");
+      if (!scannerName) {
+        scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
+        if (scannerName) {
+          localStorage.setItem("scannerName", scannerName);
+        } else {
+          alert("Naam scanner is verplicht!");
+          throw new Error("Geen scannernaam ingevuld");
+        }
       }
     }
 
-    let scannerName = localStorage.getItem("scannerName");
-    if (!scannerName) {
-      scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-      if (scannerName) {
-        localStorage.setItem("scannerName", scannerName);
-      } else {
-        alert("Naam scanner is verplicht!");
-        throw new Error("Geen scannernaam ingevuld");
+    function chooseAmount(amount) {
+      const chipOwner = localStorage.getItem("chipOwner");
+      const scannerName = localStorage.getItem("scannerName");
+      if (!chipOwner || !scannerName) {
+        initNames();
       }
+      sendScan(chipOwner, scannerName, amount);
     }
+
+    initNames();
   </script>
 </body>
 </html>
