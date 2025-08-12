@@ -44,7 +44,7 @@
   <button id="resetBtn">Reset opgeslagen namen</button>
 
   <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbyjMPATIFf41QNkpjEgRfYPKlr9tfwsy5zQbZQfivdWHCgrdMwCKadZHaiyuULkHsnbUA/exec";
     const spinner = document.getElementById("spinner");
 
     function showSpinner() {
@@ -75,7 +75,7 @@
       .then(res => res.text())
       .then(text => {
         hideSpinner();
-        alert(`Gelukt! Je hebt 1 munt gegeven aan: ${text}`);
+        alert(`Gelukt! Je hebt 1 munt gegeven: ${text}`);
       })
       .catch(err => {
         hideSpinner();
