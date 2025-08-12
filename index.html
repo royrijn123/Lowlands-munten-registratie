@@ -4,128 +4,120 @@
   <meta charset="UTF-8" />
   <title>Lowlands Scan</title>
   <style>
-    /* Spinner styling */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Spinner */
     #spinner {
       display: none;
-      margin: 20px auto;
-      border: 60px solid #f3f3f3;
-      border-top: 60px solid #3498db;
+      margin: auto;
+      border: 20px solid #f3f3f3;
+      border-top: 20px solid #3498db;
       border-radius: 50%;
-      width: 400px;
-      height: 400px;
+      width: 150px;
+      height: 150px;
       animation: spin 1s linear infinite;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 999;
     }
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
-    body {
-      text-align: center;
-      font-family: Arial, sans-serif;
-      padding: 30px;
-    }
-    #resetBtn {
-      margin-top: 30px;
-      padding: 10px 20px;
-      font-size: 18px;
-      background-color: #e74c3c;
-      color: white;
+
+    /* Knoppen die het scherm vullen */
+    .coin-btn {
+      flex: 1;
+      font-size: 3rem;
+      font-weight: bold;
       border: none;
-      border-radius: 8px;
+      color: white;
       cursor: pointer;
     }
-    #resetBtn:hover {
-      background-color: #c0392b;
-    }
+    .btn-1 { background-color: #27ae60; }
+    .btn-1_5 { background-color: #f39c12; }
+    .btn-2 { background-color: #e74c3c; }
   </style>
 </head>
 <body>
   <div id="spinner"></div>
-  <button id="resetBtn">Reset opgeslagen namen</button>
+
+  <!-- Drie grote keuze-knoppen -->
+  <button class="coin-btn btn-1" onclick="sendCoins(1)">1 munt</button>
+  <button class="coin-btn btn-1_5" onclick="sendCoins(1.5)">1,5 munt</button>
+  <button class="coin-btn btn-2" onclick="sendCoins(2)">2 munten</button>
 
   <script>
     const apiUrl = "https://script.google.com/macros/s/AKfycbzYYy8v9JwosKehMYOAH6nZumg9l1x2QnC1mdwGlkFBmPnUbYU_Qt5WctGjeriXYtStAA/exec";
     const spinner = document.getElementById("spinner");
 
-    function showSpinner() {
-      spinner.style.display = "block";
-    }
-    function hideSpinner() {
-      spinner.style.display = "none";
-    }
+    function showSpinner() { spinner.style.display = "block"; }
+    function hideSpinner() { spinner.style.display = "none"; }
 
-    // Functie om URL-parameter te lezen
     function getQueryParam(param) {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get(param);
     }
 
-    // Functie om scan te versturen
-    function sendScan(chipOwner, scannerName) {
+    // Stuur scan naar server
+    function sendCoins(amount) {
+      showSpinner();
       const data = new URLSearchParams();
       data.append("chipOwner", chipOwner);
       data.append("scanner", scannerName);
+      data.append("coins", amount);
 
-      showSpinner();
-
-      fetch(apiUrl, {
-        method: "POST",
-        body: data
-      })
-      .then(res => res.text())
-      .then(text => {
-        hideSpinner();
-        alert(`Gelukt! Je hebt 1 munt gegeven aan: ${text}`);
-      })
-      .catch(err => {
-        hideSpinner();
-        console.error(err);
-        alert("Mislukt... probeer opnieuw!");
-      });
+      fetch(apiUrl, { method: "POST", body: data })
+        .then(res => res.text())
+        .then(text => {
+          hideSpinner();
+          alert(`✅ Je hebt ${amount} munt(en) gegeven aan: ${chipOwner}`);
+        })
+        .catch(err => {
+          hideSpinner();
+          console.error(err);
+          alert("❌ Mislukt... probeer opnieuw!");
+        });
     }
 
-    // Hoofd init functie
-    function init() {
-      const chipId = getQueryParam("chipId");
-      if (!chipId) {
-        alert("Geen chipId in URL gevonden!");
-        throw new Error("Geen chipId");
-      }
-
-      let chipOwner = localStorage.getItem("chipOwner_" + chipId);
-      if (!chipOwner) {
-        chipOwner = prompt("Van wie is de chip die je scande?");
-        if (chipOwner) {
-          localStorage.setItem("chipOwner_" + chipId, chipOwner);
-        } else {
-          alert("Naam chiphouder is verplicht!");
-          throw new Error("Geen chiphoudernaam ingevuld");
-        }
-      }
-
-      let scannerName = localStorage.getItem("scannerName");
-      if (!scannerName) {
-        scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-        if (scannerName) {
-          localStorage.setItem("scannerName", scannerName);
-        } else {
-          alert("Naam scanner is verplicht!");
-          throw new Error("Geen scannernaam ingevuld");
-        }
-      }
-
-      sendScan(chipOwner, scannerName);
+    // Init: vraag namen 1x op
+    const chipId = getQueryParam("chipId");
+    if (!chipId) {
+      alert("Geen chipId in URL gevonden!");
+      throw new Error("Geen chipId");
     }
 
-    // Resetknop functie
-    document.getElementById("resetBtn").addEventListener("click", () => {
-      if (confirm("Weet je zeker dat je alle opgeslagen namen wilt verwijderen?")) {
-        localStorage.clear();
-        alert("Alle namen zijn verwijderd. Herlaad de pagina om opnieuw te starten.");
+    let chipOwner = localStorage.getItem("chipOwner_" + chipId);
+    if (!chipOwner) {
+      chipOwner = prompt("Van wie is de chip die je scande?");
+      if (chipOwner) {
+        localStorage.setItem("chipOwner_" + chipId, chipOwner);
+      } else {
+        alert("Naam chiphouder is verplicht!");
+        throw new Error("Geen chiphoudernaam ingevuld");
       }
-    });
+    }
 
-    init();
+    let scannerName = localStorage.getItem("scannerName");
+    if (!scannerName) {
+      scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
+      if (scannerName) {
+        localStorage.setItem("scannerName", scannerName);
+      } else {
+        alert("Naam scanner is verplicht!");
+        throw new Error("Geen scannernaam ingevuld");
+      }
+    }
   </script>
 </body>
 </html>
