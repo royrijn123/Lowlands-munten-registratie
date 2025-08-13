@@ -15,11 +15,12 @@
     }
     .btn {
       width: 100%;
-      height: calc((100vh - 60px) / 3); /* Houd rekening met Safari zoekbalk */
+      height: calc((100vh - 60px) / 3);
       font-size: 5em;
       border: none;
       color: white;
       cursor: pointer;
+      display: none; /* start onzichtbaar */
     }
     .btn-1 { background-color: #3498db; }
     .btn-15 { background-color: #f1c40f; }
@@ -64,25 +65,49 @@
     async function init() {
       // Ophalen chiphouder via GET
       const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-      const owner = await resp.text();
+      const owner = (await resp.text()).trim();
 
       if (owner) {
         chipOwner = owner;
       } else {
         chipOwner = prompt("Van wie is deze chip?");
-        await fetch(apiUrl, {
-          method: "POST",
-          body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
-        });
+        if (chipOwner) {
+          await fetch(apiUrl, {
+            method: "POST",
+            body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
+          });
+        } else {
+          alert("Je moet een naam invoeren!");
+          return init(); // opnieuw proberen
+        }
       }
 
       if (!scannerName) {
         scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-        localStorage.setItem("scannerName", scannerName);
+        if (scannerName) {
+          localStorage.setItem("scannerName", scannerName);
+        } else {
+          alert("Je moet een naam invoeren!");
+          return init(); // opnieuw proberen
+        }
       }
+
+      // Toon knoppen pas NA init
+      document.querySelectorAll(".btn").forEach(b => b.style.display = "block");
     }
 
     async function sendAmount(amount) {
+      // Extra check: mocht init niet afgerond zijn
+      if (!chipOwner) {
+        chipOwner = prompt("Van wie is deze chip?");
+      }
+      if (!scannerName) {
+        scannerName = prompt("Wat is jouw naam?");
+        if (scannerName) {
+          localStorage.setItem("scannerName", scannerName);
+        }
+      }
+
       document.querySelectorAll(".btn").forEach(b => b.disabled = true);
       showSpinner();
 
@@ -100,7 +125,6 @@
         await resp.text();
 
         alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${chipOwner}`);
-
         document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
 
         const msg = document.createElement("div");
