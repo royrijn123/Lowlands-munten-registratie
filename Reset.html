@@ -1,1 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Scannernaam wissen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+    }
+    button {
+      font-size: 2em;
+      padding: 1em 2em;
+      border: none;
+      border-radius: 10px;
+      background: #e74c3c;
+      color: white;
+      cursor: pointer;
+    }
+    button:active {
+      background: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <button onclick="resetScannerName()">Scannernaam verwijderen</button>
+
+  <script>
+    function resetScannerName() {
+      localStorage.removeItem('scannerName');
+      alert('Scannernaam is verwijderd!');
+      // eventueel doorsturen naar je normale scanpagina:
+      // window.location.href = 'scan.html';
+    }
+  </script>
+</body>
+</html>
 
