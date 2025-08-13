@@ -15,12 +15,11 @@
     }
     .btn {
       width: 100%;
-      height: calc((100vh - 60px) / 3);
+      height: calc((100vh - 60px) / 3); /* Houd rekening met Safari zoekbalk */
       font-size: 5em;
       border: none;
       color: white;
       cursor: pointer;
-      display: none; /* start onzichtbaar */
     }
     .btn-1 { background-color: #3498db; }
     .btn-15 { background-color: #f1c40f; }
@@ -50,84 +49,76 @@
   <button class="btn btn-1" onclick="sendAmount(1)">1 munt (€3,90)</button>
   <button class="btn btn-15" onclick="sendAmount(1.5)">1,5 munt (€5,90)</button>
   <button class="btn btn-2" onclick="sendAmount(2)">2 munten (€7,80)</button>
-  <button onclick="localStorage.removeItem('scannerName'); location.reload();">
-  Scannernaam wijzigen
-</button>
 
+  <script>
+    const apiUrl = "https://script.google.com/macros/s/AKfycbx4S27sMxt7KtLbCD1X3cMmM8xbyVsuQZTwOxmwjIf0IVzqcoJUHi7C0x8xND13spnFtQ/exec";
+    const chipId = new URLSearchParams(window.location.search).get("chipId");
+    if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
 
-<script>
-  const apiUrl = "https://script.google.com/macros/s/AKfycbx4S27sMxt7KtLbCD1X3cMmM8xbyVsuQZTwOxmwjIf0IVzqcoJUHi7C0x8xND13spnFtQ/exec";
-  const chipId = new URLSearchParams(window.location.search).get("chipId");
-  if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
+    let chipOwner = "";
+    let scannerName = localStorage.getItem("scannerName");
 
-  let chipOwner = "";
-  let scannerName = localStorage.getItem("scannerName") || "";
+    function showSpinner() { document.getElementById("spinner").style.display = "block"; }
+    function hideSpinner() { document.getElementById("spinner").style.display = "none"; }
 
-  function showSpinner() { document.getElementById("spinner").style.display = "block"; }
-  function hideSpinner() { document.getElementById("spinner").style.display = "none"; }
+    async function init() {
+      // Ophalen chiphouder via GET
+      const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
+      const owner = await resp.text();
 
-  async function init() {
-    // Ophalen chiphouder via GET
-    const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-    const owner = await resp.text();
+      if (owner) {
+        chipOwner = owner;
+      } else {
+        chipOwner = prompt("Van wie is deze chip?");
+        await fetch(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
+        });
+      }
 
-    if (owner) {
-      chipOwner = owner;
-    } else {
-      chipOwner = prompt("Van wie is deze chip?");
-      await fetch(apiUrl, {
-        method: "POST",
-        body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
-      });
-    }
-
-    // Scannernaam altijd vragen als hij leeg is of "null"
-    if (!scannerName || scannerName.toLowerCase() === "null") {
-      scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-      if (scannerName) {
+      if (!scannerName) {
+        scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
         localStorage.setItem("scannerName", scannerName);
       }
     }
-  }
 
-  async function sendAmount(amount) {
-    document.querySelectorAll(".btn").forEach(b => b.disabled = true);
-    showSpinner();
+    async function sendAmount(amount) {
+      document.querySelectorAll(".btn").forEach(b => b.disabled = true);
+      showSpinner();
 
-    try {
-      const resp = await fetch(apiUrl, {
-        method: "POST",
-        body: new URLSearchParams({
-          action: "scan",
-          chipId,
-          owner: chipOwner,
-          scanner: scannerName,
-          amount
-        })
-      });
-      await resp.text();
+      try {
+        const resp = await fetch(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({
+            action: "scan",
+            chipId,
+            owner: chipOwner,
+            scanner: scannerName,
+            amount
+          })
+        });
+        await resp.text();
 
-      alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${chipOwner}`);
+        alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${chipOwner}`);
 
-      document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
+        document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
 
-      const msg = document.createElement("div");
-      msg.style.fontSize = "3em";
-      msg.style.marginTop = "20vh";
-      msg.style.color = "#3498db";
-      msg.textContent = "Topper! Geniet van je bestelling!🍻";
-      document.body.appendChild(msg);
+        const msg = document.createElement("div");
+        msg.style.fontSize = "3em";
+        msg.style.marginTop = "20vh";
+        msg.style.color = "#3498db";
+        msg.textContent = "Topper! Geniet van je bestelling!🍻";
+        document.body.appendChild(msg);
 
-    } catch (err) {
-      console.error(err);
-      alert("❌ Mislukt… probeer opnieuw!");
-    } finally {
-      hideSpinner();
+      } catch (err) {
+        console.error(err);
+        alert("❌ Mislukt… probeer opnieuw!");
+      } finally {
+        hideSpinner();
+      }
     }
-  }
 
-  window.addEventListener('load', init);
-</script>
-
+    window.addEventListener('load', init);
+  </script>
 </body>
 </html>
