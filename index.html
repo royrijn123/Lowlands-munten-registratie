@@ -51,7 +51,7 @@
   <button class="btn btn-2" onclick="sendAmount(2)">2 munten (€7,80)</button>
 
   <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbx4S27sMxt7KtLbCD1X3cMmM8xbyVsuQZTwOxmwjIf0IVzqcoJUHi7C0x8xND13spnFtQ/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbwE6EBlHX9Y6BYJSeUBRJNuENMssdpy2MBta3j540nqns8jbgNuQKVcd_aau0Z9OkWZsA/exec";
     const chipId = new URLSearchParams(window.location.search).get("chipId");
     if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
 
@@ -63,7 +63,7 @@
 
     async function init() {
       // Ophalen chiphouder via GET
-      const resp = await fetch(${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)});
+      const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
       const owner = await resp.text();
 
       if (owner) {
@@ -77,7 +77,7 @@
       }
 
       if (!scannerName) {
-        scannerName = prompt(Je scande de chip van ${chipOwner}. Wat is jouw naam?);
+        scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
         localStorage.setItem("scannerName", scannerName);
       }
     }
@@ -97,19 +97,8 @@
             amount
           })
         });
-        await resp.text();
-
-        alert(✅ Je hebt ${amount} munt(en) gegeven aan ${chipOwner});
-
-        document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
-
-        const msg = document.createElement("div");
-        msg.style.fontSize = "3em";
-        msg.style.marginTop = "20vh";
-        msg.style.color = "#3498db";
-        msg.textContent = "Topper! Geniet van je bestelling!🍻";
-        document.body.appendChild(msg);
-
+        const resTxt = await resp.text();
+        alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${resTxt}`);
       } catch (err) {
         console.error(err);
         alert("❌ Mislukt… probeer opnieuw!");
