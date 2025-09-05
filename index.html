@@ -1,124 +1,457 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Lowlands Scan</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-      text-align: center;
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Toggle } from "@/components/ui/toggle";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  ChevronDown,
+  Plus,
+  Search,
+  Beer,
+  Coffee,
+  Wine,
+  Cocktail,
+  Users,
+  QrCode,
+  CreditCard,
+  Settings,
+  Crown,
+  Sun,
+  Moon,
+  MoreHorizontal,
+  Trophy,
+  Share2,
+  Check,
+  X,
+} from "lucide-react";
+
+// Dummy assets
+const people = [
+  { name: "Noa", img: "https://i.pravatar.cc/40?img=1" },
+  { name: "Sam", img: "https://i.pravatar.cc/40?img=2" },
+  { name: "Lynn", img: "https://i.pravatar.cc/40?img=3" },
+  { name: "Jules", img: "https://i.pravatar.cc/40?img=4" },
+];
+
+const drinks = [
+  { id: "1", name: "Pilsener", icon: Beer, note: "25cl", price: 3.2 },
+  { id: "2", name: "IPA", icon: Beer, note: "33cl", price: 4.8 },
+  { id: "3", name: "Koffie", icon: Coffee, note: "Zwart", price: 2.7 },
+  { id: "4", name: "Latte", icon: Coffee, note: "Haver", price: 3.4 },
+  { id: "5", name: "Wit", icon: Wine, note: "Glas", price: 5.2 },
+  { id: "6", name: "Margarita", icon: Cocktail, note: "Classic", price: 9.0 },
+];
+
+const rounds = [
+  {
+    id: "r1",
+    title: "Vrijdagborrel @ Bar Botanique",
+    status: "Bezig",
+    sponsor: "Lynn",
+    total: 28.6,
+    progress: 60,
+    members: people,
+  },
+  {
+    id: "r2",
+    title: "Zaterdag pubquiz",
+    status: "Wachten",
+    sponsor: "Noa",
+    total: 0,
+    progress: 0,
+    members: people.slice(0, 3),
+  },
+];
+
+const Stat = ({ label, value, icon: Icon }: any) => (
+  <Card className="rounded-2xl">
+    <CardContent className="p-4 flex items-center gap-3">
+      <div className="p-2 rounded-xl bg-muted">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-xl font-semibold">{value}</div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const PersonStack = ({ people }: { people: typeof people }) => (
+  <div className="flex -space-x-2">
+    {people.map((p, i) => (
+      <Avatar key={i} className="h-7 w-7 border-2 border-background">
+        <AvatarImage src={p.img} alt={p.name} />
+        <AvatarFallback>{p.name.slice(0, 2)}</AvatarFallback>
+      </Avatar>
+    ))}
+  </div>
+);
+
+const HeaderBar = ({ onToggleTheme }: { onToggleTheme: () => void }) => (
+  <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70 bg-background/80 border-b">
+    <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 rounded-2xl bg-primary/10 grid place-items-center">
+          <Crown className="h-5 w-5" />
+        </div>
+        <div>
+          <div className="font-semibold leading-tight">NextRound</div>
+          <div className="text-xs text-muted-foreground -mt-0.5">Rondes. Vrienden. Fun.</div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="hidden sm:flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="gap-2"><Trophy className="h-4 w-4"/>Leaderboard</Button>
+          <Button variant="ghost" size="sm" className="gap-2"><Users className="h-4 w-4"/>Groepen</Button>
+          <Button variant="ghost" size="sm" className="gap-2"><QrCode className="h-4 w-4"/>QR</Button>
+        </div>
+
+        <Toggle aria-label="Thema wisselen" onClick={onToggleTheme} className="ml-1">
+          <Sun className="h-4 w-4 rotate-0 dark:-rotate-90 transition-all"/>
+          <Moon className="h-4 w-4 absolute opacity-0 dark:opacity-100 rotate-90 dark:rotate-0 transition-all"/>
+        </Toggle>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="rounded-xl">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="rounded-2xl">
+            <DropdownMenuLabel>Snelle acties</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="gap-2"><Share2 className="h-4 w-4"/>Deel app</DropdownMenuItem>
+            <DropdownMenuItem className="gap-2"><Settings className="h-4 w-4"/>Instellingen</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  </div>
+);
+
+const RoundCard = ({ r }: { r: typeof rounds[number] }) => (
+  <Card className="rounded-2xl hover:shadow-sm transition-shadow">
+    <CardHeader className="pb-2">
+      <div className="flex items-center justify-between">
+        <CardTitle className="text-base font-semibold">{r.title}</CardTitle>
+        <Badge variant={r.status === "Bezig" ? "default" : "secondary"}>{r.status}</Badge>
+      </div>
+      <div className="text-xs text-muted-foreground">Ronde-sponsor: <span className="font-medium">{r.sponsor}</span></div>
+    </CardHeader>
+    <CardContent className="pt-0 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm">Totaal: <span className="font-semibold">€ {r.total.toFixed(2)}</span></div>
+        <PersonStack people={r.members as any} />
+      </div>
+      <Progress value={r.progress} className="h-2"/>
+      <div className="flex gap-2">
+        <Button size="sm" className="rounded-xl gap-2"><Check className="h-4 w-4"/>Volgende ronde</Button>
+        <Button size="sm" variant="secondary" className="rounded-xl">Details</Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const CatalogCard = ({ d, add }: any) => (
+  <Card className="rounded-2xl">
+    <CardContent className="p-4 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-xl bg-muted">
+          <d.icon className="h-5 w-5" />
+        </div>
+        <div>
+          <div className="text-sm font-medium leading-tight">{d.name}</div>
+          <div className="text-xs text-muted-foreground">{d.note}</div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="text-sm font-semibold">€ {d.price.toFixed(2)}</div>
+        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => add(d)}>+
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const QRDrawer = () => (
+  <Sheet>
+    <SheetTrigger asChild>
+      <Button variant="secondary" className="rounded-xl gap-2"><QrCode className="h-4 w-4"/>Deel ronde</Button>
+    </SheetTrigger>
+    <SheetContent className="rounded-l-2xl">
+      <SheetHeader>
+        <SheetTitle>Deel via QR-code</SheetTitle>
+      </SheetHeader>
+      <div className="mt-6 grid place-items-center gap-3">
+        <div className="size-48 rounded-2xl bg-muted grid place-items-center text-muted-foreground">QR</div>
+        <div className="text-sm text-center text-muted-foreground px-4">Laat vrienden scannen om aan te haken op deze NextRound.</div>
+        <Button className="rounded-xl w-full mt-2"><Share2 className="h-4 w-4 mr-2"/>Kopieer link</Button>
+      </div>
+    </SheetContent>
+  </Sheet>
+);
+
+const CreateRoundDialog = () => (
+  <Dialog>
+    <DialogTrigger asChild>
+      <Button className="rounded-xl gap-2"><Plus className="h-4 w-4"/>Nieuwe ronde</Button>
+    </DialogTrigger>
+    <DialogContent className="sm:max-w-md rounded-2xl">
+      <DialogHeader>
+        <DialogTitle>Nieuwe ronde starten</DialogTitle>
+      </DialogHeader>
+      <div className="grid gap-4">
+        <div className="grid gap-2">
+          <Label>Locatie / Bar</Label>
+          <Input placeholder="Bijv. Bar Botanique" />
+        </div>
+        <div className="grid gap-2">
+          <Label>Ronde-type</Label>
+          <Select>
+            <SelectTrigger className="rounded-xl"><SelectValue placeholder="Kies" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="drinks">Drankjes</SelectItem>
+              <SelectItem value="koffie">Koffie</SelectItem>
+              <SelectItem value="mix">Mix</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label>Vrienden uitnodigen</Label>
+          <div className="flex gap-2">
+            <Input placeholder="Zoek naam of nummer" />
+            <Button variant="secondary" className="rounded-xl"><Users className="h-4 w-4"/></Button>
+          </div>
+        </div>
+      </div>
+      <DialogFooter className="sm:justify-between gap-2">
+        <Button variant="outline" className="rounded-xl"><X className="h-4 w-4 mr-2"/>Annuleer</Button>
+        <Button className="rounded-xl"><Check className="h-4 w-4 mr-2"/>Start ronde</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
+export default function NextRoundUI() {
+  const [theme, setTheme] = React.useState<"light" | "dark">("light");
+  const [query, setQuery] = React.useState("");
+  const [bag, setBag] = React.useState<any[]>([]);
+
+  const addToBag = (item: any) => setBag((b) => {
+    const found = b.find((x) => x.id === item.id);
+    if (found) return b.map((x) => x.id === item.id ? { ...x, qty: x.qty + 1 } : x);
+    return [...b, { ...item, qty: 1 }];
+  });
+  const removeFromBag = (id: string) => setBag((b) => b.filter((x) => x.id !== id));
+  const setQty = (id: string, qty: number) => setBag((b) => b.map((x) => x.id === id ? { ...x, qty: Math.max(1, qty) } : x));
+  const total = bag.reduce((s, x) => s + x.qty * x.price, 0);
+
+  React.useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", theme === "dark");
     }
-    .btn {
-      width: 100%;
-      height: calc((100vh - 60px) / 3); /* Houd rekening met Safari zoekbalk */
-      font-size: 3em;
-      border: none;
-      color: white;
-      cursor: pointer;
-    }
-    .btn-1 { background-color: #3498db; }
-    .btn-15 { background-color: #f1c40f; }
-    .btn-2 { background-color: #e74c3c; }
-    #spinner {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      width: 30px;
-      height: 80px;
-      margin: -40px 0 0 -40px;
-      border: 10px solid #f3f3f3;
-      border-top: 10px solid #3498db;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      z-index: 999;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
-</head>
-<body>
-  <div id="spinner"></div>
-  <button class="btn btn-1" onclick="sendAmount(1)">Frisdrank/kleine bier</button>
-  <button class="btn btn-15" onclick="sendAmount(1.5)">Grote bier</button>
-  <button class="btn btn-2" onclick="sendAmount(2)">Desperados</button>
+  }, [theme]);
 
-  <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbx4S27sMxt7KtLbCD1X3cMmM8xbyVsuQZTwOxmwjIf0IVzqcoJUHi7C0x8xND13spnFtQ/exec";
-    const chipId = new URLSearchParams(window.location.search).get("chipId");
-    if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <HeaderBar onToggleTheme={() => setTheme((t) => (t === "light" ? "dark" : "light"))} />
 
-    let chipOwner = "";
-    let scannerName = localStorage.getItem("scannerName");
+      <main className="mx-auto max-w-6xl p-4 space-y-6">
+        {/* Top strip */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Stat label="Actieve rondes" value={2} icon={Crown} />
+          <Stat label="Vrienden online" value={8} icon={Users} />
+          <Stat label="Tegoed" value={`€ ${(42.5).toFixed(2)}`} icon={CreditCard} />
+          <Card className="rounded-2xl">
+            <CardContent className="p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-muted"><Trophy className="h-5 w-5"/></div>
+                <div>
+                  <div className="text-xs text-muted-foreground">#1 deze week</div>
+                  <div className="text-sm font-semibold">Jij en Sam</div>
+                </div>
+              </div>
+              <Button size="sm" variant="secondary" className="rounded-xl">Bekijk</Button>
+            </CardContent>
+          </Card>
+        </div>
 
-    function showSpinner() { document.getElementById("spinner").style.display = "block"; }
-    function hideSpinner() { document.getElementById("spinner").style.display = "none"; }
+        {/* Main content */}
+        <Tabs defaultValue="rondes" className="w-full">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <TabsList className="rounded-2xl">
+              <TabsTrigger value="rondes" className="rounded-xl">Rondes</TabsTrigger>
+              <TabsTrigger value="catalogus" className="rounded-xl">Catalogus</TabsTrigger>
+              <TabsTrigger value="betaal" className="rounded-xl">Betalen</TabsTrigger>
+              <TabsTrigger value="klassement" className="rounded-xl">Klassement</TabsTrigger>
+            </TabsList>
 
-    async function init() {
-      // Ophalen chiphouder via GET
-      const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-      const owner = await resp.text();
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
+                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Zoek drankjes, rondes of vrienden" className="pl-9 rounded-2xl w-64"/>
+              </div>
+              <CreateRoundDialog />
+              <QRDrawer />
+            </div>
+          </div>
 
-      if (owner) {
-        chipOwner = owner;
-      } else {
-        chipOwner = prompt("Van wie is deze chip?");
-        await fetch(apiUrl, {
-          method: "POST",
-          body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
-        });
-      }
+          {/* Rondes */}
+          <TabsContent value="rondes" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {rounds.map((r) => (
+                <AnimatePresence key={r.id}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <RoundCard r={r} />
+                  </motion.div>
+                </AnimatePresence>
+              ))}
+            </div>
+          </TabsContent>
 
-      if (!scannerName) {
-        scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-        localStorage.setItem("scannerName", scannerName);
-      }
-    }
+          {/* Catalogus */}
+          <TabsContent value="catalogus" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              {drinks
+                .filter((d) => d.name.toLowerCase().includes(query.toLowerCase()))
+                .map((d) => (
+                  <CatalogCard key={d.id} d={d} add={addToBag} />
+                ))}
+            </div>
 
-    async function sendAmount(amount) {
-      document.querySelectorAll(".btn").forEach(b => b.disabled = true);
-      showSpinner();
+            <Card className="rounded-2xl mt-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Bestelling</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {bag.length === 0 && (
+                  <div className="text-sm text-muted-foreground">Nog niets toegevoegd.</div>
+                )}
+                {bag.map((x) => (
+                  <div key={x.id} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-muted"><x.icon className="h-4 w-4"/></div>
+                      <div>
+                        <div className="text-sm font-medium leading-tight">{x.name}</div>
+                        <div className="text-xs text-muted-foreground">{x.note}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input type="number" value={x.qty} onChange={(e) => setQty(x.id, Number(e.target.value))} className="w-16 rounded-xl"/>
+                      <div className="w-16 text-right text-sm">€ {(x.qty * x.price).toFixed(2)}</div>
+                      <Button size="icon" variant="ghost" onClick={() => removeFromBag(x.id)} className="rounded-xl"><X className="h-4 w-4"/></Button>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between border-t pt-3 mt-2">
+                  <div className="text-sm font-medium">Totaal</div>
+                  <div className="text-sm font-semibold">€ {total.toFixed(2)}</div>
+                </div>
+                <div className="flex gap-2">
+                  <Button className="rounded-xl flex-1">Plaats bestelling</Button>
+                  <Button variant="secondary" className="rounded-xl" >Splitsen</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      try {
-        const resp = await fetch(apiUrl, {
-          method: "POST",
-          body: new URLSearchParams({
-            action: "scan",
-            chipId,
-            owner: chipOwner,
-            scanner: scannerName,
-            amount
-          })
-        });
-        await resp.text();
+          {/* Betalen */}
+          <TabsContent value="betaal" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="rounded-2xl">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Betaalverzoek</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-2">
+                    <Label>Te voldoen</Label>
+                    <Input placeholder="€ 0,00" defaultValue={(total || 18.4).toFixed(2)} className="rounded-xl"/>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Methode</Label>
+                    <Select defaultValue="tikkie">
+                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tikkie">Tikkie</SelectItem>
+                        <SelectItem value="ideal">iDEAL</SelectItem>
+                        <SelectItem value="cash">Contant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button className="rounded-xl w-full"><CreditCard className="h-4 w-4 mr-2"/>Stuur betaalverzoek</Button>
+                </CardContent>
+              </Card>
 
-        alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${chipOwner}`);
+              <Card className="rounded-2xl">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Saldo & voortgang</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">Weekdoel: 5 rondes sponsoren</div>
+                    <div className="text-sm font-medium">3/5</div>
+                  </div>
+                  <Progress value={60} className="h-2"/>
+                  <div className="grid gap-2">
+                    <Label>Virtuele pot</Label>
+                    <div className="text-2xl font-semibold">€ 42,50</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-        document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
+          {/* Klassement */}
+          <TabsContent value="klassement" className="mt-4">
+            <Card className="rounded-2xl">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Top spelers deze maand</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {["Sam", "Noa", "Lynn", "Jules"].map((n, i) => (
+                  <div key={n} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Badge variant={i === 0 ? "default" : "secondary"} className="rounded-xl w-8 justify-center">{i + 1}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-7 w-7"><AvatarImage src={`https://i.pravatar.cc/40?img=${i+6}`} /><AvatarFallback>{n[0]}</AvatarFallback></Avatar>
+                        <div className="text-sm font-medium">{n}</div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">{Math.round(120 - i * 17)} pts</div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
 
-        const msg = document.createElement("div");
-        msg.style.fontSize = "3em";
-        msg.style.marginTop = "20vh";
-        msg.style.color = "#3498db";
-        msg.textContent = "Topper! Geniet van je bestelling!🍻";
-        document.body.appendChild(msg);
-
-      } catch (err) {
-        console.error(err);
-        alert("❌ Mislukt… probeer opnieuw!");
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    window.addEventListener('load', init);
-  </script>
-</body>
-</html>
+      {/* Mobile bottom bar */}
+      <div className="fixed bottom-4 left-0 right-0 px-4 md:hidden">
+        <div className="mx-auto max-w-md bg-background/90 backdrop-blur border rounded-2xl shadow-lg p-2 grid grid-cols-4 gap-2">
+          <Button variant="secondary" className="rounded-xl flex flex-col gap-1 py-3"><Crown className="h-5 w-5"/><span className="text-xs">Rondes</span></Button>
+          <Button variant="ghost" className="rounded-xl flex flex-col gap-1 py-3"><Search className="h-5 w-5"/><span className="text-xs">Zoek</span></Button>
+          <Button variant="ghost" className="rounded-xl flex flex-col gap-1 py-3"><CreditCard className="h-5 w-5"/><span className="text-xs">Betaal</span></Button>
+          <Button variant="ghost" className="rounded-xl flex flex-col gap-1 py-3"><Trophy className="h-5 w-5"/><span className="text-xs">Ranking</span></Button>
+        </div>
+      </div>
+    </div>
+  );
+}
