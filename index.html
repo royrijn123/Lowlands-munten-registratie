@@ -1,124 +1,212 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Lowlands Scan</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NextDrink NFC</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
+    body {
       font-family: Arial, sans-serif;
       text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #7e22ce, #f97316);
+      color: #fff;
     }
-    .btn {
+    .card {
+      background: #fff;
+      color: #111;
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.2);
+    }
+    button {
+      display: block;
       width: 100%;
-      height: calc((100vh - 60px) / 3); /* Houd rekening met Safari zoekbalk */
-      font-size: 3em;
+      margin: 8px 0;
+      padding: 12px;
       border: none;
-      color: white;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
       cursor: pointer;
     }
-    .btn-1 { background-color: #3498db; }
-    .btn-15 { background-color: #f1c40f; }
-    .btn-2 { background-color: #e74c3c; }
-    #spinner {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      width: 30px;
-      height: 80px;
-      margin: -40px 0 0 -40px;
-      border: 10px solid #f3f3f3;
-      border-top: 10px solid #3498db;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      z-index: 999;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    .primary { background: #7e22ce; color: #fff; }
+    .secondary { background: #f97316; color: #fff; }
+    .outline { background: #eee; color: #111; }
+    h1,h2,h3 { margin: 12px 0; }
+    #scoreList, #finalList { text-align: left; margin-top: 12px; }
   </style>
 </head>
 <body>
-  <div id="spinner"></div>
-  <button class="btn btn-1" onclick="sendAmount(1)">Frisdrank/kleine bier</button>
-  <button class="btn btn-15" onclick="sendAmount(1.5)">Grote bier</button>
-  <button class="btn btn-2" onclick="sendAmount(2)">Desperados</button>
+  <div class="card">
+    <h1>NextDrink</h1>
+    <div id="loading">Bezig met laden...</div>
+    
+    <!-- Menu -->
+    <div id="menu" style="display:none;">
+      <h2 id="menuTitle"></h2>
+      <div id="drinks"></div>
+      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
+    
+    <!-- Bevestiging -->
+    <div id="confirm" style="display:none;">
+      <h2>✅ Verwerkt!</h2>
+      <p id="confirmText"></p>
+      <button class="secondary" onclick="newRound()">Nieuw rondje</button>
+      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
+    
+    <!-- Tussenstand -->
+    <div id="scores" style="display:none;">
+      <h2>Tussenstand</h2>
+      <div id="scoreList"></div>
+      <button class="primary" onclick="backToMenu()">Terug</button>
+    </div>
+    
+    <!-- Eindafrekening -->
+    <div id="final" style="display:none;">
+      <h2>🏁 Eindafrekening</h2>
+      <div id="finalWinner"></div>
+      <div id="finalList"></div>
+      <button class="primary" onclick="backToMenu()">Terug</button>
+    </div>
+  </div>
 
-  <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbx4S27sMxt7KtLbCD1X3cMmM8xbyVsuQZTwOxmwjIf0IVzqcoJUHi7C0x8xND13spnFtQ/exec";
-    const chipId = new URLSearchParams(window.location.search).get("chipId");
-    if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
+<script>
+const apiUrl = "https://script.google.com/macros/s/AKfycbx4S27sMxt7KtLbCD1X3cMmM8xbyVsuQZTwOxmwjIf0IVzqcoJUHi7C0x8xND13spnFtQ/exec";
+const chipId = new URLSearchParams(window.location.search).get("chipId");
+if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
 
-    let chipOwner = "";
-    let scannerName = localStorage.getItem("scannerName");
+let chipOwner = "";
+let scannerName = localStorage.getItem("scannerName");
 
-    function showSpinner() { document.getElementById("spinner").style.display = "block"; }
-    function hideSpinner() { document.getElementById("spinner").style.display = "none"; }
+const drinks = [
+  { name: "Bier", price: 3 },
+  { name: "Wijn", price: 4 },
+  { name: "Cocktail", price: 7 },
+  { name: "Frisdrank", price: 2 }
+];
 
-    async function init() {
-      // Ophalen chiphouder via GET
-      const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-      const owner = await resp.text();
+async function init() {
+  document.getElementById("loading").style.display = "block";
 
-      if (owner) {
-        chipOwner = owner;
-      } else {
-        chipOwner = prompt("Van wie is deze chip?");
-        await fetch(apiUrl, {
-          method: "POST",
-          body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
-        });
-      }
+  // Owner ophalen
+  const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
+  const owner = await resp.text();
 
-      if (!scannerName) {
-        scannerName = prompt(`Je scande de chip van ${chipOwner}. Wat is jouw naam?`);
-        localStorage.setItem("scannerName", scannerName);
-      }
+  if (owner) {
+    chipOwner = owner;
+  } else {
+    chipOwner = prompt("Van wie is deze chip?");
+    if (chipOwner) {
+      await fetch(apiUrl, {
+        method: "POST",
+        body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
+      });
+    } else {
+      alert("Geen eigenaar ingevoerd. Stop.");
+      return;
     }
+  }
 
-    async function sendAmount(amount) {
-      document.querySelectorAll(".btn").forEach(b => b.disabled = true);
-      showSpinner();
+  // Scanner naam onthouden
+  if (!scannerName) {
+    scannerName = prompt("Wat is jouw naam (scanner)?");
+    if (scannerName) localStorage.setItem("scannerName", scannerName);
+  }
 
-      try {
-        const resp = await fetch(apiUrl, {
-          method: "POST",
-          body: new URLSearchParams({
-            action: "scan",
-            chipId,
-            owner: chipOwner,
-            scanner: scannerName,
-            amount
-          })
-        });
-        await resp.text();
+  renderMenu();
+}
 
-        alert(`✅ Je hebt ${amount} munt(en) gegeven aan ${chipOwner}`);
+function renderMenu() {
+  hideAll();
+  document.getElementById("menuTitle").textContent =
+    `Wat wil je dat ${chipOwner} voor je gaat halen?`;
 
-        document.querySelectorAll(".btn").forEach(b => b.style.display = "none");
+  const drinksDiv = document.getElementById("drinks");
+  drinksDiv.innerHTML = "";
+  drinks.forEach(d => {
+    const btn = document.createElement("button");
+    btn.className = "secondary";
+    btn.textContent = `${d.name} (€${d.price})`;
+    btn.onclick = () => placeOrder(d);
+    drinksDiv.appendChild(btn);
+  });
 
-        const msg = document.createElement("div");
-        msg.style.fontSize = "3em";
-        msg.style.marginTop = "20vh";
-        msg.style.color = "#3498db";
-        msg.textContent = "Topper! Geniet van je bestelling!🍻";
-        document.body.appendChild(msg);
+  document.getElementById("menu").style.display = "block";
+}
 
-      } catch (err) {
-        console.error(err);
-        alert("❌ Mislukt… probeer opnieuw!");
-      } finally {
-        hideSpinner();
-      }
-    }
+async function placeOrder(drink) {
+  await fetch(apiUrl, {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "addScan",
+      chipId,
+      scanner: scannerName,
+      drink: drink.name,
+      munten: drink.price
+    })
+  });
 
-    window.addEventListener('load', init);
-  </script>
+  hideAll();
+  document.getElementById("confirmText").textContent =
+    `${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`;
+  document.getElementById("confirm").style.display = "block";
+}
+
+async function showScores() {
+  const resp = await fetch(`${apiUrl}?action=getScores`);
+  const scores = await resp.json();
+
+  let html = "<ul>";
+  scores.sort((a,b) => b.rounds - a.rounds).forEach(s => {
+    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"}</li>`;
+  });
+  html += "</ul>";
+
+  hideAll();
+  document.getElementById("scoreList").innerHTML = html;
+  document.getElementById("scores").style.display = "block";
+}
+
+async function showFinal() {
+  const resp = await fetch(`${apiUrl}?action=getScores`);
+  const scores = await resp.json();
+  scores.sort((a,b) => b.rounds - a.rounds);
+
+  let html = "<ul>";
+  scores.forEach(s => {
+    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"}</li>`;
+  });
+  html += "</ul>";
+
+  hideAll();
+  if (scores.length > 0) {
+    const winnaar = scores[0];
+    document.getElementById("finalWinner").innerHTML =
+      `<h3>🏆 ${winnaar.owner} heeft de meeste rondjes gehaald (${winnaar.rounds})!</h3>`;
+  } else {
+    document.getElementById("finalWinner").innerHTML = "<p>Nog geen data.</p>";
+  }
+  document.getElementById("finalList").innerHTML = html;
+  document.getElementById("final").style.display = "block";
+}
+
+function hideAll() {
+  ["loading","menu","confirm","scores","final"].forEach(id =>
+    document.getElementById(id).style.display = "none"
+  );
+}
+
+function backToMenu() { renderMenu(); }
+function newRound() { renderMenu(); }
+
+init();
+</script>
 </body>
 </html>
