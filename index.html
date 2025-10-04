@@ -78,7 +78,7 @@
   </div>
 
 <script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbyI9_cA5o3L_C2O1oiL0MbS9cfHzIw3mUROdrvZ0zcDB_piXntzNnumIR5Bze_ExaB4Og/exec";
+const apiUrl = "https://script.google.com/macros/s/AKfycbzyEFq0kYxZN36GQ1LxAp69SzpzpiMQul6Q1xKEDaTwGrADT5x7W6Hxvg2e3zXIt24kqw/exec";
 const chipId = new URLSearchParams(window.location.search).get("chipId");
 if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
 
@@ -185,6 +185,21 @@ async function showFinal() {
   });
   html += "</ul>";
 
+  // Settlement ophalen
+  const respSettle = await fetch(`${apiUrl}?action=getSettlement`);
+  const settlements = await respSettle.json();
+
+  let settleHtml = "<h3>💶 Verrekeningen</h3>";
+  if (settlements.length === 0) {
+    settleHtml += "<p>Alles is al eerlijk verdeeld.</p>";
+  } else {
+    settleHtml += "<ul>";
+    settlements.forEach(s => {
+      settleHtml += `<li>${s.from} betaalt €${s.amount.toFixed(2)} aan ${s.to}</li>`;
+    });
+    settleHtml += "</ul>";
+  }
+
   hideAll();
   if (scores.length > 0) {
     const winnaar = scores[0];
@@ -193,14 +208,8 @@ async function showFinal() {
   } else {
     document.getElementById("finalWinner").innerHTML = "<p>Nog geen data.</p>";
   }
-  document.getElementById("finalList").innerHTML = html;
+  document.getElementById("finalList").innerHTML = html + settleHtml;
   document.getElementById("final").style.display = "block";
-}
-
-function hideAll() {
-  ["loading","menu","confirm","scores","final"].forEach(id =>
-    document.getElementById(id).style.display = "none"
-  );
 }
 
 function backToMenu() { renderMenu(); }
