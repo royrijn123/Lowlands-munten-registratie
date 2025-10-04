@@ -16,7 +16,6 @@
   body {
     font-family: Arial, sans-serif;
     text-align: center;
-    padding: 20px;
     background: linear-gradient(135deg, #7e22ce, #f97316);
     background-size: cover;
     color: #fff;
@@ -27,13 +26,13 @@
 
   /* Card transparant */
   .card {
-    background: transparent; /* geen witte achtergrond */
+    background: transparent;
     color: #fff;
     max-width: 400px;
     width: 100%;
     padding: 20px;
     border-radius: 16px;
-    box-shadow: none; /* geen schaduw */
+    box-shadow: none;
   }
 
   /* Buttons */
@@ -57,13 +56,11 @@
   }
 
   h1,h2,h3 { margin: 12px 0; }
-
-  /* Score en final lijst */
   #scoreList, #finalList { text-align: left; margin-top: 12px; }
 
   /* Logo */
   #logo {
-    max-width: 200px;
+    max-width: 150px;
     height: auto;
     margin-bottom: 16px;
     display: block;
@@ -83,7 +80,6 @@
       <div id="drinks"></div>
       <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
       <button class="outline" onclick="showFinal()">Eindafrekening</button>
-      <button class="outline" onclick="addCustomDrink()">Voeg drankje toe</button>
     </div>
     
     <!-- Bevestiging -->
@@ -124,7 +120,8 @@ if (!chipId) {
 let chipOwner = "";
 let scannerName = localStorage.getItem("scannerName");
 
-const drinks = [
+// Drinks uit localStorage of default lijst
+let drinks = JSON.parse(localStorage.getItem("drinks")) || [
   { name: "Bier", price: 3 },
   { name: "Wijn", price: 4 },
   { name: "Cocktail", price: 7 },
@@ -144,7 +141,6 @@ async function init() {
     alert("Fout bij ophalen eigenaar: " + err.message);
   }
 
-  // Alleen prompt tonen als chip onbekend is
   if (owner) {
     chipOwner = owner;
   } else {
@@ -167,36 +163,12 @@ async function init() {
     }
   }
 
-  // Scanner naam onthouden
   if (!scannerName) {
     scannerName = prompt("Wat is jouw naam (scanner)?")?.trim();
     if (scannerName) localStorage.setItem("scannerName", scannerName);
   }
 
   showLoading(false);
-  renderMenu();
-}
-// Drinks array initialiseren met localStorage
-let drinks = JSON.parse(localStorage.getItem("drinks")) || [
-  { name: "Bier", price: 3 },
-  { name: "Wijn", price: 4 },
-  { name: "Cocktail", price: 7 },
-  { name: "Frisdrank", price: 2 }
-];
-
-// Voeg drankje toe functie
-function addCustomDrink() {
-  const name = prompt("Wat is de naam van het nieuwe drankje?");
-  if (!name) return;
-  const priceInput = prompt(`Wat is de prijs van "${name}"? (in €)`);
-  const price = parseFloat(priceInput.replace(",", "."));
-  if (isNaN(price) || price <= 0) {
-    alert("Ongeldige prijs!");
-    return;
-  }
-
-  drinks.push({ name: name.trim(), price });
-  localStorage.setItem("drinks", JSON.stringify(drinks)); // opslaan
   renderMenu();
 }
 
@@ -211,15 +183,38 @@ function renderMenu() {
 
   const drinksDiv = document.getElementById("drinks");
   drinksDiv.innerHTML = "";
+
   drinks.forEach(d => {
     const btn = document.createElement("button");
     btn.className = "secondary";
-    btn.textContent = `${d.name} (${d.price.toLocaleString("nl-NL", {style:"currency", currency:"EUR"})})`;
+    btn.textContent = `${d.name} (${d.price.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})})`;
     btn.onclick = () => placeOrder(d);
     drinksDiv.appendChild(btn);
   });
 
+  // Voeg drankje knop
+  const addBtn = document.createElement("button");
+  addBtn.className = "outline";
+  addBtn.textContent = "Voeg drankje toe";
+  addBtn.onclick = addCustomDrink;
+  drinksDiv.appendChild(addBtn);
+
   document.getElementById("menu").style.display = "block";
+}
+
+function addCustomDrink() {
+  const name = prompt("Wat is de naam van het nieuwe drankje?");
+  if (!name) return;
+  const priceInput = prompt(`Wat is de prijs van "${name}"? (in €)`);
+  const price = parseFloat(priceInput.replace(",", "."));
+  if (isNaN(price) || price <= 0) {
+    alert("Ongeldige prijs!");
+    return;
+  }
+
+  drinks.push({ name: name.trim(), price });
+  localStorage.setItem("drinks", JSON.stringify(drinks));
+  renderMenu();
 }
 
 async function placeOrder(drink) {
@@ -243,7 +238,7 @@ async function placeOrder(drink) {
 
   hideAll();
   document.getElementById("confirmText").textContent =
-    `${drink.name} (${drink.price.toLocaleString("nl-NL", {style:"currency", currency:"EUR"})}) is doorgegeven aan ${chipOwner}.`;
+    `${drink.name} (${drink.price.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})}) is doorgegeven aan ${chipOwner}.`;
   document.getElementById("confirm").style.display = "block";
   showLoading(false);
 }
@@ -262,7 +257,6 @@ async function showScores() {
   }
 
   scores.sort((a,b) => b.rounds - a.rounds);
-
   let html = "<ul>";
   scores.forEach(s => {
     html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (${s.total.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})})</li>`;
@@ -314,23 +308,4 @@ async function showFinal() {
   if (scores.length > 0) {
     const winnaar = scores[0];
     document.getElementById("finalWinner").innerHTML =
-      `<h3>🏆 ${winnaar.owner} heeft de meeste rondjes gehaald (${winnaar.rounds}) voor in totaal ${winnaar.total.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})}!</h3>`;
-  } else {
-    document.getElementById("finalWinner").innerHTML = "<p>Nog geen data.</p>";
-  }
-  document.getElementById("finalList").innerHTML = html + settleHtml;
-  document.getElementById("final").style.display = "block";
-  showLoading(false);
-}
-
-function hideAll() {
-  ["menu","confirm","scores","final"].forEach(id => document.getElementById(id).style.display="none");
-}
-
-function backToMenu() { renderMenu(); }
-function newRound() { renderMenu(); }
-
-init();
-</script>
-</body>
-</html>
+      `<h3>🏆 ${winnaar.owner} heeft de meeste rondjes gehaald (${winnaar.rounds}) voor in totaal ${winnaar.total.toLocale
