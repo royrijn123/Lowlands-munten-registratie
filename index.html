@@ -81,6 +81,7 @@
     <div id="menu" style="display:none;">
       <h2 id="menuTitle"></h2>
       <div id="drinks"></div>
+      <button class="outline" onclick="addCustomDrink()">Voeg drankje toe</button>
       <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
       <button class="outline" onclick="showFinal()">Eindafrekening</button>
     </div>
@@ -178,6 +179,22 @@ async function init() {
 
 function showLoading(show) {
   document.getElementById("loading").style.display = show ? "block" : "none";
+}
+ function addCustomDrink() {
+  const name = prompt("Wat is de naam van het nieuwe drankje?");
+  if (!name) return; // afgebroken
+  const priceInput = prompt(`Wat is de prijs van "${name}"? (in €)`);
+  const price = parseFloat(priceInput.replace(",", "."));
+  if (isNaN(price) || price <= 0) {
+    alert("Ongeldige prijs!");
+    return;
+  }
+  
+  // Voeg het drankje toe aan de drinks array
+  drinks.push({ name: name.trim(), price });
+  
+  // Render menu opnieuw zodat het nieuwe drankje zichtbaar wordt
+  renderMenu();
 }
 
 function renderMenu() {
