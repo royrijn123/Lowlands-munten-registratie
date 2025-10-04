@@ -63,7 +63,7 @@
 
   /* Logo */
   #logo {
-    max-width: 150px;
+    max-width: 200px;
     height: auto;
     margin-bottom: 16px;
     display: block;
@@ -83,6 +83,7 @@
       <div id="drinks"></div>
       <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
       <button class="outline" onclick="showFinal()">Eindafrekening</button>
+      <button class="outline" onclick="addCustomDrink()">Voeg drankje toe</button>
     </div>
     
     <!-- Bevestiging -->
@@ -173,6 +174,29 @@ async function init() {
   }
 
   showLoading(false);
+  renderMenu();
+}
+// Drinks array initialiseren met localStorage
+let drinks = JSON.parse(localStorage.getItem("drinks")) || [
+  { name: "Bier", price: 3 },
+  { name: "Wijn", price: 4 },
+  { name: "Cocktail", price: 7 },
+  { name: "Frisdrank", price: 2 }
+];
+
+// Voeg drankje toe functie
+function addCustomDrink() {
+  const name = prompt("Wat is de naam van het nieuwe drankje?");
+  if (!name) return;
+  const priceInput = prompt(`Wat is de prijs van "${name}"? (in €)`);
+  const price = parseFloat(priceInput.replace(",", "."));
+  if (isNaN(price) || price <= 0) {
+    alert("Ongeldige prijs!");
+    return;
+  }
+
+  drinks.push({ name: name.trim(), price });
+  localStorage.setItem("drinks", JSON.stringify(drinks)); // opslaan
   renderMenu();
 }
 
