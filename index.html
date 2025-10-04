@@ -5,38 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NextDrink NFC</title>
 <style>
-  /* Zorg dat HTML en BODY 100% hoogte hebben */
   html, body {
     height: 100%;
     margin: 0;
     padding: 0;
   }
 
-  /* Body met fullscreen gradient */
   body {
     font-family: Arial, sans-serif;
     text-align: center;
-    padding: 20px;
     background: linear-gradient(135deg, #7e22ce, #f97316);
     background-size: cover;
+    background-repeat: no-repeat;
     color: #fff;
     display: flex;
     justify-content: center;
     align-items: flex-start;
   }
 
-  /* Card transparant */
   .card {
-    background: transparent; /* geen witte achtergrond */
+    background: transparent;
     color: #fff;
     max-width: 400px;
     width: 100%;
     padding: 20px;
     border-radius: 16px;
-    box-shadow: none; /* geen schaduw */
+    box-shadow: none;
   }
 
-  /* Buttons */
   button {
     display: block;
     width: 100%;
@@ -57,11 +53,8 @@
   }
 
   h1,h2,h3 { margin: 12px 0; }
-
-  /* Score en final lijst */
   #scoreList, #finalList { text-align: left; margin-top: 12px; }
 
-  /* Logo */
   #logo {
     max-width: 150px;
     height: auto;
