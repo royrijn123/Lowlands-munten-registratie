@@ -32,6 +32,14 @@
       font-weight: bold;
       cursor: pointer;
     }
+    #logo {
+      max-width: 200px;  /* past het logo aan zodat het niet te groot is */
+      height: auto;
+      margin-bottom: 16px; /* ruimte tussen logo en de rest */
+      display: block;
+      margin-left: auto;
+      margin-right: auto; /* centreert het logo */
+    }
     .primary { background: #7e22ce; color: #fff; }
     .secondary { background: #f97316; color: #fff; }
     .outline { background: #eee; color: #111; }
@@ -41,7 +49,7 @@
 </head>
 <body>
   <div class="card">
-    <h1>NextDrink</h1>
+    <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
     <div id="loading">Bezig met laden...</div>
     
     <!-- Menu -->
