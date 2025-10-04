@@ -78,7 +78,7 @@
   </div>
 
 <script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbzezWYEnZ6qftd6bBOhm6YvSV9XG1lCOixHJvw5KeoNQinup-OXVe0udycLi0HfvAlB3w/exec";
+const apiUrl = "https://script.google.com/macros/s/AKfycbx4S27sMxt7KtLbCD1X3cMmM8xbyVsuQZTwOxmwjIf0IVzqcoJUHi7C0x8xND13spnFtQ/exec";
 const chipId = new URLSearchParams(window.location.search).get("chipId");
 if (!chipId) { alert("Geen chipId in URL"); throw new Error("Geen chipId"); }
 
@@ -165,7 +165,7 @@ async function showScores() {
 
   let html = "<ul>";
   scores.sort((a,b) => b.rounds - a.rounds).forEach(s => {
-    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"}</li>`;
+    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total.toFixed(2)})</li>`;
   });
   html += "</ul>";
 
@@ -181,7 +181,7 @@ async function showFinal() {
 
   let html = "<ul>";
   scores.forEach(s => {
-    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"}</li>`;
+    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total.toFixed(2)})</li>`;
   });
   html += "</ul>";
 
@@ -189,7 +189,7 @@ async function showFinal() {
   if (scores.length > 0) {
     const winnaar = scores[0];
     document.getElementById("finalWinner").innerHTML =
-      `<h3>🏆 ${winnaar.owner} heeft de meeste rondjes gehaald (${winnaar.rounds})!</h3>`;
+      `<h3>🏆 ${winnaar.owner} heeft de meeste rondjes gehaald (${winnaar.rounds}) voor in totaal €${winnaar.total.toFixed(2)}!</h3>`;
   } else {
     document.getElementById("finalWinner").innerHTML = "<p>Nog geen data.</p>";
   }
