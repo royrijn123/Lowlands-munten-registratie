@@ -5,47 +5,68 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NextDrink NFC</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background: linear-gradient(135deg, #7e22ce, #f97316);
-      color: #fff;
-    }
-    .card {
-      background: #fff;
-      color: #111;
-      max-width: 400px;
-      margin: 0 auto;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 6px 24px rgba(0,0,0,.2);
-    }
-    button {
-      display: block;
-      width: 100%;
-      margin: 8px 0;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    #logo {
-      max-width: 200px;  /* past het logo aan zodat het niet te groot is */
-      height: auto;
-      margin-bottom: 16px; /* ruimte tussen logo en de rest */
-      display: block;
-      margin-left: auto;
-      margin-right: auto; /* centreert het logo */
-    }
-    .primary { background: #7e22ce; color: #fff; }
-    .secondary { background: #f97316; color: #fff; }
-    .outline { background: #eee; color: #111; }
-    h1,h2,h3 { margin: 12px 0; }
-    #scoreList, #finalList { text-align: left; margin-top: 12px; }
-  </style>
+  /* Body met fullscreen gradient */
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh; /* gradient vult altijd het scherm */
+    background: linear-gradient(135deg, #7e22ce, #f97316);
+    background-size: cover;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  /* Card transparant */
+  .card {
+    background: transparent; /* geen witte achtergrond */
+    color: #fff;
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: none; /* geen schaduw */
+  }
+
+  /* Buttons */
+  button {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .primary { background: #7e22ce; color: #fff; }
+  .secondary { background: #f97316; color: #fff; }
+  .outline { 
+    background: rgba(255,255,255,0.2); 
+    color: #fff; 
+    border: 1px solid #fff; 
+  }
+
+  h1,h2,h3 { margin: 12px 0; }
+
+  /* Score en final lijst */
+  #scoreList, #finalList { text-align: left; margin-top: 12px; }
+
+  /* Logo */
+  #logo {
+    max-width: 200px;
+    height: auto;
+    margin-bottom: 16px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
 </head>
 <body>
   <div class="card">
