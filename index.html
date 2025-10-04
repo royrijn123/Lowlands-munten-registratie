@@ -4,14 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NextDrink NFC</title>
-  <style>
+<style>
+  /* Zorg dat HTML en BODY 100% hoogte hebben */
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
   /* Body met fullscreen gradient */
   body {
     font-family: Arial, sans-serif;
     text-align: center;
-    margin: 0;
     padding: 20px;
-    min-height: 100vh; /* gradient vult altijd het scherm */
     background: linear-gradient(135deg, #7e22ce, #f97316);
     background-size: cover;
     color: #fff;
@@ -26,7 +31,6 @@
     color: #fff;
     max-width: 400px;
     width: 100%;
-    margin: 0 auto;
     padding: 20px;
     border-radius: 16px;
     box-shadow: none; /* geen schaduw */
