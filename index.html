@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NextDrink NFC</title>
 <style>
-  /* Zorg dat HTML en BODY 100% hoogte hebben */
   html, body {
     height: 100%;
     margin: 0;
     padding: 0;
   }
-
-  /* Body met fullscreen gradient */
   body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -23,8 +20,6 @@
     justify-content: center;
     align-items: flex-start;
   }
-
-  /* Card transparant */
   .card {
     background: transparent;
     color: #fff;
@@ -34,8 +29,6 @@
     border-radius: 16px;
     box-shadow: none;
   }
-
-  /* Buttons */
   button {
     display: block;
     width: 100%;
@@ -54,11 +47,8 @@
     color: #fff; 
     border: 1px solid #fff; 
   }
-
   h1,h2,h3 { margin: 12px 0; }
   #scoreList, #finalList { text-align: left; margin-top: 12px; }
-
-  /* Logo */
   #logo {
     max-width: 150px;
     height: auto;
@@ -74,7 +64,6 @@
     <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
     <div id="loading">Bezig met laden...</div>
     
-    <!-- Menu -->
     <div id="menu" style="display:none;">
       <h2 id="menuTitle"></h2>
       <div id="drinks"></div>
@@ -82,7 +71,6 @@
       <button class="outline" onclick="showFinal()">Eindafrekening</button>
     </div>
     
-    <!-- Bevestiging -->
     <div id="confirm" style="display:none;">
       <h2>✅ Verwerkt!</h2>
       <p id="confirmText"></p>
@@ -91,14 +79,12 @@
       <button class="outline" onclick="showFinal()">Eindafrekening</button>
     </div>
     
-    <!-- Tussenstand -->
     <div id="scores" style="display:none;">
       <h2>Tussenstand</h2>
       <div id="scoreList"></div>
       <button class="primary" onclick="backToMenu()">Terug</button>
     </div>
     
-    <!-- Eindafrekening -->
     <div id="final" style="display:none;">
       <h2>🏁 Eindafrekening</h2>
       <div id="finalWinner"></div>
@@ -120,25 +106,27 @@ if (!chipId) {
 let chipOwner = "";
 let scannerName = localStorage.getItem("scannerName");
 
-// Drinks uit localStorage of default lijst
-let drinks = JSON.parse(localStorage.getItem("drinks")) || [
-  { name: "Bier", price: 3 },
-  { name: "Wijn", price: 4 },
-  { name: "Cocktail", price: 7 },
-  { name: "Frisdrank", price: 2 }
-];
+// Haal drinks op uit localStorage of gebruik defaults
+let drinks = JSON.parse(localStorage.getItem("drinks") || "null");
+if (!drinks) {
+  drinks = [
+    { name: "Bier", price: 3 },
+    { name: "Wijn", price: 4 },
+    { name: "Cocktail", price: 7 },
+    { name: "Frisdrank", price: 2 }
+  ];
+  localStorage.setItem("drinks", JSON.stringify(drinks));
+}
 
 async function init() {
   showLoading(true);
-
-  // Owner ophalen
   let owner = "";
   try {
     const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-    if (!resp.ok) throw new Error("Netwerkfout bij ophalen eigenaar");
+    if (!resp.ok) throw new Error("Kan eigenaar niet ophalen");
     owner = (await resp.text()).trim();
   } catch (err) {
-    alert("Fout bij ophalen eigenaar: " + err.message);
+    console.warn("Fout bij ophalen eigenaar:", err.message);
   }
 
   if (owner) {
@@ -178,8 +166,7 @@ function showLoading(show) {
 
 function renderMenu() {
   hideAll();
-  document.getElementById("menuTitle").textContent =
-    `Wat wil je dat ${chipOwner} voor je gaat halen?`;
+  document.getElementById("menuTitle").textContent = `Wat wil je dat ${chipOwner} voor je gaat halen?`;
 
   const drinksDiv = document.getElementById("drinks");
   drinksDiv.innerHTML = "";
@@ -192,7 +179,6 @@ function renderMenu() {
     drinksDiv.appendChild(btn);
   });
 
-  // Voeg drankje knop
   const addBtn = document.createElement("button");
   addBtn.className = "outline";
   addBtn.textContent = "Voeg drankje toe";
@@ -211,7 +197,6 @@ function addCustomDrink() {
     alert("Ongeldige prijs!");
     return;
   }
-
   drinks.push({ name: name.trim(), price });
   localStorage.setItem("drinks", JSON.stringify(drinks));
   renderMenu();
@@ -235,7 +220,6 @@ async function placeOrder(drink) {
     showLoading(false);
     return;
   }
-
   hideAll();
   document.getElementById("confirmText").textContent =
     `${drink.name} (${drink.price.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})}) is doorgegeven aan ${chipOwner}.`;
@@ -243,69 +227,14 @@ async function placeOrder(drink) {
   showLoading(false);
 }
 
-async function showScores() {
-  showLoading(true);
-  let scores = [];
-  try {
-    const resp = await fetch(`${apiUrl}?action=getScores`);
-    if (!resp.ok) throw new Error("Kan scores niet ophalen");
-    scores = await resp.json();
-  } catch (err) {
-    alert("Fout bij ophalen scores: " + err.message);
-    showLoading(false);
-    return;
-  }
-
-  scores.sort((a,b) => b.rounds - a.rounds);
-  let html = "<ul>";
-  scores.forEach(s => {
-    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (${s.total.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})})</li>`;
-  });
-  html += "</ul>";
-
-  hideAll();
-  document.getElementById("scoreList").innerHTML = html;
-  document.getElementById("scores").style.display = "block";
-  showLoading(false);
+function hideAll() {
+  ["menu","confirm","scores","final"].forEach(id => document.getElementById(id).style.display="none");
 }
 
-async function showFinal() {
-  showLoading(true);
-  let scores = [], settlements = [];
-  try {
-    const respScores = await fetch(`${apiUrl}?action=getScores`);
-    if (!respScores.ok) throw new Error("Kan scores niet ophalen");
-    scores = await respScores.json();
-    scores.sort((a,b) => b.rounds - a.rounds);
+function backToMenu() { renderMenu(); }
+function newRound() { renderMenu(); }
 
-    const respSettle = await fetch(`${apiUrl}?action=getSettlement`);
-    if (!respSettle.ok) throw new Error("Kan settlements niet ophalen");
-    settlements = await respSettle.json();
-  } catch (err) {
-    alert("Fout bij ophalen eindafrekening: " + err.message);
-    showLoading(false);
-    return;
-  }
-
-  let html = "<ul>";
-  scores.forEach(s => {
-    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (${s.total.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})})</li>`;
-  });
-  html += "</ul>";
-
-  let settleHtml = "<h3>💶 Verrekeningen</h3>";
-  if (settlements.length === 0) {
-    settleHtml += "<p>Alles is al eerlijk verdeeld.</p>";
-  } else {
-    settleHtml += "<ul>";
-    settlements.forEach(s => {
-      settleHtml += `<li>${s.from} betaalt ${s.amount.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})} aan ${s.to}</li>`;
-    });
-    settleHtml += "</ul>";
-  }
-
-  hideAll();
-  if (scores.length > 0) {
-    const winnaar = scores[0];
-    document.getElementById("finalWinner").innerHTML =
-      `<h3>🏆 ${winnaar.owner} heeft de meeste rondjes gehaald (${winnaar.rounds}) voor in totaal ${winnaar.total.toLocale
+init();
+</script>
+</body>
+</html>
