@@ -1,12 +1,21 @@
 <script>
 const apiUrl = "https://script.google.com/macros/s/AKfycbw7iGzG79LXA-nvHYKok5XpLoO-Xud5fbkige8xbNeAh6WIsy7JGnFUG2LztYfH4X6mDg/exec";
-const chipId = new URLSearchParams(window.location.search).get("chipId");
+const urlParams = new URLSearchParams(window.location.search);
+let chipId = urlParams.get("chipId");
 
+/* --- CHECK OP CHIPID --- */
 if (!chipId) {
-  alert("Geen chipId in URL!");
-  throw new Error("Geen chipId");
+  document.body.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:sans-serif;padding:20px;">
+      <h2>⚠️ Geen chipId gevonden</h2>
+      <p>Open deze pagina via een NFC-scan of voeg <code>?chipId=test</code> toe aan de URL.</p>
+      <button id="testBtn" style="padding:10px 20px;border:none;border-radius:8px;background:#007aff;color:white;font-size:16px;cursor:pointer;">Gebruik testmodus</button>
+    </div>`;
+  document.getElementById("testBtn").onclick = () => location.href = "?chipId=test";
+  throw new Error("Geen chipId in URL");
 }
 
+/* --- VARIABELEN --- */
 let chipOwner = "";
 let scannerName = localStorage.getItem("scannerName");
 
@@ -23,28 +32,34 @@ localStorage.setItem("drinks", JSON.stringify(drinks));
 /* --- UTILITIES --- */
 const $ = id => document.getElementById(id);
 function hideAll() {
-  ["menu","confirm","scores","final","firstTime"].forEach(id => $(id).style.display = "none");
+  ["menu","confirm","scores","final","firstTime"].forEach(id => {
+    const el = $(id);
+    if (el) el.style.display = "none";
+  });
 }
 function showLoading(show, text="Bezig met laden...") {
-  $("loadingText").textContent = text;
-  $("loadingOverlay").style.display = show ? "flex" : "none";
+  const overlay = $("loadingOverlay");
+  const textEl = $("loadingText");
+  if (overlay && textEl) {
+    textEl.textContent = text;
+    overlay.style.display = show ? "flex" : "none";
+  }
   document.querySelectorAll("button").forEach(btn => btn.disabled = show);
 }
 
-/* --- INIT FAST --- */
+/* --- INIT --- */
 async function init() {
   showLoading(true, "Initialiseren...");
 
-  // Start alvast met renderMenu (leeg state), zodat UI meteen zichtbaar is
+  // UI alvast tonen (lege menu)
   requestAnimationFrame(renderMenu);
 
   try {
-    // Parallelle requests + minimale wachttijd
     const ownerPromise = fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`)
       .then(r => r.ok ? r.text() : Promise.reject("Response not ok"))
       .then(t => t.trim());
 
-    // Als scannernaam nog niet bekend is, vraag dat alvast (niet blokkeren)
+    // Scannernaam vragen indien nodig
     if (!scannerName) {
       setTimeout(() => {
         scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
@@ -87,9 +102,10 @@ async function init() {
 /* --- MENU --- */
 function renderMenu() {
   hideAll();
-  $("menuTitle").textContent = chipOwner ? `Wat wil je dat ${chipOwner} voor je gaat halen?` : "Laden...";
+  if ($("menuTitle")) $("menuTitle").textContent = chipOwner ? `Wat wil je dat ${chipOwner} voor je gaat halen?` : "Laden...";
 
   const drinksDiv = $("drinks");
+  if (!drinksDiv) return;
   const frag = document.createDocumentFragment();
 
   drinks.forEach(d => {
