@@ -14,7 +14,6 @@
       font-family: Arial, sans-serif;
       text-align: center;
       background: linear-gradient(135deg, #7e22ce, #f97316);
-      background-size: cover;
       color: #fff;
       display: flex;
       justify-content: center;
@@ -27,7 +26,6 @@
       width: 100%;
       padding: 20px;
       border-radius: 16px;
-      box-shadow: none;
     }
     button {
       display: block;
@@ -48,7 +46,34 @@
       border: 1px solid #fff; 
     }
     h1,h2,h3 { margin: 12px 0; }
-    #scoreList, #finalList { text-align: left; margin-top: 12px; }
+
+    /* === Laad overlay === */
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .spinner {
+      border: 8px solid rgba(255,255,255,0.3);
+      border-top: 8px solid #fff;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     #logo {
       max-width: 150px;
       height: auto;
@@ -60,9 +85,14 @@
   </style>
 </head>
 <body>
+  <!-- Laad overlay -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div id="loadingText">Bezig met laden...</div>
+  </div>
+
   <div class="card">
     <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
-    <div id="loading">Bezig met laden...</div>
 
     <!-- Menu -->
     <div id="menu" style="display:none;">
@@ -79,6 +109,12 @@
       <button class="secondary" onclick="newRound()">Nieuw rondje</button>
       <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
       <button class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
+
+    <!-- Eerste keer naam -->
+    <div id="firstTime" style="display:none;">
+      <h2>Welkom!</h2>
+      <p id="firstTimeText"></p>
     </div>
 
     <!-- Tussenstand -->
@@ -102,15 +138,14 @@ const apiUrl = "https://script.google.com/macros/s/AKfycbw7iGzG79LXA-nvHYKok5XpL
 const chipId = new URLSearchParams(window.location.search).get("chipId");
 
 if (!chipId) {
-  document.getElementById("loading").textContent = "Geen chipId in URL!";
-  alert("Geen chipId in URL");
+  alert("Geen chipId in URL!");
   throw new Error("Geen chipId");
 }
 
 let chipOwner = "";
 let scannerName = localStorage.getItem("scannerName");
 
-// Drinks uit localStorage of default
+// Drankjes
 let drinks = JSON.parse(localStorage.getItem("drinks") || "null");
 if (!drinks) {
   drinks = [
@@ -122,41 +157,61 @@ if (!drinks) {
   localStorage.setItem("drinks", JSON.stringify(drinks));
 }
 
+function showLoading(show, text="Bezig met laden...") {
+  const overlay = document.getElementById("loadingOverlay");
+  document.getElementById("loadingText").textContent = text;
+  overlay.style.display = show ? "flex" : "none";
+  // blokkeer alle knoppen
+  document.querySelectorAll("button").forEach(btn => btn.disabled = show);
+}
+
 async function init() {
   showLoading(true);
 
-  // Eigenaar ophalen
-  let owner = "";
+  // 1️⃣ eigenaar ophalen
   try {
     const resp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
     if (!resp.ok) throw new Error("Kan eigenaar niet ophalen");
-    owner = (await resp.text()).trim();
-  } catch (err) {
-    console.warn("Fout bij ophalen eigenaar:", err.message);
-  }
+    const owner = (await resp.text()).trim();
+    if (owner) {
+      chipOwner = owner;
+    } else {
+      // Eerste keer chip → naam vragen
+      const newName = prompt("Wat is jouw naam?");
+      if (!newName) {
+        alert("Geen naam ingevoerd. Stop.");
+        showLoading(false);
+        return;
+      }
+      chipOwner = newName.trim();
+      localStorage.setItem("scannerName", chipOwner);
 
-  if (owner) {
-    chipOwner = owner;
-  } else {
-    chipOwner = prompt("Van wie is deze chip?")?.trim();
-    if (chipOwner) {
       try {
         await fetch(apiUrl, {
           method: "POST",
           body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
         });
       } catch (err) {
-        alert("Fout bij opslaan eigenaar: " + err.message);
+        alert("Fout bij opslaan naam: " + err.message);
         showLoading(false);
         return;
       }
-    } else {
-      alert("Geen eigenaar ingevoerd. Stop.");
+
+      hideAll();
+      document.getElementById("firstTimeText").innerHTML =
+        `Gefeliciteerd ${chipOwner}! Je naam is verwerkt in het systeem.<br><br>
+        Plak nu de NFC sticker onderaan op de achterkant van je telefoon.`;
+      document.getElementById("firstTime").style.display = "block";
       showLoading(false);
       return;
     }
+  } catch (err) {
+    alert("Fout bij ophalen eigenaar: " + err.message);
+    showLoading(false);
+    return;
   }
 
+  // 2️⃣ scannerName uit localStorage
   if (!scannerName) {
     scannerName = prompt("Wat is jouw naam (scanner)?")?.trim();
     if (scannerName) localStorage.setItem("scannerName", scannerName);
@@ -166,10 +221,6 @@ async function init() {
   renderMenu();
 }
 
-function showLoading(show) {
-  document.getElementById("loading").style.display = show ? "block" : "none";
-}
-
 function renderMenu() {
   hideAll();
   document.getElementById("menuTitle").textContent = `Wat wil je dat ${chipOwner} voor je gaat halen?`;
@@ -177,16 +228,14 @@ function renderMenu() {
   const drinksDiv = document.getElementById("drinks");
   drinksDiv.innerHTML = "";
 
-  // Drankjes buttons
   drinks.forEach(d => {
     const btn = document.createElement("button");
     btn.className = "secondary";
-    btn.textContent = `${d.name} (${d.price.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})})`;
+    btn.textContent = `${d.name} (€${d.price})`;
     btn.onclick = () => placeOrder(d);
     drinksDiv.appendChild(btn);
   });
 
-  // Voeg drankje knop
   const addBtn = document.createElement("button");
   addBtn.className = "outline";
   addBtn.textContent = "Voeg drankje toe";
@@ -197,21 +246,18 @@ function renderMenu() {
 }
 
 function addCustomDrink() {
-  const name = prompt("Wat is de naam van het nieuwe drankje?");
+  const name = prompt("Naam van het nieuwe drankje?");
   if (!name) return;
-  const priceInput = prompt(`Wat is de prijs van "${name}"? (in €)`);
+  const priceInput = prompt(`Prijs van "${name}"? (€)`);
   const price = parseFloat(priceInput.replace(",", "."));
-  if (isNaN(price) || price <= 0) {
-    alert("Ongeldige prijs!");
-    return;
-  }
+  if (isNaN(price) || price <= 0) return alert("Ongeldige prijs!");
   drinks.push({ name: name.trim(), price });
   localStorage.setItem("drinks", JSON.stringify(drinks));
   renderMenu();
 }
 
 async function placeOrder(drink) {
-  showLoading(true);
+  showLoading(true, "Bezig met verwerken...");
   try {
     await fetch(apiUrl, {
       method: "POST",
@@ -223,97 +269,83 @@ async function placeOrder(drink) {
         amount: drink.price
       })
     });
+    hideAll();
+    document.getElementById("confirmText").textContent =
+      `${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`;
+    document.getElementById("confirm").style.display = "block";
   } catch (err) {
     alert("Fout bij plaatsen order: " + err.message);
-    showLoading(false);
-    return;
   }
-  hideAll();
-  document.getElementById("confirmText").textContent =
-    `${drink.name} (${drink.price.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})}) is doorgegeven aan ${chipOwner}.`;
-  document.getElementById("confirm").style.display = "block";
   showLoading(false);
 }
 
 async function showScores() {
-  showLoading(true);
-  let scores = [];
+  showLoading(true, "Scores laden...");
   try {
     const resp = await fetch(`${apiUrl}?action=getScores`);
-    if (!resp.ok) throw new Error("Kan scores niet ophalen");
-    scores = await resp.json();
+    const scores = await resp.json();
+    scores.sort((a,b) => b.rounds - a.rounds);
+
+    let html = "<ul>";
+    scores.forEach(s => {
+      html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`;
+    });
+    html += "</ul>";
+
+    hideAll();
+    document.getElementById("scoreList").innerHTML = html;
+    document.getElementById("scores").style.display = "block";
   } catch (err) {
     alert("Fout bij ophalen scores: " + err.message);
-    showLoading(false);
-    return;
   }
-
-  scores.sort((a,b) => b.rounds - a.rounds);
-
-  let html = "<ul>";
-  scores.forEach(s => {
-    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (${s.total.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})})</li>`;
-  });
-  html += "</ul>";
-
-  hideAll();
-  document.getElementById("scoreList").innerHTML = html;
-  document.getElementById("scores").style.display = "block";
   showLoading(false);
 }
 
 async function showFinal() {
-  showLoading(true);
-  let scores = [], settlements = [];
+  showLoading(true, "Eindafrekening laden...");
   try {
     const respScores = await fetch(`${apiUrl}?action=getScores`);
-    if (!respScores.ok) throw new Error("Kan scores niet ophalen");
-    scores = await respScores.json();
-    scores.sort((a,b) => b.rounds - a.rounds);
-
+    const scores = await respScores.json();
     const respSettle = await fetch(`${apiUrl}?action=getSettlement`);
-    if (!respSettle.ok) throw new Error("Kan settlements niet ophalen");
-    settlements = await respSettle.json();
+    const settlements = await respSettle.json();
+
+    scores.sort((a,b) => b.rounds - a.rounds);
+    let html = "<ul>";
+    scores.forEach(s => {
+      html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`;
+    });
+    html += "</ul>";
+
+    let settleHtml = "<h3>💶 Verrekeningen</h3>";
+    if (settlements.length === 0) {
+      settleHtml += "<p>Alles is al eerlijk verdeeld.</p>";
+    } else {
+      settleHtml += "<ul>";
+      settlements.forEach(s => {
+        settleHtml += `<li>${s.from} betaalt €${s.amount} aan ${s.to}</li>`;
+      });
+      settleHtml += "</ul>";
+    }
+
+    hideAll();
+    if (scores.length > 0) {
+      const winnaar = scores[0];
+      document.getElementById("finalWinner").innerHTML =
+        `<h3>🏆 ${winnaar.owner} heeft de meeste rondjes gehaald (${winnaar.rounds})!</h3>`;
+    } else {
+      document.getElementById("finalWinner").innerHTML = "<p>Nog geen data.</p>";
+    }
+    document.getElementById("finalList").innerHTML = html + settleHtml;
+    document.getElementById("final").style.display = "block";
   } catch (err) {
     alert("Fout bij ophalen eindafrekening: " + err.message);
-    showLoading(false);
-    return;
   }
-
-  let html = "<ul>";
-  scores.forEach(s => {
-    html += `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (${s.total.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})})</li>`;
-  });
-  html += "</ul>";
-
-  let settleHtml = "<h3>💶 Verrekeningen</h3>";
-  if (settlements.length === 0) {
-    settleHtml += "<p>Alles is al eerlijk verdeeld.</p>";
-  } else {
-    settleHtml += "<ul>";
-    settlements.forEach(s => {
-      settleHtml += `<li>${s.from} betaalt ${s.amount.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})} aan ${s.to}</li>`;
-    });
-    settleHtml += "</ul>";
-  }
-
-  hideAll();
-  if (scores.length > 0) {
-    const winnaar = scores[0];
-    document.getElementById("finalWinner").innerHTML =
-      `<h3>🏆 ${winnaar.owner} heeft de meeste rondjes gehaald (${winnaar.rounds}) voor in totaal ${winnaar.total.toLocaleString("nl-NL",{style:"currency",currency:"EUR"})}!</h3>`;
-  } else {
-    document.getElementById("finalWinner").innerHTML = "<p>Nog geen data.</p>";
-  }
-  document.getElementById("finalList").innerHTML = html + settleHtml;
-  document.getElementById("final").style.display = "block";
   showLoading(false);
 }
 
 function hideAll() {
-  ["menu","confirm","scores","final"].forEach(id => document.getElementById(id).style.display="none");
+  ["menu","confirm","scores","final","firstTime"].forEach(id => document.getElementById(id).style.display="none");
 }
-
 function backToMenu() { renderMenu(); }
 function newRound() { renderMenu(); }
 
