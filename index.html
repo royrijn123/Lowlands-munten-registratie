@@ -153,6 +153,13 @@ if (!chipId) {
 /* --- VARIABELEN --- */
 let chipOwner = "";
 let scannerName = localStorage.getItem("scannerName");
+const drinksVersion = "v2"; // wijzig dit bij een update
+const savedVersion = localStorage.getItem("drinksVersion");
+
+if (savedVersion !== drinksVersion) {
+  localStorage.removeItem("drinks");
+  localStorage.setItem("drinksVersion", drinksVersion);
+}
 
 // Cache drankjes in geheugen
 let drinks = JSON.parse(localStorage.getItem("drinks") || "null") || [
