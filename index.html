@@ -149,10 +149,11 @@ let scannerName = localStorage.getItem("scannerName");
 let drinks = JSON.parse(localStorage.getItem("drinks") || "null");
 if (!drinks) {
   drinks = [
-    { name: "Bier", price: 3 },
-    { name: "Wijn", price: 4 },
-    { name: "Cocktail", price: 7 },
-    { name: "Frisdrank", price: 2 }
+    { name: "Kleine bier", price: 4,40 },
+    { name: "Grote bier", price: 8,00 },
+    { name: "Wijn", price: 6,00 },
+    { name: "Cocktail", price: 11,50 },
+    { name: "Frisdrank", price: 4,00 }
   ];
   localStorage.setItem("drinks", JSON.stringify(drinks));
 }
@@ -231,7 +232,7 @@ function renderMenu() {
   drinks.forEach(d => {
     const btn = document.createElement("button");
     btn.className = "secondary";
-    btn.textContent = `${d.name} (€${d.price})`;
+    btn.textContent = d.name;
     btn.onclick = () => placeOrder(d);
     drinksDiv.appendChild(btn);
   });
