@@ -134,7 +134,7 @@
   </div>
 
 <script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbw7iGzG79LXA-nvHYKok5XpLoO-Xud5fbkige8xbNeAh6WIsy7JGnFUG2LztYfH4X6mDg/exec";
+const apiUrl = "https://script.google.com/macros/s/AKfycbwX1gXk9VZSqFo78OBHaltNHhZFtzt-YZ7gst5tsR7fk1M2lOioqjb_oCPmsxi8qNMrBQ/exec";
 const chipId = new URLSearchParams(window.location.search).get("chipId");
 
 if (!chipId) {
@@ -291,36 +291,91 @@ async function placeOrder(drink) {
   }
 }
 
-/* === SCORE OVERZICHT === */
+/* === SCORE OVERZICHT (met 4-minuten logica) === */
 async function showScores() {
   showLoading(true, "Scores laden...");
   try {
-    const scores = await fetch(`${apiUrl}?action=getScores`).then(r => r.json());
-    scores.sort((a, b) => b.rounds - a.rounds);
-    const html = scores.map(s =>
+    const scans = await fetch(`${apiUrl}?action=getScans`).then(r => r.json());
+    
+    // Groepeer per eigenaar, en bundel binnen 4 minuten
+    const grouped = {};
+    const FOUR_MIN = 4 * 60 * 1000;
+    scans.forEach(s => {
+      const owner = s.owner;
+      const time = new Date(s.timestamp).getTime();
+      if (!grouped[owner]) grouped[owner] = [];
+      grouped[owner].push({ time, amount: parseFloat(s.amount) });
+    });
+
+    const results = Object.entries(grouped).map(([owner, arr]) => {
+      arr.sort((a,b)=>a.time-b.time);
+      let rounds = 0;
+      let total = 0;
+      let lastTime = 0;
+      arr.forEach(scan => {
+        total += scan.amount;
+        if (scan.time - lastTime > FOUR_MIN) {
+          rounds++;
+          lastTime = scan.time;
+        }
+      });
+      return { owner, rounds, total: total.toFixed(2) };
+    });
+
+    results.sort((a, b) => b.rounds - a.rounds);
+
+    const html = results.map(s =>
       `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`
     ).join("");
+
     hideAll();
     $("scoreList").innerHTML = `<ul>${html}</ul>`;
     $("scores").style.display = "block";
-  } catch {
-    alert("Fout bij ophalen scores.");
+  } catch (err) {
+    console.error(err);
+    alert("Fout bij ophalen scores of scans.");
   } finally {
     showLoading(false);
   }
 }
 
-/* === EINDAFREKENING === */
+/* === EINDAFREKENING (met 4-minuten logica) === */
 async function showFinal() {
   showLoading(true, "Eindafrekening laden...");
   try {
-    const [scores, settlements] = await Promise.all([
-      fetch(`${apiUrl}?action=getScores`).then(r => r.json()),
+    const [scans, settlements] = await Promise.all([
+      fetch(`${apiUrl}?action=getScans`).then(r => r.json()),
       fetch(`${apiUrl}?action=getSettlement`).then(r => r.json())
     ]);
 
-    scores.sort((a, b) => b.rounds - a.rounds);
-    const scoresHtml = scores.map(s =>
+    // Zelfde groeperingslogica
+    const grouped = {};
+    const FOUR_MIN = 4 * 60 * 1000;
+    scans.forEach(s => {
+      const owner = s.owner;
+      const time = new Date(s.timestamp).getTime();
+      if (!grouped[owner]) grouped[owner] = [];
+      grouped[owner].push({ time, amount: parseFloat(s.amount) });
+    });
+
+    const results = Object.entries(grouped).map(([owner, arr]) => {
+      arr.sort((a,b)=>a.time-b.time);
+      let rounds = 0;
+      let total = 0;
+      let lastTime = 0;
+      arr.forEach(scan => {
+        total += scan.amount;
+        if (scan.time - lastTime > FOUR_MIN) {
+          rounds++;
+          lastTime = scan.time;
+        }
+      });
+      return { owner, rounds, total: total.toFixed(2) };
+    });
+
+    results.sort((a, b) => b.rounds - a.rounds);
+
+    const scoresHtml = results.map(s =>
       `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`
     ).join("");
 
@@ -332,13 +387,14 @@ async function showFinal() {
     }
 
     hideAll();
-    $("finalWinner").innerHTML = scores.length
-      ? `<h3>🏆 ${scores[0].owner} heeft de meeste rondjes gehaald (${scores[0].rounds})!</h3>`
+    $("finalWinner").innerHTML = results.length
+      ? `<h3>🏆 ${results[0].owner} heeft de meeste rondjes gehaald (${results[0].rounds})!</h3>`
       : "<p>Nog geen data.</p>";
 
     $("finalList").innerHTML = `<ul>${scoresHtml}</ul>${settleHtml}`;
     $("final").style.display = "block";
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert("Fout bij ophalen eindafrekening.");
   } finally {
     showLoading(false);
