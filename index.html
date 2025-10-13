@@ -1,192 +1,386 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NextDrink</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NextDrink NFC</title>
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f7f7f7;
+    html, body {
+      height: 100%;
       margin: 0;
-      padding: 20px;
-      text-align: center;
+      padding: 0;
     }
-    h1 {
-      margin-bottom: 10px;
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #7e22ce, #f97316);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .card {
+      background: transparent;
+      color: #fff;
+      max-width: 400px;
+      width: 100%;
+      padding: 20px;
+      border-radius: 16px;
     }
     button {
-      background: #007bff;
-      color: white;
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 12px;
       border: none;
-      border-radius: 8px;
-      padding: 10px 20px;
-      margin: 8px;
+      border-radius: 10px;
       font-size: 16px;
+      font-weight: bold;
       cursor: pointer;
     }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    .primary { background: #7e22ce; color: #fff; }
+    .secondary { background: #f97316; color: #fff; }
+    .outline { 
+      background: rgba(255,255,255,0.2); 
+      color: #fff; 
+      border: 1px solid #fff; 
     }
-    #orderButton {
-      background: #2ecc71;
-      display: none; /* verborgen tot actief */
+    h1,h2,h3 { margin: 12px 0; }
+
+    /* === Laad overlay === */
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
     }
-    select, input {
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      margin: 8px;
-      width: 80%;
-      max-width: 300px;
+    .spinner {
+      border: 8px solid rgba(255,255,255,0.3);
+      border-top: 8px solid #fff;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
     }
-    #ordersList {
-      text-align: left;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 16px;
-      margin: 16px auto;
-      width: 90%;
-      max-width: 400px;
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
-    #message {
-      margin: 12px;
-      color: #444;
-      font-weight: 500;
-      white-space: pre-line;
+
+    #logo {
+      max-width: 150px;
+      height: auto;
+      margin-bottom: 16px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
   </style>
 </head>
 <body>
-  <h1>NextDrink</h1>
-
-  <div id="setup">
-    <input id="nameInput" placeholder="Voer je naam in" />
-    <button id="saveNameBtn">Opslaan</button>
+  <!-- Laad overlay -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div id="loadingText">Bezig met laden...</div>
   </div>
 
-  <div id="main" style="display:none;">
-    <h2>Scan of kies drankje</h2>
-    <select id="drinkSelect">
-      <option value="">-- Kies drankje --</option>
-      <option value="Kleine bier" data-price="6">Kleine bier</option>
-      <option value="Grote bier" data-price="8">Grote bier</option>
-      <option value="Wijn" data-price="7">Wijn</option>
-      <option value="Cocktail" data-price="10">Cocktail</option>
-    </select>
-    <button id="submitDrinkBtn">Bestellen</button>
-    <div id="message"></div>
+  <div class="card">
+    <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
 
-    <button id="orderButton">🛒 Te bestellen</button>
-
-    <div>
-      <button id="checkScoresBtn">Tussenstand bekijken</button>
-      <button id="checkSettlementBtn">Eindafrekening bekijken</button>
+    <!-- Menu -->
+    <div id="menu" style="display:none;">
+      <h2 id="menuTitle"></h2>
+      <div id="drinks"></div>
+      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button class="outline" onclick="showFinal()">Eindafrekening</button>
     </div>
 
-    <pre id="output"></pre>
-    <div id="ordersList"></div>
+    <!-- Bevestiging -->
+    <div id="confirm" style="display:none;">
+      <h2>✅ Verwerkt!</h2>
+      <p id="confirmText"></p>
+      <button class="secondary" onclick="newRound()">Nieuw rondje</button>
+      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
+
+    <!-- Eerste keer naam -->
+    <div id="firstTime" style="display:none;">
+      <h2>Welkom!</h2>
+      <p id="firstTimeText"></p>
+    </div>
+
+    <!-- Tussenstand -->
+    <div id="scores" style="display:none;">
+      <h2>Tussenstand</h2>
+      <div id="scoreList"></div>
+      <button class="primary" onclick="backToMenu()">Terug</button>
+    </div>
+
+    <!-- Eindafrekening -->
+    <div id="final" style="display:none;">
+      <h2>🏁 Eindafrekening</h2>
+      <div id="finalWinner"></div>
+      <div id="finalList"></div>
+      <button class="primary" onclick="backToMenu()">Terug</button>
+    </div>
   </div>
 
-  <script>
-    // === CONFIG ===
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2DRqBhplOT44kJm43Vuk4OpYYfT7prl7FjJccIU_7u7TdNx0QZ88x2fjUMMiU6k9bYA/exec';
-    // bv. https://script.google.com/macros/s/AKfycbx....../exec
+<script>
+const apiUrl = "https://script.google.com/macros/s/AKfycbzdYTvLDqOm0pGhzPGQWAECLjE_z_o6mFJOucj9m0K_tCNbwT60VN-QSpDNGrjEY24VsQ/exec";
+const chipId = new URLSearchParams(window.location.search).get("chipId");
 
-    let currentUser = '';
-    let currentChipId = '';
-    let pollInterval = null;
+if (!chipId) {
+  alert("Geen chipId in URL!");
+  throw new Error("Geen chipId");
+}
 
-    const setupDiv = document.getElementById('setup');
-    const mainDiv = document.getElementById('main');
-    const messageDiv = document.getElementById('message');
-    const outputDiv = document.getElementById('output');
-    const ordersList = document.getElementById('ordersList');
-    const orderButton = document.getElementById('orderButton');
+/* === CACHE VERSIEBEHEER === */
+const drinksVersion = "v2";
+const savedVersion = localStorage.getItem("drinksVersion");
+if (savedVersion !== drinksVersion) {
+  localStorage.removeItem("drinks");
+  localStorage.setItem("drinksVersion", drinksVersion);
+}
 
-    document.getElementById('saveNameBtn').addEventListener('click', async () => {
-      const name = document.getElementById('nameInput').value.trim();
-      if (!name) return alert('Voer een naam in');
-      currentUser = name;
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'setOwner', chipId: 'CHIP-' + name.toUpperCase(), owner: name }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const text = await res.text();
-      messageDiv.textContent = text;
-      setupDiv.style.display = 'none';
-      mainDiv.style.display = 'block';
-      startPolling();
-    });
+/* === VARIABELEN === */
+let chipOwner = "";
+let scannerName = localStorage.getItem("scannerName");
 
-    document.getElementById('submitDrinkBtn').addEventListener('click', async () => {
-      const select = document.getElementById('drinkSelect');
-      const drink = select.value;
-      if (!drink) return alert('Kies een drankje');
-      const amount = parseFloat(select.selectedOptions[0].dataset.price || 0);
+let drinks = JSON.parse(localStorage.getItem("drinks") || "null") || [
+  { name: "Kleine bier", price: 4.40 },
+  { name: "Grote bier", price: 8.00 },
+  { name: "Wijn", price: 6.00 },
+  { name: "Cocktail", price: 11.50 },
+  { name: "Frisdrank", price: 4.00 }
+];
+localStorage.setItem("drinks", JSON.stringify(drinks));
 
-      await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'addScan',
-          chipId: 'CHIP-' + currentUser.toUpperCase(),
-          scanner: currentUser,
-          drink,
-          amount,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      messageDiv.textContent = `✅ ${drink} toegevoegd (${amount} munten).`;
-    });
+/* === HULPFUNCTIES === */
+const $ = id => document.getElementById(id);
+function hideAll() {
+  ["menu","confirm","scores","final","firstTime"].forEach(id => $(id).style.display = "none");
+}
+function showLoading(show, text="Bezig met laden...") {
+  $("loadingText").textContent = text;
+  $("loadingOverlay").style.display = show ? "flex" : "none";
+  document.querySelectorAll("button").forEach(btn => btn.disabled = show);
+}
 
-    document.getElementById('checkScoresBtn').addEventListener('click', async () => {
-      const res = await fetch(`${SCRIPT_URL}?action=getScores`);
-      const data = await res.json();
-      outputDiv.textContent = JSON.stringify(data, null, 2);
-    });
+/* === INIT === */
+async function init() {
+  showLoading(true, "Initialiseren...");
+  requestAnimationFrame(renderMenu);
 
-    document.getElementById('checkSettlementBtn').addEventListener('click', async () => {
-      const res = await fetch(`${SCRIPT_URL}?action=getSettlement`);
-      const data = await res.json();
-      outputDiv.textContent = JSON.stringify(data, null, 2);
-    });
+  try {
+    const ownerPromise = fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`)
+      .then(r => r.ok ? r.text() : Promise.reject("Response not ok"))
+      .then(t => t.trim());
 
-    orderButton.addEventListener('click', async () => {
-      const res = await fetch(`${SCRIPT_URL}?action=getOrdersForOwner&owner=${encodeURIComponent(currentUser)}`);
-      const orders = await res.json();
-      if (!orders.length) {
-        ordersList.innerHTML = '<p>Geen bestellingen gevonden.</p>';
+    if (!scannerName) {
+      setTimeout(() => {
+        scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
+        localStorage.setItem("scannerName", scannerName);
+      }, 100);
+    }
+
+    const owner = await ownerPromise;
+    if (!owner) {
+      chipOwner = prompt("Wat is jouw naam?")?.trim();
+      if (!chipOwner) {
+        alert("Geen naam ingevoerd. Stop.");
+        showLoading(false);
         return;
       }
-      let html = `<h3>Bestellijst (${orders.length})</h3>`;
-      html += '<ul>';
-      for (const o of orders) {
-        html += `<li><strong>${o.scanner}</strong>: ${o.drink} (${o.amount} munten)</li>`;
-      }
-      html += '</ul>';
-      ordersList.innerHTML = html;
+
+      localStorage.setItem("scannerName", chipOwner);
+
+      await fetch(apiUrl, {
+        method: "POST",
+        body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
+      });
+
+      hideAll();
+      $("firstTimeText").innerHTML = `
+        Gefeliciteerd ${chipOwner}! Je naam is verwerkt in het systeem.<br><br>
+        📱 Plak nu de NFC sticker <strong>onderaan op de achterkant van je telefoon</strong> 
+        zodat je deze eenvoudig kunt scannen bij het bestellen van een drankje.`;
+      $("firstTime").style.display = "block";
+    } else {
+      chipOwner = owner;
+      renderMenu();
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Fout bij ophalen eigenaar.");
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* === MENU === */
+function renderMenu() {
+  hideAll();
+  $("menuTitle").textContent = chipOwner
+    ? `Wat wil je dat ${chipOwner} voor je gaat halen?`
+    : "Laden...";
+
+  const drinksDiv = $("drinks");
+  const frag = document.createDocumentFragment();
+
+  drinks.forEach(d => {
+    const btn = document.createElement("button");
+    btn.className = "secondary";
+    btn.textContent = d.name;
+    btn.addEventListener("click", () => placeOrder(d));
+    frag.appendChild(btn);
+  });
+
+  const addBtn = document.createElement("button");
+  addBtn.className = "outline";
+  addBtn.textContent = "Voeg drankje toe";
+  addBtn.onclick = addCustomDrink;
+  frag.appendChild(addBtn);
+
+  drinksDiv.replaceChildren(frag);
+  $("menu").style.display = "block";
+}
+
+/* === DRANK TOEVOEGEN === */
+function addCustomDrink() {
+  const name = prompt("Naam van het nieuwe drankje?");
+  if (!name) return;
+  const price = parseFloat(prompt(`Prijs van "${name}"? (€)`).replace(",", "."));
+  if (isNaN(price) || price <= 0) return alert("Ongeldige prijs!");
+  drinks.push({ name: name.trim(), price });
+  localStorage.setItem("drinks", JSON.stringify(drinks));
+  renderMenu();
+}
+
+/* === BESTELLING === */
+async function placeOrder(drink) {
+  showLoading(true, "Verwerken...");
+  try {
+    await fetch(apiUrl, {
+      method: "POST",
+      body: new URLSearchParams({
+        action: "addScan",
+        chipId,
+        scanner: scannerName,
+        drink: drink.name,
+        amount: drink.price
+      })
     });
+    hideAll();
+    $("confirmText").textContent = `${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`;
+    $("confirm").style.display = "block";
+  } catch {
+    alert("Fout bij plaatsen order.");
+  } finally {
+    showLoading(false);
+  }
+}
 
-    function startPolling() {
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(checkActiveRounds, 5000);
-      checkActiveRounds();
-    }
+/* === FUNCTIE: groepeer scans binnen 4 minuten === */
+function groupScansWithin4Min(scans) {
+  const grouped = {};
+  const FOUR_MIN = 4 * 60 * 1000;
+  scans.forEach(s => {
+    const owner = s.owner;
+    const time = new Date(s.timestamp).getTime();
+    if (!grouped[owner]) grouped[owner] = [];
+    grouped[owner].push({ time, amount: parseFloat(s.amount) });
+  });
 
-    async function checkActiveRounds() {
-      try {
-        const res = await fetch(`${SCRIPT_URL}?action=getActiveRounds`);
-        const active = await res.json();
-        const isActive = active.includes(currentUser);
-        orderButton.style.display = isActive ? 'inline-block' : 'none';
-      } catch (e) {
-        console.error(e);
+  return Object.entries(grouped).map(([owner, arr]) => {
+    arr.sort((a,b)=>a.time-b.time);
+    let rounds = 0;
+    let total = 0;
+    let lastTime = 0;
+    arr.forEach(scan => {
+      total += scan.amount;
+      if (scan.time - lastTime > FOUR_MIN) {
+        rounds++;
+        lastTime = scan.time;
       }
+    });
+    return { owner, rounds, total: total.toFixed(2) };
+  });
+}
+
+/* === TUSSENSTAND === */
+async function showScores() {
+  showLoading(true, "Scores laden...");
+  try {
+    const scans = await fetch(`${apiUrl}?action=getScans`).then(r => r.json());
+    const results = groupScansWithin4Min(scans);
+    results.sort((a, b) => b.rounds - a.rounds);
+
+    const html = results.map(s =>
+      `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`
+    ).join("");
+
+    hideAll();
+    $("scoreList").innerHTML = `<ul>${html}</ul>`;
+    $("scores").style.display = "block";
+  } catch (err) {
+    console.error(err);
+    alert("Fout bij ophalen scores.");
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* === EINDAFREKENING === */
+async function showFinal() {
+  showLoading(true, "Eindafrekening laden...");
+  try {
+    const [scans, settlements] = await Promise.all([
+      fetch(`${apiUrl}?action=getScans`).then(r => r.json()),
+      fetch(`${apiUrl}?action=getSettlement`).then(r => r.json())
+    ]);
+
+    const results = groupScansWithin4Min(scans);
+    results.sort((a,b)=>b.rounds-a.rounds);
+
+    const scoresHtml = results.map(s =>
+      `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`
+    ).join("");
+
+    let settleHtml = "<h3>💶 Verrekeningen</h3>";
+    if (!settlements.length) {
+      settleHtml += "<p>Alles is al eerlijk verdeeld.</p>";
+    } else {
+      settleHtml += `<ul>${settlements.map(s => `<li>${s.from} betaalt €${s.amount} aan ${s.to}</li>`).join("")}</ul>`;
     }
-  </script>
+
+    hideAll();
+    $("finalWinner").innerHTML = results.length
+      ? `<h3>🏆 ${results[0].owner} heeft de meeste rondjes gehaald (${results[0].rounds})!</h3>`
+      : "<p>Nog geen data.</p>";
+
+    $("finalList").innerHTML = `<ul>${scoresHtml}</ul>${settleHtml}`;
+    $("final").style.display = "block";
+  } catch (err) {
+    console.error(err);
+    alert("Fout bij ophalen eindafrekening.");
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* === NAVIGATIE === */
+function backToMenu() { renderMenu(); }
+function newRound() { renderMenu(); }
+
+init();
+</script>
 </body>
 </html>
