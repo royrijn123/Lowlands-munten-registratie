@@ -134,7 +134,7 @@
   </div>
 
 <script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbwX1gXk9VZSqFo78OBHaltNHhZFtzt-YZ7gst5tsR7fk1M2lOioqjb_oCPmsxi8qNMrBQ/exec";
+const apiUrl = "https://script.google.com/macros/s/AKfycbwXmLukN8gDT-8YrvCZOlSF8ooS_vVBwcH8vxAaJK719IziRSiSoqQL54BajJGvSy81Zw/exec";
 const chipId = new URLSearchParams(window.location.search).get("chipId");
 
 if (!chipId) {
@@ -143,7 +143,7 @@ if (!chipId) {
 }
 
 /* === CACHE VERSIEBEHEER === */
-const drinksVersion = "v2"; // verhoog dit als je de dranklijst wijzigt
+const drinksVersion = "v2";
 const savedVersion = localStorage.getItem("drinksVersion");
 if (savedVersion !== drinksVersion) {
   localStorage.removeItem("drinks");
@@ -154,7 +154,6 @@ if (savedVersion !== drinksVersion) {
 let chipOwner = "";
 let scannerName = localStorage.getItem("scannerName");
 
-// Drankjes laden (of standaardlijst)
 let drinks = JSON.parse(localStorage.getItem("drinks") || "null") || [
   { name: "Kleine bier", price: 4.40 },
   { name: "Grote bier", price: 8.00 },
@@ -185,7 +184,6 @@ async function init() {
       .then(r => r.ok ? r.text() : Promise.reject("Response not ok"))
       .then(t => t.trim());
 
-    // Scannernaam vooraf opvragen
     if (!scannerName) {
       setTimeout(() => {
         scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
@@ -195,7 +193,6 @@ async function init() {
 
     const owner = await ownerPromise;
     if (!owner) {
-      // Eerste keer: eigenaar instellen
       chipOwner = prompt("Wat is jouw naam?")?.trim();
       if (!chipOwner) {
         alert("Geen naam ingevoerd. Stop.");
@@ -241,7 +238,7 @@ function renderMenu() {
   drinks.forEach(d => {
     const btn = document.createElement("button");
     btn.className = "secondary";
-    btn.textContent = d.name; // geen prijs tonen
+    btn.textContent = d.name;
     btn.addEventListener("click", () => placeOrder(d));
     frag.appendChild(btn);
   });
@@ -291,37 +288,39 @@ async function placeOrder(drink) {
   }
 }
 
-/* === SCORE OVERZICHT (met 4-minuten logica) === */
+/* === FUNCTIE: groepeer scans binnen 4 minuten === */
+function groupScansWithin4Min(scans) {
+  const grouped = {};
+  const FOUR_MIN = 4 * 60 * 1000;
+  scans.forEach(s => {
+    const owner = s.owner;
+    const time = new Date(s.timestamp).getTime();
+    if (!grouped[owner]) grouped[owner] = [];
+    grouped[owner].push({ time, amount: parseFloat(s.amount) });
+  });
+
+  return Object.entries(grouped).map(([owner, arr]) => {
+    arr.sort((a,b)=>a.time-b.time);
+    let rounds = 0;
+    let total = 0;
+    let lastTime = 0;
+    arr.forEach(scan => {
+      total += scan.amount;
+      if (scan.time - lastTime > FOUR_MIN) {
+        rounds++;
+        lastTime = scan.time;
+      }
+    });
+    return { owner, rounds, total: total.toFixed(2) };
+  });
+}
+
+/* === TUSSENSTAND === */
 async function showScores() {
   showLoading(true, "Scores laden...");
   try {
     const scans = await fetch(`${apiUrl}?action=getScans`).then(r => r.json());
-    
-    // Groepeer per eigenaar, en bundel binnen 4 minuten
-    const grouped = {};
-    const FOUR_MIN = 4 * 60 * 1000;
-    scans.forEach(s => {
-      const owner = s.owner;
-      const time = new Date(s.timestamp).getTime();
-      if (!grouped[owner]) grouped[owner] = [];
-      grouped[owner].push({ time, amount: parseFloat(s.amount) });
-    });
-
-    const results = Object.entries(grouped).map(([owner, arr]) => {
-      arr.sort((a,b)=>a.time-b.time);
-      let rounds = 0;
-      let total = 0;
-      let lastTime = 0;
-      arr.forEach(scan => {
-        total += scan.amount;
-        if (scan.time - lastTime > FOUR_MIN) {
-          rounds++;
-          lastTime = scan.time;
-        }
-      });
-      return { owner, rounds, total: total.toFixed(2) };
-    });
-
+    const results = groupScansWithin4Min(scans);
     results.sort((a, b) => b.rounds - a.rounds);
 
     const html = results.map(s =>
@@ -333,13 +332,13 @@ async function showScores() {
     $("scores").style.display = "block";
   } catch (err) {
     console.error(err);
-    alert("Fout bij ophalen scores of scans.");
+    alert("Fout bij ophalen scores.");
   } finally {
     showLoading(false);
   }
 }
 
-/* === EINDAFREKENING (met 4-minuten logica) === */
+/* === EINDAFREKENING === */
 async function showFinal() {
   showLoading(true, "Eindafrekening laden...");
   try {
@@ -348,32 +347,8 @@ async function showFinal() {
       fetch(`${apiUrl}?action=getSettlement`).then(r => r.json())
     ]);
 
-    // Zelfde groeperingslogica
-    const grouped = {};
-    const FOUR_MIN = 4 * 60 * 1000;
-    scans.forEach(s => {
-      const owner = s.owner;
-      const time = new Date(s.timestamp).getTime();
-      if (!grouped[owner]) grouped[owner] = [];
-      grouped[owner].push({ time, amount: parseFloat(s.amount) });
-    });
-
-    const results = Object.entries(grouped).map(([owner, arr]) => {
-      arr.sort((a,b)=>a.time-b.time);
-      let rounds = 0;
-      let total = 0;
-      let lastTime = 0;
-      arr.forEach(scan => {
-        total += scan.amount;
-        if (scan.time - lastTime > FOUR_MIN) {
-          rounds++;
-          lastTime = scan.time;
-        }
-      });
-      return { owner, rounds, total: total.toFixed(2) };
-    });
-
-    results.sort((a, b) => b.rounds - a.rounds);
+    const results = groupScansWithin4Min(scans);
+    results.sort((a,b)=>b.rounds-a.rounds);
 
     const scoresHtml = results.map(s =>
       `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`
