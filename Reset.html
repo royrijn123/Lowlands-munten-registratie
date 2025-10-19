@@ -1,45 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Scannernaam wissen</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>NextDrink reset</title>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
+      margin: 0; padding: 0; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: #f7f7f7; font-family: Arial, sans-serif;
     }
+    .card {
+      text-align: center;
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-width: 400px; width: 90%;
+    }
+    h1 { margin-bottom: 12px; color: #333; }
+    p { color: #555; margin-bottom: 20px; }
     button {
-      font-size: 2em;
-      padding: 1em 2em;
-      border: none;
-      border-radius: 10px;
-      background: #e74c3c;
-      color: white;
-      cursor: pointer;
+      background: #e74c3c; color: #fff;
+      font-size: 16px; font-weight: bold;
+      border: none; border-radius: 10px;
+      padding: 12px 20px; cursor: pointer;
     }
-    button:active {
-      background: #c0392b;
-    }
+    button:active { background: #c0392b; }
   </style>
 </head>
 <body>
-  <button onclick="resetScannerName()">Scannernaam verwijderen</button>
+  <div class="card">
+    <h1>NextDrink reset</h1>
+    <p>Verwijder lokale gegevens en handmatig toegevoegde drankjes (Google Sheets blijft onaangetast).</p>
+    <button onclick="resetNextDrink()">Reset gegevens</button>
+  </div>
 
   <script>
-    function resetScannerName() {
-      localStorage.removeItem('scannerName');
-      alert('Scannernaam is verwijderd!');
-      // eventueel doorsturen naar je normale scanpagina:
-      // window.location.href = 'scan.html';
+    function resetNextDrink() {
+      const scannerName = localStorage.getItem('scannerName');
+      const chipHolderName = localStorage.getItem('chipHolderName');
+
+      if (!scannerName || !chipHolderName) {
+        alert('Er is geen scanner of chiphoudernaam gevonden in localStorage.');
+        return;
+      }
+
+      if (scannerName.trim().toLowerCase() === chipHolderName.trim().toLowerCase()) {
+        const standaardDrinks = [
+          { name: "Kleine bier", price: 4.40 },
+          { name: "Grote bier", price: 8.00 },
+          { name: "Wijn", price: 6.00 },
+          { name: "Cocktail", price: 11.50 },
+          { name: "Frisdrank", price: 4.00 }
+        ];
+
+        // Verwijder namen
+        localStorage.removeItem('scannerName');
+        localStorage.removeItem('chipHolderName');
+
+        // Verwijder alle localStorage keys waarin de naam voorkomt
+        const naam = scannerName.trim().toLowerCase();
+        const keysToRemove = [];
+        for (let key in localStorage) {
+          if (
+            key.toLowerCase().includes(naam) &&
+            !key.includes('googleSheets') // veiligheid: laat Google Sheets data ongemoeid
+          ) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+
+        // Verwijder handmatig toegevoegde drankjes uit localStorage (niet uit Sheets)
+        const current = JSON.parse(localStorage.getItem('drinks') || '[]');
+        const filtered = current.filter(cd =>
+          standaardDrinks.some(sd =>
+            sd.name === cd.name && Number(sd.price) === Number(cd.price)
+          )
+        );
+        if (filtered.length !== current.length) {
+          localStorage.setItem('drinks', JSON.stringify(standaardDrinks));
+        }
+
+        alert(`Alle lokale gegevens van "${scannerName}" zijn verwijderd.\nGoogle Sheets-gegevens blijven behouden.`);
+      } else {
+        alert(
+          `De scannernaam (${scannerName}) en chiphoudernaam (${chipHolderName}) komen niet overeen.\n\nEr is niets verwijderd.`
+        );
+      }
     }
   </script>
 </body>
 </html>
-
