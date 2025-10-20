@@ -5,75 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NextDrink NFC</title>
 <style>
-  html, body { height:100%; margin:0; padding:0; }
-  body {
-    font-family: Arial, sans-serif;
-    text-align:center;
-    background: linear-gradient(135deg, #7e22ce, #f97316);
-    color:#fff;
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-  }
-  .card {
-    background: transparent;
-    color:#fff;
-    max-width:450px;
-    width:100%;
-    padding:20px;
-    border-radius:16px;
-  }
-  #drinks {
-    display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:12px;
-    margin-bottom:16px;
-  }
-  #drinks button {
-    width:100%;
-    aspect-ratio:1/1;
-    font-size:18px;
-    font-weight:bold;
-    border-radius:12px;
-    cursor:pointer;
-    transition: transform 0.1s;
-  }
-  #drinks button:active { transform: scale(0.97); }
-  button.primary { background:#7e22ce; color:#fff; }
-  button.secondary { background:#f97316; color:#fff; }
-  button.outline { background: rgba(255,255,255,0.2); color:#fff; border:2px solid #fff; }
-  h1,h2,h3 { margin:12px 0; }
+html, body { height:100%; margin:0; padding:0; }
+body {
+  font-family: Arial, sans-serif;
+  text-align:center;
+  background: linear-gradient(135deg, #7e22ce, #f97316);
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+.card {
+  background: transparent;
+  color:#fff;
+  max-width:450px;
+  width:100%;
+  padding:20px;
+  border-radius:16px;
+}
+#drinks {
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:12px;
+  margin-bottom:16px;
+}
+#drinks button {
+  width:100%;
+  aspect-ratio:1/1;
+  font-size:18px;
+  font-weight:bold;
+  border-radius:12px;
+  cursor:pointer;
+  transition: transform 0.1s;
+}
+#drinks button:active { transform: scale(0.97); }
 
-  #loadingOverlay {
-    display:none;
-    position:fixed; top:0; left:0;
-    width:100vw; height:100vh;
-    background: rgba(0,0,0,0.7);
-    z-index:9999;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    flex-direction:column;
-  }
-  .spinner {
-    border:8px solid rgba(255,255,255,0.3);
-    border-top:8px solid #fff;
-    border-radius:50%;
-    width:80px; height:80px;
-    animation:spin 1s linear infinite;
-    margin-bottom:16px;
-  }
-  @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-  #logo { max-width:150px; height:auto; margin:0 auto 16px; display:block; }
+button.primary { background:#7e22ce; color:#fff; }
+button.secondary { background:#f97316; color:#fff; }
+button.outline { background: rgba(255,255,255,0.2); color:#fff; border:2px solid #fff; }
 
-  #orderList {
-    background: rgba(0,0,0,0.6);
-    padding:16px;
-    border-radius:12px;
-    margin-bottom:16px;
-  }
-  #orderList ul { list-style:none; padding:0; margin:0; text-align:left; }
-  #orderList ul li { padding:6px 0; font-size:16px; }
+#menuTitle, h1,h2,h3 { margin:12px 0; }
+
+#loadingOverlay {
+  display:none;
+  position:fixed; top:0; left:0;
+  width:100vw; height:100vh;
+  background: rgba(0,0,0,0.7);
+  z-index:9999;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+}
+.spinner {
+  border:8px solid rgba(255,255,255,0.3);
+  border-top:8px solid #fff;
+  border-radius:50%;
+  width:80px; height:80px;
+  animation:spin 1s linear infinite;
+  margin-bottom:16px;
+}
+@keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+#logo { max-width:150px; height:auto; margin:0 auto 16px; display:block; }
+
+#orderList {
+  background: rgba(0,0,0,0.6);
+  padding:16px;
+  border-radius:12px;
+  margin-bottom:16px;
+}
+#orderList ul { list-style:none; padding:0; margin:0; text-align:left; }
+#orderList ul li { padding:6px 0; font-size:16px; }
+
+#orderListBtn {
+  background: #10b981; /* andere kleur */
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  font-size:18px;
+  font-weight:bold;
+  width:100%;
+  aspect-ratio:1/1;
+  cursor:pointer;
+  margin-top:12px;
+  transition: transform 0.1s;
+}
+#orderListBtn:active { transform: scale(0.97); }
 
 </style>
 </head>
@@ -90,7 +107,7 @@
   <div id="menu" style="display:none;">
     <h2 id="menuTitle"></h2>
     <div id="drinks"></div>
-    <button class="outline" onclick="showOrderList()">Bekijk bestellijst</button>
+    <button id="orderListBtn" onclick="showOrderList()">Bekijk bestellijst</button>
     <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
     <button class="outline" onclick="showFinal()">Eindafrekening</button>
   </div>
@@ -133,7 +150,6 @@
 <script>
 const apiUrl = "https://script.google.com/macros/s/AKfycbzdYTvLDqOm0pGhzPGQWAECLjE_z_o6mFJOucj9m0K_tCNbwT60VN-QSpDNGrjEY24VsQ/exec";
 const chipId = new URLSearchParams(window.location.search).get("chipId");
-
 if(!chipId){ alert("Geen chipId in URL!"); throw new Error("Geen chipId"); }
 
 const drinksVersion="v2";
@@ -192,15 +208,14 @@ function renderMenu(){
   $("menuTitle").textContent=chipOwner?`Wat wil je dat ${chipOwner} voor je gaat halen?`:"Laden...";
   const drinksDiv=$("drinks"); const frag=document.createDocumentFragment();
   drinks.forEach(d=>{
-    const btn=document.createElement("button");
-    btn.className="secondary"; btn.textContent=d.name;
+    const btn=document.createElement("button"); btn.className="secondary"; btn.textContent=d.name;
     btn.addEventListener("click",()=>placeOrder(d));
     frag.appendChild(btn);
   });
-  const addBtn=document.createElement("button");
-  addBtn.className="outline"; addBtn.textContent="Voeg drankje toe";
-  addBtn.onclick=addCustomDrink; frag.appendChild(addBtn);
-  drinksDiv.replaceChildren(frag); $("menu").style.display="block";
+  const addBtn=document.createElement("button"); addBtn.className="outline"; addBtn.textContent="Voeg drankje toe"; addBtn.onclick=addCustomDrink;
+  frag.appendChild(addBtn);
+  drinksDiv.replaceChildren(frag);
+  $("menu").style.display="block";
 }
 
 function addCustomDrink(){
@@ -230,10 +245,33 @@ function groupScansWithin4Min(scans){
   });
   return Object.entries(grouped).map(([owner,arr])=>{
     arr.sort((a,b)=>a.time-b.time);
-    let rounds=0,total=0,lastTime=0;
-    arr.forEach(scan=>{ total+=scan.amount; if(scan.time-lastTime>FOUR_MIN){ rounds++; lastTime=scan.time;}});
-    return { owner, rounds, total:total.toFixed(2), scans:arr };
+    let rounds=0,total=0,lastTime=0,lastRound=[];
+    arr.forEach(scan=>{
+      total+=scan.amount;
+      if(scan.time-lastTime>FOUR_MIN){ rounds++; lastTime=scan.time; lastRound=[]; }
+      lastRound.push(scan);
+    });
+    return { owner, rounds, total:total.toFixed(2), lastRound: lastRound };
   });
+}
+
+async function showOrderList(){
+  showLoading(true,"Bestellijst laden...");
+  try{
+    const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
+    const grouped=groupScansWithin4Min(scans);
+    const chipData=grouped.find(g=>g.owner===chipOwner);
+    hideAll();
+    if(!chipData || !chipData.lastRound.length){
+      $("orderListTitle").textContent=`${chipOwner} heeft nog geen bestellingen.`;
+      $("orderListItems").innerHTML="";
+    }else{
+      $("orderListTitle").textContent=`${chipOwner} gaat deze drankjes halen:`;
+      $("orderListItems").innerHTML=chipData.lastRound.map(s=>`<li>${s.scanner} → ${s.drink}</li>`).join("");
+    }
+    $("orderList").style.display="block";
+  }catch(err){ console.error(err); alert("Fout bij ophalen bestellijst."); }
+  finally{ showLoading(false); }
 }
 
 async function showScores(){
@@ -264,26 +302,6 @@ async function showFinal(){
     $("finalWinner").innerHTML=results.length?`<h3>🏆 ${results[0].owner} heeft de meeste rondjes gehaald (${results[0].rounds})!</h3>`:"<p>Nog geen data.</p>";
     $("finalList").innerHTML=`<ul>${scoresHtml}</ul>${settleHtml}`; $("final").style.display="block";
   }catch(err){ console.error(err); alert("Fout bij ophalen eindafrekening."); }
-  finally{ showLoading(false); }
-}
-
-// Bestellijst functie
-async function showOrderList(){
-  showLoading(true,"Bestellijst laden...");
-  try{
-    const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
-    const grouped=groupScansWithin4Min(scans);
-    const lastOwner=grouped.find(g=>g.owner===chipOwner);
-    hideAll();
-    if(!lastOwner || !lastOwner.scans.length){
-      $("orderListTitle").textContent=`${chipOwner} heeft nog geen bestellingen.`;
-      $("orderListItems").innerHTML="";
-    }else{
-      $("orderListTitle").textContent=`${chipOwner} gaat deze drankjes halen:`;
-      $("orderListItems").innerHTML=lastOwner.scans.map(s=>`<li>${s.scanner} → ${s.drink}</li>`).join("");
-    }
-    $("orderList").style.display="block";
-  }catch(err){ console.error(err); alert("Fout bij ophalen bestellijst."); }
   finally{ showLoading(false); }
 }
 
