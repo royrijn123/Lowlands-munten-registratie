@@ -1,119 +1,158 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NextDrink NFC</title>
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: linear-gradient(135deg, #7e22ce, #f97316);
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-    }
-    .card {
-      background: transparent;
-      color: #fff;
-      max-width: 400px;
-      width: 100%;
-      padding: 20px;
-      border-radius: 16px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NextDrink NFC</title>
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: linear-gradient(135deg, #7e22ce, #f97316);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.card {
+  background: transparent;
+  color: #fff;
+  max-width: 400px;
+  width: 100%;
+  padding: 20px;
+  border-radius: 16px;
+}
+.drinks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+.drink-btn {
+  background: #f97316;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-weight: bold;
+  font-size: 20px;
+  height: 120px;
+  min-width: 120px;
+  padding: 12px;
+  cursor: pointer;
+  word-wrap: break-word;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+}
+.drink-btn:active {
+  transform: scale(0.97);
+}
+.outline, .secondary, .primary {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.outline { background: rgba(255,255,255,0.2); color:#fff; border:1px solid #fff; }
+.secondary { background:#7e22ce; color:#fff; }
+.primary { background:#f97316; color:#fff; }
 
-    /* Knoppen lay-out */
-    .drinks-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .drink-btn {
-      background: #f97316;
-      color: #fff;
-      border: none;
-      border-radius: 14px;
-      font-weight: bold;
-      font-size: 20px;
-      height: 120px;
-      min-width: 120px;
-      padding: 12px;
-      cursor: pointer;
-      word-wrap: break-word;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-      transition: transform 0.1s;
-    }
-    .drink-btn:active {
-      transform: scale(0.97);
-    }
+h1,h2,h3 { margin: 12px 0; }
 
-    .outline, .secondary, .primary {
-      display: block;
-      width: 100%;
-      margin: 6px 0;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .outline { background: rgba(255,255,255,0.2); color:#fff; border:1px solid #fff; }
-    .secondary { background:#7e22ce; color:#fff; }
-    .primary { background:#f97316; color:#fff; }
+#logo {
+  max-width: 150px;
+  margin-bottom: 16px;
+}
 
-    h1,h2,h3 { margin: 12px 0; }
-
-    #logo {
-      max-width: 150px;
-      margin-bottom: 16px;
-    }
-  </style>
+/* === Laad overlay === */
+#loadingOverlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.spinner {
+  border: 8px solid rgba(255,255,255,0.3);
+  border-top: 8px solid #fff;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>
 </head>
 <body>
-  <div class="card">
-    <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
 
-    <!-- Menu -->
-    <div id="menu" style="display:none;">
-      <h2 id="menuTitle"></h2>
-      <div id="drinks" class="drinks-grid"></div>
-      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
-      <button class="outline" onclick="showFinal()">Eindafrekening</button>
-    </div>
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div id="loadingText">Bezig met laden...</div>
+</div>
 
-    <!-- Eerste keer naam -->
-    <div id="firstTime" style="display:none;">
-      <h2>Welkom!</h2>
-      <p id="firstTimeText"></p>
-    </div>
+<div class="card">
+  <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
 
-    <!-- Tussenstand -->
-    <div id="scores" style="display:none;">
-      <h2>Tussenstand</h2>
-      <div id="scoreList"></div>
-      <button class="primary" onclick="backToMenu()">Terug</button>
-    </div>
-
-    <!-- Eindafrekening -->
-    <div id="final" style="display:none;">
-      <h2>🏁 Eindafrekening</h2>
-      <div id="finalWinner"></div>
-      <div id="finalList"></div>
-      <button class="primary" onclick="backToMenu()">Terug</button>
-    </div>
+  <!-- Menu -->
+  <div id="menu" style="display:none;">
+    <h2 id="menuTitle"></h2>
+    <div id="drinks" class="drinks-grid"></div>
+    <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+    <button class="outline" onclick="showFinal()">Eindafrekening</button>
   </div>
 
+  <!-- Bevestiging -->
+  <div id="confirm" style="display:none;">
+    <h2>✅ Verwerkt!</h2>
+    <p id="confirmText"></p>
+    <button class="secondary" onclick="newRound()">Nieuw rondje</button>
+    <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+    <button class="outline" onclick="showFinal()">Eindafrekening</button>
+  </div>
+
+  <!-- Eerste keer naam -->
+  <div id="firstTime" style="display:none;">
+    <h2>Welkom!</h2>
+    <p id="firstTimeText"></p>
+  </div>
+
+  <!-- Tussenstand -->
+  <div id="scores" style="display:none;">
+    <h2>Tussenstand</h2>
+    <div id="scoreList"></div>
+    <button class="primary" onclick="backToMenu()">Terug</button>
+  </div>
+
+  <!-- Eindafrekening -->
+  <div id="final" style="display:none;">
+    <h2>🏁 Eindafrekening</h2>
+    <div id="finalWinner"></div>
+    <div id="finalList"></div>
+    <button class="primary" onclick="backToMenu()">Terug</button>
+  </div>
+</div>
+
 <script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbzdYTvLDqOm0pGhzPGQWAECLjE_z_o6mFJOucj9m0K_tCNbwT60VN-QSpDNGrjEY24VsQ/exec";
+const apiUrl = "YOUR_GOOGLE_SCRIPT_URL_HIER";
 const chipId = new URLSearchParams(window.location.search).get("chipId");
 
 if (!chipId) {
@@ -121,43 +160,80 @@ if (!chipId) {
   throw new Error("Geen chipId");
 }
 
+/* === CACHE VERSIEBEHEER === */
+const drinksVersion = "v2";
+const savedVersion = localStorage.getItem("drinksVersion");
+if (savedVersion !== drinksVersion) {
+  localStorage.removeItem("drinks");
+  localStorage.setItem("drinksVersion", drinksVersion);
+}
+
+/* === VARIABELEN === */
 let chipOwner = "";
 let scannerName = localStorage.getItem("scannerName");
 
+let drinks = JSON.parse(localStorage.getItem("drinks") || "null") || [
+  { name: "Kleine bier", price: 4.40 },
+  { name: "Grote bier", price: 8.00 },
+  { name: "Wijn", price: 6.00 },
+  { name: "Cocktail", price: 11.50 },
+  { name: "Frisdrank", price: 4.00 }
+];
+localStorage.setItem("drinks", JSON.stringify(drinks));
+
+/* === HULPFUNCTIES === */
+const $ = id => document.getElementById(id);
+function hideAll() {
+  ["menu","confirm","scores","final","firstTime"].forEach(id => $(id).style.display = "none");
+}
+function showLoading(show, text="Bezig met laden...") {
+  $("loadingText").textContent = text;
+  $("loadingOverlay").style.display = show ? "flex" : "none";
+  document.querySelectorAll("button").forEach(btn => btn.disabled = show);
+}
+
 /* === INIT === */
 async function init() {
+  showLoading(true, "Initialiseren...");
+
   if (!scannerName) {
-    scannerName = prompt("Wat is je naam?");
-    if (!scannerName) return alert("Naam is verplicht om verder te gaan.");
-    localStorage.setItem("scannerName", scannerName);
+    setTimeout(() => {
+      scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
+      localStorage.setItem("scannerName", scannerName);
+    }, 100);
   }
 
-  // Ophalen eigenaar chip
   try {
     const owner = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`)
-      .then(r => r.text()).then(t => t.trim());
+      .then(r => r.ok ? r.text() : Promise.reject("Response not ok"))
+      .then(t => t.trim());
 
     if (!owner) {
-      const naamChip = prompt("Deze chip heeft nog geen naam. Wat is de naam van de chiphouder?");
-      if (!naamChip) return alert("Geen naam ingevoerd.");
+      chipOwner = prompt("Wat is jouw naam?")?.trim();
+      if (!chipOwner) { alert("Geen naam ingevoerd."); showLoading(false); return; }
+
+      localStorage.setItem("scannerName", chipOwner);
+
       await fetch(apiUrl, {
         method: "POST",
-        body: new URLSearchParams({ action: "setOwner", chipId, owner: naamChip })
+        body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
       });
-      chipOwner = naamChip;
 
+      hideAll();
       $("firstTimeText").innerHTML = `
-        Gefeliciteerd ${naamChip}! Je naam is verwerkt in het systeem.<br><br>
-        📱 Plak nu de NFC sticker <strong>onderaan op de achterkant van je telefoon.</strong><br>
-        Jij laat jouw NFC sticker scannen als jij een rondje gaat halen.`;
-      hideAll(); $("firstTime").style.display="block";
+        Gefeliciteerd ${chipOwner}! Je naam is verwerkt in het systeem.<br><br>
+        📱 Plak nu de NFC sticker <strong>onderaan op de achterkant van je telefoon.</strong> 
+        Jij laat <strong>jouw</strong> NFC sticker scannen als <strong>jij een rondje gaat halen.</strong>`;
+      $("firstTime").style.display = "block";
     } else {
       chipOwner = owner;
       renderMenu();
     }
   } catch (err) {
     console.error(err);
-    alert("Fout bij ophalen chip eigenaar.");
+    alert("Fout bij ophalen eigenaar.");
+  } finally {
+    showLoading(false);
   }
 }
 
@@ -170,21 +246,23 @@ function renderMenu() {
 
   const drinksDiv = $("drinks");
   drinksDiv.innerHTML = "";
+  const frag = document.createDocumentFragment();
 
   drinks.forEach(d => {
     const btn = document.createElement("button");
-    btn.className = "secondary";
+    btn.className = "drink-btn";
     btn.textContent = d.name;
-    btn.onclick = () => placeOrder(d);
-    drinksDiv.appendChild(btn);
+    btn.addEventListener("click", () => placeOrder(d));
+    frag.appendChild(btn);
   });
 
   const addBtn = document.createElement("button");
   addBtn.className = "outline";
   addBtn.textContent = "Voeg drankje toe";
   addBtn.onclick = addCustomDrink;
-  drinksDiv.appendChild(addBtn);
+  frag.appendChild(addBtn);
 
+  drinksDiv.appendChild(frag);
   $("menu").style.display = "block";
 }
 
@@ -199,7 +277,7 @@ function addCustomDrink() {
   renderMenu();
 }
 
-/* === BESTELLING PLAATSEN === */
+/* === BESTELLING === */
 async function placeOrder(drink) {
   showLoading(true, "Verwerken...");
   try {
@@ -223,7 +301,49 @@ async function placeOrder(drink) {
   }
 }
 
-/* === OVERIGE FUNCTIES === */
+/* === SCORES / FINAL === */
+async function showScores() {
+  showLoading(true, "Scores laden...");
+  try {
+    const scans = await fetch(`${apiUrl}?action=getScans`).then(r => r.json());
+    const html = scans.map(s => `<li><strong>${s.owner}</strong> — €${parseFloat(s.amount).toFixed(2)}</li>`).join("");
+    hideAll();
+    $("scoreList").innerHTML = html || "<p>Geen data.</p>";
+    $("scores").style.display = "block";
+  } catch (err) {
+    console.error(err);
+    alert("Fout bij ophalen scores.");
+  } finally { showLoading(false); }
+}
+
+async function showFinal() {
+  showLoading(true, "Eindafrekening laden...");
+  try {
+    const [scans, settlements] = await Promise.all([
+      fetch(`${apiUrl}?action=getScans`).then(r => r.json()),
+      fetch(`${apiUrl}?action=getSettlement`).then(r => r.json())
+    ]);
+
+    const scoresHtml = scans.map(s => `<li><strong>${s.owner}</strong> — €${parseFloat(s.amount).toFixed(2)}</li>`).join("");
+
+    let settleHtml = "<h3>💶 Verrekeningen</h3>";
+    if (!settlements.length) {
+      settleHtml += "<p>Alles is al eerlijk verdeeld.</p>";
+    } else {
+      settleHtml += `<ul>${settlements.map(s => `<li>${s.from} betaalt €${s.amount} aan ${s.to}</li>`).join("")}</ul>`;
+    }
+
+    hideAll();
+    $("finalWinner").innerHTML = scans.length ? `<h3>🏆 ${scans[0].owner} heeft de meeste rondjes!</h3>` : "<p>Nog geen data.</p>";
+    $("finalList").innerHTML = `<ul>${scoresHtml}</ul>${settleHtml}`;
+    $("final").style.display = "block";
+  } catch (err) {
+    console.error(err);
+    alert("Fout bij ophalen eindafrekening.");
+  } finally { showLoading(false); }
+}
+
+/* === NAVIGATIE === */
 function backToMenu() { renderMenu(); }
 function newRound() { renderMenu(); }
 
