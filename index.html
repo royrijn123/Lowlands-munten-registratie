@@ -27,24 +27,31 @@
       padding: 20px;
       border-radius: 16px;
     }
+
+    /* === KNOPPEN === */
     button {
       display: block;
       width: 100%;
-      margin: 8px 0;
-      padding: 12px;
+      margin: 12px 0;       /* extra ruimte tussen knoppen */
+      padding: 20px;        /* groter voor makkelijker selecteren */
       border: none;
-      border-radius: 10px;
-      font-size: 16px;
+      border-radius: 12px;
+      font-size: 20px;      /* grotere tekst */
       font-weight: bold;
       cursor: pointer;
+      transition: transform 0.1s;
+    }
+    button:active {
+      transform: scale(0.97); /* subtiele klik animatie */
     }
     .primary { background: #7e22ce; color: #fff; }
     .secondary { background: #f97316; color: #fff; }
     .outline { 
       background: rgba(255,255,255,0.2); 
       color: #fff; 
-      border: 1px solid #fff; 
+      border: 2px solid #fff; 
     }
+
     h1,h2,h3 { margin: 12px 0; }
 
     /* === Laad overlay === */
