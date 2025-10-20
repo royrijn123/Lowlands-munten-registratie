@@ -22,31 +22,36 @@
     .card {
       background: transparent;
       color: #fff;
-      max-width: 400px;
+      max-width: 450px;
       width: 100%;
       padding: 20px;
       border-radius: 16px;
     }
 
-    /* === KNOPPEN === */
-    button {
-      display: block;
+    /* === Drankknoppen Grid === */
+    #drinks {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr); /* twee knoppen naast elkaar */
+      gap: 12px; /* ruimte tussen knoppen */
+      margin-bottom: 16px;
+    }
+    #drinks button {
       width: 100%;
-      margin: 12px 0;       /* extra ruimte tussen knoppen */
-      padding: 20px;        /* groter voor makkelijker selecteren */
-      border: none;
-      border-radius: 12px;
-      font-size: 20px;      /* grotere tekst */
+      aspect-ratio: 1 / 1;   /* vierkant */
+      font-size: 18px;
       font-weight: bold;
+      border-radius: 12px;
       cursor: pointer;
       transition: transform 0.1s;
     }
-    button:active {
-      transform: scale(0.97); /* subtiele klik animatie */
+    #drinks button:active {
+      transform: scale(0.97);
     }
-    .primary { background: #7e22ce; color: #fff; }
-    .secondary { background: #f97316; color: #fff; }
-    .outline { 
+
+    /* === Algemene knopstijl === */
+    button.primary { background: #7e22ce; color: #fff; }
+    button.secondary { background: #f97316; color: #fff; }
+    button.outline { 
       background: rgba(255,255,255,0.2); 
       color: #fff; 
       border: 2px solid #fff; 
@@ -295,7 +300,7 @@ async function placeOrder(drink) {
   }
 }
 
-/* === FUNCTIE: groepeer scans binnen 4 minuten === */
+/* === GROEP SCANS === */
 function groupScansWithin4Min(scans) {
   const grouped = {};
   const FOUR_MIN = 4 * 60 * 1000;
@@ -391,3 +396,4 @@ init();
 </script>
 </body>
 </html>
+
