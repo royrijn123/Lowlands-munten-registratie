@@ -1,158 +1,140 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NextDrink NFC</title>
-<style>
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  background: linear-gradient(135deg, #7e22ce, #f97316);
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-.card {
-  background: transparent;
-  color: #fff;
-  max-width: 400px;
-  width: 100%;
-  padding: 20px;
-  border-radius: 16px;
-}
-.drinks-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 12px;
-}
-.drink-btn {
-  background: #f97316;
-  color: #fff;
-  border: none;
-  border-radius: 14px;
-  font-weight: bold;
-  font-size: 20px;
-  height: 120px;
-  min-width: 120px;
-  padding: 12px;
-  cursor: pointer;
-  word-wrap: break-word;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  transition: transform 0.1s;
-}
-.drink-btn:active {
-  transform: scale(0.97);
-}
-.outline, .secondary, .primary {
-  display: block;
-  width: 100%;
-  margin: 6px 0;
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-}
-.outline { background: rgba(255,255,255,0.2); color:#fff; border:1px solid #fff; }
-.secondary { background:#7e22ce; color:#fff; }
-.primary { background:#f97316; color:#fff; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NextDrink NFC</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #7e22ce, #f97316);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .card {
+      background: transparent;
+      color: #fff;
+      max-width: 400px;
+      width: 100%;
+      padding: 20px;
+      border-radius: 16px;
+    }
+    button {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .primary { background: #7e22ce; color: #fff; }
+    .secondary { background: #f97316; color: #fff; }
+    .outline { 
+      background: rgba(255,255,255,0.2); 
+      color: #fff; 
+      border: 1px solid #fff; 
+    }
+    h1,h2,h3 { margin: 12px 0; }
 
-h1,h2,h3 { margin: 12px 0; }
+    /* === Laad overlay === */
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .spinner {
+      border: 8px solid rgba(255,255,255,0.3);
+      border-top: 8px solid #fff;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
 
-#logo {
-  max-width: 150px;
-  margin-bottom: 16px;
-}
-
-/* === Laad overlay === */
-#loadingOverlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 9999;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-}
-.spinner {
-  border: 8px solid rgba(255,255,255,0.3);
-  border-top: 8px solid #fff;
-  border-radius: 50%;
-  width: 80px;
-  height: 80px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-</style>
+    #logo {
+      max-width: 150px;
+      height: auto;
+      margin-bottom: 16px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
 </head>
 <body>
-
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-  <div id="loadingText">Bezig met laden...</div>
-</div>
-
-<div class="card">
-  <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
-
-  <!-- Menu -->
-  <div id="menu" style="display:none;">
-    <h2 id="menuTitle"></h2>
-    <div id="drinks" class="drinks-grid"></div>
-    <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
-    <button class="outline" onclick="showFinal()">Eindafrekening</button>
+  <!-- Laad overlay -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div id="loadingText">Bezig met laden...</div>
   </div>
 
-  <!-- Bevestiging -->
-  <div id="confirm" style="display:none;">
-    <h2>✅ Verwerkt!</h2>
-    <p id="confirmText"></p>
-    <button class="secondary" onclick="newRound()">Nieuw rondje</button>
-    <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
-    <button class="outline" onclick="showFinal()">Eindafrekening</button>
-  </div>
+  <div class="card">
+    <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
 
-  <!-- Eerste keer naam -->
-  <div id="firstTime" style="display:none;">
-    <h2>Welkom!</h2>
-    <p id="firstTimeText"></p>
-  </div>
+    <!-- Menu -->
+    <div id="menu" style="display:none;">
+      <h2 id="menuTitle"></h2>
+      <div id="drinks"></div>
+      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
 
-  <!-- Tussenstand -->
-  <div id="scores" style="display:none;">
-    <h2>Tussenstand</h2>
-    <div id="scoreList"></div>
-    <button class="primary" onclick="backToMenu()">Terug</button>
-  </div>
+    <!-- Bevestiging -->
+    <div id="confirm" style="display:none;">
+      <h2>✅ Verwerkt!</h2>
+      <p id="confirmText"></p>
+      <button class="secondary" onclick="newRound()">Nieuw rondje</button>
+      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
 
-  <!-- Eindafrekening -->
-  <div id="final" style="display:none;">
-    <h2>🏁 Eindafrekening</h2>
-    <div id="finalWinner"></div>
-    <div id="finalList"></div>
-    <button class="primary" onclick="backToMenu()">Terug</button>
+    <!-- Eerste keer naam -->
+    <div id="firstTime" style="display:none;">
+      <h2>Welkom!</h2>
+      <p id="firstTimeText"></p>
+    </div>
+
+    <!-- Tussenstand -->
+    <div id="scores" style="display:none;">
+      <h2>Tussenstand</h2>
+      <div id="scoreList"></div>
+      <button class="primary" onclick="backToMenu()">Terug</button>
+    </div>
+
+    <!-- Eindafrekening -->
+    <div id="final" style="display:none;">
+      <h2>🏁 Eindafrekening</h2>
+      <div id="finalWinner"></div>
+      <div id="finalList"></div>
+      <button class="primary" onclick="backToMenu()">Terug</button>
+    </div>
   </div>
-</div>
 
 <script>
-const apiUrl = "YOUR_GOOGLE_SCRIPT_URL_HIER";
+const apiUrl = "https://script.google.com/macros/s/AKfycbzdYTvLDqOm0pGhzPGQWAECLjE_z_o6mFJOucj9m0K_tCNbwT60VN-QSpDNGrjEY24VsQ/exec";
 const chipId = new URLSearchParams(window.location.search).get("chipId");
 
 if (!chipId) {
@@ -195,22 +177,28 @@ function showLoading(show, text="Bezig met laden...") {
 /* === INIT === */
 async function init() {
   showLoading(true, "Initialiseren...");
-
-  if (!scannerName) {
-    setTimeout(() => {
-      scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
-      localStorage.setItem("scannerName", scannerName);
-    }, 100);
-  }
+  requestAnimationFrame(renderMenu);
 
   try {
-    const owner = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`)
+    const ownerPromise = fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`)
       .then(r => r.ok ? r.text() : Promise.reject("Response not ok"))
       .then(t => t.trim());
 
+    if (!scannerName) {
+      setTimeout(() => {
+        scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
+        localStorage.setItem("scannerName", scannerName);
+      }, 100);
+    }
+
+    const owner = await ownerPromise;
     if (!owner) {
       chipOwner = prompt("Wat is jouw naam?")?.trim();
-      if (!chipOwner) { alert("Geen naam ingevoerd."); showLoading(false); return; }
+      if (!chipOwner) {
+        alert("Geen naam ingevoerd. Stop.");
+        showLoading(false);
+        return;
+      }
 
       localStorage.setItem("scannerName", chipOwner);
 
@@ -245,12 +233,11 @@ function renderMenu() {
     : "Laden...";
 
   const drinksDiv = $("drinks");
-  drinksDiv.innerHTML = "";
   const frag = document.createDocumentFragment();
 
   drinks.forEach(d => {
     const btn = document.createElement("button");
-    btn.className = "drink-btn";
+    btn.className = "secondary";
     btn.textContent = d.name;
     btn.addEventListener("click", () => placeOrder(d));
     frag.appendChild(btn);
@@ -262,7 +249,7 @@ function renderMenu() {
   addBtn.onclick = addCustomDrink;
   frag.appendChild(addBtn);
 
-  drinksDiv.appendChild(frag);
+  drinksDiv.replaceChildren(frag);
   $("menu").style.display = "block";
 }
 
@@ -301,21 +288,57 @@ async function placeOrder(drink) {
   }
 }
 
-/* === SCORES / FINAL === */
+/* === FUNCTIE: groepeer scans binnen 4 minuten === */
+function groupScansWithin4Min(scans) {
+  const grouped = {};
+  const FOUR_MIN = 4 * 60 * 1000;
+  scans.forEach(s => {
+    const owner = s.owner;
+    const time = new Date(s.timestamp).getTime();
+    if (!grouped[owner]) grouped[owner] = [];
+    grouped[owner].push({ time, amount: parseFloat(s.amount) });
+  });
+
+  return Object.entries(grouped).map(([owner, arr]) => {
+    arr.sort((a,b)=>a.time-b.time);
+    let rounds = 0;
+    let total = 0;
+    let lastTime = 0;
+    arr.forEach(scan => {
+      total += scan.amount;
+      if (scan.time - lastTime > FOUR_MIN) {
+        rounds++;
+        lastTime = scan.time;
+      }
+    });
+    return { owner, rounds, total: total.toFixed(2) };
+  });
+}
+
+/* === TUSSENSTAND === */
 async function showScores() {
   showLoading(true, "Scores laden...");
   try {
     const scans = await fetch(`${apiUrl}?action=getScans`).then(r => r.json());
-    const html = scans.map(s => `<li><strong>${s.owner}</strong> — €${parseFloat(s.amount).toFixed(2)}</li>`).join("");
+    const results = groupScansWithin4Min(scans);
+    results.sort((a, b) => b.rounds - a.rounds);
+
+    const html = results.map(s =>
+      `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`
+    ).join("");
+
     hideAll();
-    $("scoreList").innerHTML = html || "<p>Geen data.</p>";
+    $("scoreList").innerHTML = `<ul>${html}</ul>`;
     $("scores").style.display = "block";
   } catch (err) {
     console.error(err);
     alert("Fout bij ophalen scores.");
-  } finally { showLoading(false); }
+  } finally {
+    showLoading(false);
+  }
 }
 
+/* === EINDAFREKENING === */
 async function showFinal() {
   showLoading(true, "Eindafrekening laden...");
   try {
@@ -324,7 +347,12 @@ async function showFinal() {
       fetch(`${apiUrl}?action=getSettlement`).then(r => r.json())
     ]);
 
-    const scoresHtml = scans.map(s => `<li><strong>${s.owner}</strong> — €${parseFloat(s.amount).toFixed(2)}</li>`).join("");
+    const results = groupScansWithin4Min(scans);
+    results.sort((a,b)=>b.rounds-a.rounds);
+
+    const scoresHtml = results.map(s =>
+      `<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`
+    ).join("");
 
     let settleHtml = "<h3>💶 Verrekeningen</h3>";
     if (!settlements.length) {
@@ -334,13 +362,18 @@ async function showFinal() {
     }
 
     hideAll();
-    $("finalWinner").innerHTML = scans.length ? `<h3>🏆 ${scans[0].owner} heeft de meeste rondjes!</h3>` : "<p>Nog geen data.</p>";
+    $("finalWinner").innerHTML = results.length
+      ? `<h3>🏆 ${results[0].owner} heeft de meeste rondjes gehaald (${results[0].rounds})!</h3>`
+      : "<p>Nog geen data.</p>";
+
     $("finalList").innerHTML = `<ul>${scoresHtml}</ul>${settleHtml}`;
     $("final").style.display = "block";
   } catch (err) {
     console.error(err);
     alert("Fout bij ophalen eindafrekening.");
-  } finally { showLoading(false); }
+  } finally {
+    showLoading(false);
+  }
 }
 
 /* === NAVIGATIE === */
