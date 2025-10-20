@@ -31,13 +31,13 @@
     /* === Drankknoppen Grid === */
     #drinks {
       display: grid;
-      grid-template-columns: repeat(2, 1fr); /* twee knoppen naast elkaar */
-      gap: 12px; /* ruimte tussen knoppen */
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
       margin-bottom: 16px;
     }
     #drinks button {
       width: 100%;
-      aspect-ratio: 1 / 1;   /* vierkant */
+      aspect-ratio: 1 / 1;
       font-size: 18px;
       font-weight: bold;
       border-radius: 12px;
@@ -196,23 +196,20 @@ async function init() {
       .then(r => r.ok ? r.text() : Promise.reject("Response not ok"))
       .then(t => t.trim());
 
+    // Alleen localStorage scannerName vragen als nog niet aanwezig
     if (!scannerName) {
-      setTimeout(() => {
-        scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
-        localStorage.setItem("scannerName", scannerName);
-      }, 100);
+      scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
+      localStorage.setItem("scannerName", scannerName);
     }
 
     const owner = await ownerPromise;
     if (!owner) {
-      chipOwner = prompt("Wat is jouw naam?")?.trim();
+      chipOwner = prompt("Wat is jouw naam voor deze chip?")?.trim();
       if (!chipOwner) {
         alert("Geen naam ingevoerd. Stop.");
         showLoading(false);
         return;
       }
-
-      localStorage.setItem("scannerName", chipOwner);
 
       await fetch(apiUrl, {
         method: "POST",
