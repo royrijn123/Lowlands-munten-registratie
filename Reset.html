@@ -32,20 +32,22 @@
 <body>
   <div class="card">
     <h1>NextDrink reset</h1>
-    <p>Wis lokale gegevens en handmatig toegevoegde drankjes.<br>
-    (Google Sheets blijft onaangetast)</p>
+    <p>Verwijder lokale gegevens en handmatig toegevoegde drankjes.<br>
+    (Bestellingen in Google Sheets blijven behouden)</p>
     <button onclick="resetNextDrink()">Reset gegevens</button>
   </div>
 
   <script>
     function resetNextDrink() {
       const scannerName = localStorage.getItem('scannerName');
-
       if (!scannerName) {
-        if (!confirm("Er is geen scannernaam gevonden. Toch alle lokale data wissen?")) return;
-      } else {
-        if (!confirm(`Weet je zeker dat je alle lokale gegevens van "${scannerName}" wilt wissen?`)) return;
+        alert("Er is geen scannernaam gevonden in localStorage.");
+        return;
       }
+
+      if (!confirm(`Weet je zeker dat je alle lokale gegevens van "${scannerName}" wilt wissen?`)) return;
+
+      const naam = scannerName.trim().toLowerCase();
 
       // Standaarddrankjes behouden
       const standaardDrinks = [
@@ -59,20 +61,28 @@
       // Verwijder scannernaam
       localStorage.removeItem('scannerName');
 
-      // Verwijder alle custom drankjes en overige lokale data
-      const keysToKeep = ['drinksVersion'];
-      const currentDrinks = JSON.parse(localStorage.getItem('drinks') || '[]');
-      const filteredDrinks = currentDrinks.filter(cd =>
+      // Zoek en verwijder mogelijke chiphoudergegevens met dezelfde naam
+      for (let key in localStorage) {
+        try {
+          const value = localStorage.getItem(key);
+          if (value && value.toLowerCase().includes(naam)) {
+            localStorage.removeItem(key);
+          }
+        } catch (e) {
+          console.warn(`Kon ${key} niet controleren:`, e);
+        }
+      }
+
+      // Verwijder handmatig toegevoegde drankjes
+      const current = JSON.parse(localStorage.getItem('drinks') || '[]');
+      const filtered = current.filter(cd =>
         standaardDrinks.some(sd =>
           sd.name === cd.name && Number(sd.price) === Number(cd.price)
         )
       );
+      localStorage.setItem('drinks', JSON.stringify(filtered.length ? filtered : standaardDrinks));
 
-      localStorage.clear(); // alles wissen
-      localStorage.setItem('drinks', JSON.stringify(standaardDrinks));
-      localStorage.setItem('drinksVersion', 'v2'); // behouden voor consistentie
-
-      alert("Lokale gegevens en handmatig toegevoegde drankjes zijn verwijderd.\nGoogle Sheets-data blijft behouden.");
+      alert(`✅ Reset voltooid!\n\nAlle lokale gegevens van "${scannerName}" zijn verwijderd.\nJe bestellingen in Google Sheets blijven behouden.`);
     }
   </script>
 </body>
