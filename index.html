@@ -27,7 +27,7 @@ body {
   display:grid;
   grid-template-columns:repeat(2, 1fr);
   gap:12px;
-  margin-bottom:16px;
+  margin-bottom:12px;
 }
 #drinks button {
   width:100%;
@@ -39,6 +39,20 @@ body {
   transition: transform 0.1s;
 }
 #drinks button:active { transform: scale(0.97); }
+
+#orderListBtn {
+  background: #10b981; /* andere kleur */
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  font-size:18px;
+  font-weight:bold;
+  width:100%;
+  aspect-ratio:1/1;
+  cursor:pointer;
+  transition: transform 0.1s;
+}
+#orderListBtn:active { transform: scale(0.97); }
 
 button.primary { background:#7e22ce; color:#fff; }
 button.secondary { background:#f97316; color:#fff; }
@@ -76,22 +90,6 @@ button.outline { background: rgba(255,255,255,0.2); color:#fff; border:2px solid
 }
 #orderList ul { list-style:none; padding:0; margin:0; text-align:left; }
 #orderList ul li { padding:6px 0; font-size:16px; }
-
-#orderListBtn {
-  background: #10b981; /* andere kleur */
-  color:#fff;
-  border:none;
-  border-radius:12px;
-  font-size:18px;
-  font-weight:bold;
-  width:100%;
-  aspect-ratio:1/1;
-  cursor:pointer;
-  margin-top:12px;
-  transition: transform 0.1s;
-}
-#orderListBtn:active { transform: scale(0.97); }
-
 </style>
 </head>
 <body>
@@ -236,38 +234,40 @@ async function placeOrder(drink){
   finally{ showLoading(false); }
 }
 
-function groupScansWithin4Min(scans){
-  const grouped={}; const FOUR_MIN=4*60*1000;
-  scans.forEach(s=>{
-    const owner=s.owner; const time=new Date(s.timestamp).getTime();
-    if(!grouped[owner]) grouped[owner]=[];
-    grouped[owner].push({ time, amount:parseFloat(s.amount), scanner:s.scanner, drink:s.drink });
-  });
-  return Object.entries(grouped).map(([owner,arr])=>{
-    arr.sort((a,b)=>a.time-b.time);
-    let rounds=0,total=0,lastTime=0,lastRound=[];
-    arr.forEach(scan=>{
-      total+=scan.amount;
-      if(scan.time-lastTime>FOUR_MIN){ rounds++; lastTime=scan.time; lastRound=[]; }
-      lastRound.push(scan);
-    });
-    return { owner, rounds, total:total.toFixed(2), lastRound: lastRound };
-  });
-}
-
+// **Bestellijst laatste ronde per scanner binnen 15 minuten met tijdstip**
 async function showOrderList(){
   showLoading(true,"Bestellijst laden...");
   try{
     const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
-    const grouped=groupScansWithin4Min(scans);
-    const chipData=grouped.find(g=>g.owner===chipOwner);
+    const now = Date.now();
+    const FIFTEEN_MIN = 15*60*1000;
+    const ownerScans = scans.filter(s=>s.owner===chipOwner && (now - new Date(s.timestamp).getTime()) <= FIFTEEN_MIN);
+    
+    // Groeperen per scanner
+    const grouped = {};
+    ownerScans.forEach(s=>{
+      if(!grouped[s.scanner]) grouped[s.scanner]=[];
+      grouped[s.scanner].push({drink:s.drink, time:new Date(s.timestamp).getTime()});
+    });
+    
+    // Binnen elke scanner: vind laatste ronde binnen 15 min
+    const finalList = [];
+    Object.entries(grouped).forEach(([scanner, arr])=>{
+      arr.sort((a,b)=>a.time-b.time);
+      const lastTime = arr[arr.length-1].time;
+      const round = arr.filter(x => lastTime - x.time <= FIFTEEN_MIN);
+      const roundTime = new Date(round[0].time);
+      const timeStr = `${roundTime.getHours().toString().padStart(2,'0')}:${roundTime.getMinutes().toString().padStart(2,'0')}`;
+      round.forEach(x=> finalList.push({scanner, drink:x.drink, time:timeStr}));
+    });
+    
     hideAll();
-    if(!chipData || !chipData.lastRound.length){
-      $("orderListTitle").textContent=`${chipOwner} heeft nog geen bestellingen.`;
+    if(finalList.length===0){
+      $("orderListTitle").textContent=`${chipOwner} heeft nog geen bestellingen in de laatste 15 minuten.`;
       $("orderListItems").innerHTML="";
-    }else{
+    } else {
       $("orderListTitle").textContent=`${chipOwner} gaat deze drankjes halen:`;
-      $("orderListItems").innerHTML=chipData.lastRound.map(s=>`<li>${s.scanner} → ${s.drink}</li>`).join("");
+      $("orderListItems").innerHTML = finalList.map(x=>`<li>[${x.time}] ${x.scanner} → ${x.drink}</li>`).join("");
     }
     $("orderList").style.display="block";
   }catch(err){ console.error(err); alert("Fout bij ophalen bestellijst."); }
@@ -278,8 +278,16 @@ async function showScores(){
   showLoading(true,"Scores laden...");
   try{
     const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
-    const results=groupScansWithin4Min(scans);
-    results.sort((a,b)=>b.rounds-a.rounds);
+    const grouped = {};
+    scans.forEach(s=>{
+      if(!grouped[s.owner]) grouped[s.owner] = [];
+      grouped[s.owner].push(s);
+    });
+    const results = Object.entries(grouped).map(([owner, arr])=>{
+      let total=0;
+      arr.forEach(s=>total+=parseFloat(s.amount));
+      return { owner, rounds: arr.length, total: total.toFixed(2) };
+    }).sort((a,b)=>b.rounds-a.rounds);
     const html=results.map(s=>`<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`).join("");
     hideAll(); $("scoreList").innerHTML=`<ul>${html}</ul>`; $("scores").style.display="block";
   }catch(err){ console.error(err); alert("Fout bij ophalen scores."); }
@@ -293,7 +301,16 @@ async function showFinal(){
       fetch(`${apiUrl}?action=getScans`).then(r=>r.json()),
       fetch(`${apiUrl}?action=getSettlement`).then(r=>r.json())
     ]);
-    const results=groupScansWithin4Min(scans); results.sort((a,b)=>b.rounds-a.rounds);
+    const grouped = {};
+    scans.forEach(s=>{
+      if(!grouped[s.owner]) grouped[s.owner] = [];
+      grouped[s.owner].push(s);
+    });
+    const results = Object.entries(grouped).map(([owner, arr])=>{
+      let total=0;
+      arr.forEach(s=>total+=parseFloat(s.amount));
+      return { owner, rounds: arr.length, total: total.toFixed(2) };
+    }).sort((a,b)=>b.rounds-a.rounds);
     const scoresHtml=results.map(s=>`<li><strong>${s.owner}</strong> — ${s.rounds} rondje${s.rounds===1?"":"s"} (€${s.total})</li>`).join("");
     let settleHtml="<h3>💶 Verrekeningen</h3>";
     if(!settlements.length) settleHtml+="<p>Alles is al eerlijk verdeeld.</p>";
