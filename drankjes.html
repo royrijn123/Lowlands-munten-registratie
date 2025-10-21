@@ -1,110 +1,99 @@
-Drankjes. HTML
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Drankjes Beheer</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #fff;
-      text-align: center;
-      padding: 20px;
-    }
-    table {
-      margin: 20px auto;
-      border-collapse: collapse;
-      width: 90%;
-      max-width: 600px;
-      background: #222;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    th, td {
-      padding: 12px;
-      border-bottom: 1px solid #444;
-    }
-    th { background: #333; }
-    input {
-      width: 80%;
-      padding: 6px;
-      border: none;
-      border-radius: 6px;
-      background: #333;
-      color: #fff;
-    }
-    button {
-      padding: 10px 16px;
-      margin: 10px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .add-btn { background: #22c55e; color: white; }
-    .save-btn { background: #3b82f6; color: white; }
-    .delete-btn { background: #ef4444; color: white; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NextDrink Drankjes Beheer</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:20px;color:#333;}
+h1{margin-bottom:20px;text-align:center;}
+table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+th,td{padding:12px;border:1px solid #ccc;text-align:left;}
+th{background:#7e22ce;color:#fff;}
+input[type=text], input[type=number]{width:100%;padding:8px;box-sizing:border-box;}
+button{padding:10px 16px;margin-top:10px;border:none;border-radius:6px;cursor:pointer;}
+.primary{background:#7e22ce;color:#fff;}
+.secondary{background:#f97316;color:#fff;}
+.delete-btn{background:#ef4444;color:#fff;}
+</style>
 </head>
 <body>
-  <h1>🍹 Drankjes Beheer</h1>
-  <p>Pas hier de namen en prijzen van de standaard drankjes aan.</p>
-  <table id="drinksTable">
-    <thead>
-      <tr><th>Naam</th><th>Prijs (€)</th><th></th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <button class="add-btn" onclick="addRow()">+ Drankje toevoegen</button>
-  <br>
-  <button class="save-btn" onclick="saveDrinks()">💾 Opslaan</button>
 
-  <script>
-  const apiUrl = "https://script.google.com/macros/s/AKfycbzdYTvLDqOm0pGhzPGQWAECLjE_z_o6mFJOucj9m0K_tCNbwT60VN-QSpDNGrjEY24VsQ/exec";
+<h1>NextDrink Drankjes Beheer</h1>
 
-  async function loadDrinks() {
-    const drinks = await fetch(`${apiUrl}?action=getDrinks`).then(r=>r.json());
-    const tbody = document.querySelector("#drinksTable tbody");
-    tbody.innerHTML = "";
-    drinks.forEach(d => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td><input value="${d.name}"></td>
-        <td><input type="number" step="0.01" value="${d.price}"></td>
-        <td><button class="delete-btn" onclick="this.closest('tr').remove()">🗑️</button></td>`;
-      tbody.appendChild(row);
+<table id="drinksTable">
+  <thead>
+    <tr><th>Naam</th><th>Prijs (€)</th><th>Acties</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h3>Nieuw drankje toevoegen</h3>
+<input type="text" id="newDrinkName" placeholder="Naam">
+<input type="number" id="newDrinkPrice" placeholder="Prijs (€)" step="0.01" min="0">
+<button class="primary" onclick="addDrink()">Toevoegen</button>
+
+<script>
+const apiUrl = "https://script.google.com/macros/s/AKfycbxwgCnzRQOIhJ2SjV7sq1aFn4Deq75pkoiVdxzuHYksfc7YBCB9y5U0foDC4B6Yjb5_Fw/exec";
+let drinks = [];
+
+async function loadDrinks(){
+  try{
+    drinks = await fetch(`${apiUrl}?action=getDrinks`).then(r=>r.json());
+    renderTable();
+  }catch(e){alert("Fout bij laden drankjes.");console.error(e);}
+}
+
+function renderTable(){
+  const tbody = document.querySelector("#drinksTable tbody");
+  tbody.innerHTML="";
+  drinks.forEach((d,i)=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td><input type="text" value="${d.name}" onchange="updateDrink(${i}, 'name', this.value)"></td>
+      <td><input type="number" value="${d.price}" step="0.01" min="0" onchange="updateDrink(${i}, 'price', this.value)"></td>
+      <td><button class="delete-btn" onclick="deleteDrink(${i})">Verwijder</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function saveDrinks(){
+  try{
+    await fetch(apiUrl,{
+      method:"POST",
+      body:new URLSearchParams({action:"setDrinks",drinks:JSON.stringify(drinks)})
     });
-  }
+  }catch(e){alert("Fout bij opslaan drankjes.");console.error(e);}
+}
 
-  function addRow() {
-    const tbody = document.querySelector("#drinksTable tbody");
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td><input placeholder="Naam"></td>
-      <td><input type="number" step="0.01" placeholder="Prijs"></td>
-      <td><button class="delete-btn" onclick="this.closest('tr').remove()">🗑️</button></td>`;
-    tbody.appendChild(row);
-  }
+function updateDrink(index, field, value){
+  if(field==="name") drinks[index].name=value.trim();
+  if(field==="price") drinks[index].price=parseFloat(value);
+  saveDrinks();
+}
 
-  async function saveDrinks() {
-    const rows = [...document.querySelectorAll("#drinksTable tbody tr")];
-    const drinks = rows.map(r => ({
-      name: r.children[0].querySelector("input").value.trim(),
-      price: parseFloat(r.children[1].querySelector("input").value)
-    })).filter(d => d.name && !isNaN(d.price));
+function deleteDrink(index){
+  if(!confirm(`Weet je zeker dat je "${drinks[index].name}" wilt verwijderen?`)) return;
+  drinks.splice(index,1);
+  renderTable();
+  saveDrinks();
+}
 
-    await fetch(`${apiUrl}?action=setDrinks`, {
-      method: "POST",
-      body: new URLSearchParams({ drinks: JSON.stringify(drinks) })
-    });
-    alert("✅ Drankjeslijst opgeslagen!");
-    loadDrinks();
-  }
+function addDrink(){
+  const name=document.getElementById("newDrinkName").value.trim();
+  const price=parseFloat(document.getElementById("newDrinkPrice").value);
+  if(!name||isNaN(price)||price<=0){alert("Vul een geldige naam en prijs in!");return;}
+  drinks.push({name,price});
+  document.getElementById("newDrinkName").value="";
+  document.getElementById("newDrinkPrice").value="";
+  renderTable();
+  saveDrinks();
+}
 
-  loadDrinks();
-  </script>
+// Initialisatie
+loadDrinks();
+</script>
+
 </body>
 </html>
