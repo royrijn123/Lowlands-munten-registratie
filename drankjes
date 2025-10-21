@@ -1,0 +1,110 @@
+Drankjes. HTML
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drankjes Beheer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 600px;
+      background: #222;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #444;
+    }
+    th { background: #333; }
+    input {
+      width: 80%;
+      padding: 6px;
+      border: none;
+      border-radius: 6px;
+      background: #333;
+      color: #fff;
+    }
+    button {
+      padding: 10px 16px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .add-btn { background: #22c55e; color: white; }
+    .save-btn { background: #3b82f6; color: white; }
+    .delete-btn { background: #ef4444; color: white; }
+  </style>
+</head>
+<body>
+  <h1>🍹 Drankjes Beheer</h1>
+  <p>Pas hier de namen en prijzen van de standaard drankjes aan.</p>
+  <table id="drinksTable">
+    <thead>
+      <tr><th>Naam</th><th>Prijs (€)</th><th></th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button class="add-btn" onclick="addRow()">+ Drankje toevoegen</button>
+  <br>
+  <button class="save-btn" onclick="saveDrinks()">💾 Opslaan</button>
+
+  <script>
+  const apiUrl = "https://script.google.com/macros/s/AKfycbzdYTvLDqOm0pGhzPGQWAECLjE_z_o6mFJOucj9m0K_tCNbwT60VN-QSpDNGrjEY24VsQ/exec";
+
+  async function loadDrinks() {
+    const drinks = await fetch(`${apiUrl}?action=getDrinks`).then(r=>r.json());
+    const tbody = document.querySelector("#drinksTable tbody");
+    tbody.innerHTML = "";
+    drinks.forEach(d => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><input value="${d.name}"></td>
+        <td><input type="number" step="0.01" value="${d.price}"></td>
+        <td><button class="delete-btn" onclick="this.closest('tr').remove()">🗑️</button></td>`;
+      tbody.appendChild(row);
+    });
+  }
+
+  function addRow() {
+    const tbody = document.querySelector("#drinksTable tbody");
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><input placeholder="Naam"></td>
+      <td><input type="number" step="0.01" placeholder="Prijs"></td>
+      <td><button class="delete-btn" onclick="this.closest('tr').remove()">🗑️</button></td>`;
+    tbody.appendChild(row);
+  }
+
+  async function saveDrinks() {
+    const rows = [...document.querySelectorAll("#drinksTable tbody tr")];
+    const drinks = rows.map(r => ({
+      name: r.children[0].querySelector("input").value.trim(),
+      price: parseFloat(r.children[1].querySelector("input").value)
+    })).filter(d => d.name && !isNaN(d.price));
+
+    await fetch(`${apiUrl}?action=setDrinks`, {
+      method: "POST",
+      body: new URLSearchParams({ drinks: JSON.stringify(drinks) })
+    });
+    alert("✅ Drankjeslijst opgeslagen!");
+    loadDrinks();
+  }
+
+  loadDrinks();
+  </script>
+</body>
+</html>
