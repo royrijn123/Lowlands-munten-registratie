@@ -1,67 +1,25 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NextDrink NFC</title>
-  <style>
-    html, body { height:100%; margin:0; padding:0; }
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: linear-gradient(135deg,#7e22ce,#f97316);
-      color:#fff;
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-    }
-    .card {
-      background:transparent;
-      color:#fff;
-      max-width:400px;
-      width:100%;
-      padding:20px;
-      border-radius:16px;
-    }
-    h1,h2,h3 { margin:12px 0; }
-    .drinks-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-    button {
-      width:100%;
-      aspect-ratio:1/1;
-      font-size:20px;
-      font-weight:bold;
-      border:none;
-      border-radius:14px;
-      cursor:pointer;
-      padding:12px;
-    }
-    .primary { background:#7e22ce; color:#fff; }
-    .secondary { background:#f97316; color:#fff; }
-    .outline { 
-      background: rgba(255,255,255,0.2); 
-      color:#fff; 
-      border:1px solid #fff; 
-      width:100%; aspect-ratio:auto; padding:14px; margin-top:12px; font-size:16px; border-radius:10px;
-    }
-    .bestellijst-btn { background:#10b981; color:#fff; }
-    #loadingOverlay {
-      display:none; position:fixed; top:0; left:0;
-      width:100vw; height:100vh;
-      background:rgba(0,0,0,0.7);
-      z-index:9999;
-      justify-content:center; align-items:center; flex-direction:column;
-    }
-    .spinner {
-      border:8px solid rgba(255,255,255,0.3);
-      border-top:8px solid #fff;
-      border-radius:50%;
-      width:80px; height:80px;
-      animation:spin 1s linear infinite;
-      margin-bottom:16px;
-    }
-    @keyframes spin { from{transform:rotate(0);} to{transform:rotate(360deg);} }
-    #logo { max-width:150px; margin:0 auto 16px; display:block; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NextDrink NFC</title>
+<style>
+html, body {height:100%;margin:0;padding:0;}
+body {font-family: Arial,sans-serif;text-align:center;background:linear-gradient(135deg,#7e22ce,#f97316);color:#fff;display:flex;justify-content:center;align-items:flex-start;}
+.card {background:transparent;color:#fff;max-width:400px;width:100%;padding:20px;border-radius:16px;}
+h1,h2,h3{margin:12px 0;}
+.drinks-grid {display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+button {width:100%;aspect-ratio:1/1;font-size:20px;font-weight:bold;border:none;border-radius:14px;cursor:pointer;padding:12px;}
+.primary {background:#7e22ce;color:#fff;}
+.secondary {background:#f97316;color:#fff;}
+.outline {background:rgba(255,255,255,0.2);color:#fff;border:1px solid #fff;width:100%;aspect-ratio:auto;padding:14px;margin-top:12px;font-size:16px;border-radius:10px;}
+.bestellijst-btn {background:#10b981;color:#fff;}
+#loadingOverlay {display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:9999;justify-content:center;align-items:center;flex-direction:column;}
+.spinner {border:8px solid rgba(255,255,255,0.3);border-top:8px solid #fff;border-radius:50%;width:80px;height:80px;animation:spin 1s linear infinite;margin-bottom:16px;}
+@keyframes spin{from{transform:rotate(0);}to{transform:rotate(360deg);}}
+#logo{max-width:150px;margin:0 auto 16px;display:block;}
+</style>
 </head>
 <body>
 <div id="loadingOverlay">
@@ -70,176 +28,184 @@
 </div>
 
 <div class="card">
-  <img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
+<img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
 
-  <!-- Menu -->
-  <div id="menu" style="display:none;">
-    <h2 id="menuTitle"></h2>
-    <div id="drinks" class="drinks-grid"></div>
-    <button class="outline" onclick="addCustomDrink()">+ Drankje toevoegen</button>
-    <button class="outline bestellijst-btn" onclick="showBestellijst()">Bekijk bestellijst</button>
-    <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
-    <button class="outline" onclick="showFinal()">Eindafrekening</button>
-  </div>
+<!-- Menu -->
+<div id="menu" style="display:none;">
+  <h2 id="menuTitle"></h2>
+  <div id="drinks" class="drinks-grid"></div>
+  <button class="outline" onclick="addCustomDrink()">+ Drankje toevoegen</button>
+  <button class="outline bestellijst-btn" onclick="showBestellijst()">Bekijk bestellijst</button>
+  <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+  <button class="outline" onclick="showFinal()">Eindafrekening</button>
+</div>
 
-  <!-- Bevestiging -->
-  <div id="confirm" style="display:none;">
-    <h2>✅ Verwerkt!</h2>
-    <p id="confirmText"></p>
-    <button class="secondary" onclick="newRound()">Nieuw rondje</button>
-    <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
-    <button class="outline" onclick="showFinal()">Eindafrekening</button>
-  </div>
+<!-- Bevestiging -->
+<div id="confirm" style="display:none;">
+  <h2>✅ Verwerkt!</h2>
+  <p id="confirmText"></p>
+  <button class="secondary" onclick="newRound()">Nieuw rondje</button>
+  <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+  <button class="outline" onclick="showFinal()">Eindafrekening</button>
+</div>
 
-  <!-- Eerste keer -->
-  <div id="firstTime" style="display:none;">
-    <h2>Welkom!</h2>
-    <p id="firstTimeText"></p>
-  </div>
+<!-- Eerste keer -->
+<div id="firstTime" style="display:none;">
+  <h2>Welkom!</h2>
+  <p id="firstTimeText"></p>
+</div>
 
-  <!-- Tussenstand -->
-  <div id="scores" style="display:none;">
-    <h2>Tussenstand</h2>
-    <div id="scoreList"></div>
-    <button class="primary" onclick="backToMenu()">Terug</button>
-  </div>
+<!-- Tussenstand -->
+<div id="scores" style="display:none;">
+  <h2>Tussenstand</h2>
+  <div id="scoreList"></div>
+  <button class="primary" onclick="backToMenu()">Terug</button>
+</div>
 
-  <!-- Eindafrekening -->
-  <div id="final" style="display:none;">
-    <h2>🏁 Eindafrekening</h2>
-    <div id="finalWinner"></div>
-    <div id="finalList"></div>
-    <button class="primary" onclick="backToMenu()">Terug</button>
-  </div>
+<!-- Eindafrekening -->
+<div id="final" style="display:none;">
+  <h2>🏁 Eindafrekening</h2>
+  <div id="finalWinner"></div>
+  <div id="finalList"></div>
+  <button class="primary" onclick="backToMenu()">Terug</button>
+</div>
 
-  <!-- Bestellijst -->
-  <div id="bestellijst" style="display:none;">
-    <h2>📝 Bestellijst (Laatste 15 minuten)</h2>
-    <div id="bestellijstContent"></div>
-    <button class="primary" onclick="backToMenu()">Terug</button>
-  </div>
+<!-- Bestellijst -->
+<div id="bestellijst" style="display:none;">
+  <h2>📝 Bestellijst</h2>
+  <div id="bestellijstContent"></div>
+  <button class="primary" onclick="backToMenu()">Terug</button>
+</div>
 </div>
 
 <script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbxB609nb3A-dFWJsyPrttPXHAgWmUx6vFOzsMFpyBbiaUjZgES0d7ers9ZryaJm1PTBbw/exec";
-const chipId = new URLSearchParams(window.location.search).get("chipId");
+const apiUrl="https://script.google.com/macros/s/AKfycbxB609nb3A-dFWJsyPrttPXHAgWmUx6vFOzsMFpyBbiaUjZgES0d7ers9ZryaJm1PTBbw/exec";
+const chipId=new URLSearchParams(window.location.search).get("chipId");
+if(!chipId){alert("Geen chipId in URL!");throw new Error("Geen chipId");}
 
-if(!chipId){alert("Geen chipId in URL!"); throw new Error("Geen chipId");}
+let chipOwner="";
+let scannerName=localStorage.getItem("scannerName");
+let drinks=[];
 
-let chipOwner = "";
-let scannerName = localStorage.getItem("scannerName");
-let drinks = [];
+const $=id=>document.getElementById(id);
+function hideAll(){["menu","confirm","scores","final","firstTime","bestellijst"].forEach(id=>$(id).style.display="none");}
+function showLoading(show,text="Bezig..."){$("loadingText").textContent=text;$("loadingOverlay").style.display=show?"flex":"none";document.querySelectorAll("button").forEach(b=>b.disabled=show);}
 
-/* =============== HULPFUNCTIES =============== */
-const $ = id => document.getElementById(id);
-function hideAll(){ ["menu","confirm","scores","final","firstTime","bestellijst"].forEach(id => $(id).style.display="none"); }
-function showLoading(show, text="Bezig..."){ $("loadingText").textContent=text; $("loadingOverlay").style.display=show?"flex":"none"; document.querySelectorAll("button").forEach(b=>b.disabled=show); }
-
-/* =============== INIT =============== */
+/* ========== INIT ========== */
 async function init(){
   showLoading(true,"Initialiseren...");
   try{
-    if(!scannerName){
-      scannerName = prompt("Wat is jouw naam (scanner)?")?.trim() || "Onbekend";
-      localStorage.setItem("scannerName",scannerName);
-    }
-    const owner = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`).then(r=>r.text()).then(t=>t.trim());
+    // Scanner naam 1x vragen
+    if(!scannerName){scannerName=prompt("Wat is jouw naam (scanner)?")?.trim();if(!scannerName)scannerName="Onbekend";localStorage.setItem("scannerName",scannerName);}
+    const owner=await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`).then(r=>r.text()).then(t=>t.trim());
     if(!owner){
-      chipOwner = prompt("Wat is jouw naam voor deze chip?")?.trim();
-      if(!chipOwner){ alert("Geen naam ingevoerd."); showLoading(false); return; }
+      chipOwner=prompt("Wat is jouw naam (chip eigenaar)?")?.trim();if(!chipOwner){alert("Geen naam ingevoerd.");return;}
       await fetch(apiUrl,{method:"POST",body:new URLSearchParams({action:"setOwner",chipId,owner:chipOwner})});
       $("firstTimeText").innerHTML=`Welkom ${chipOwner}!<br>Plak nu de NFC sticker op je telefoon en laat deze scannen als jij een rondje haalt.`;
-      hideAll(); $("firstTime").style.display="block";
-    }else{ chipOwner = owner; }
-    await loadDrinks();
-    renderMenu();
-  }catch(e){ console.error(e); alert("Fout bij laden."); }
-  finally{ showLoading(false); }
+      hideAll();$("firstTime").style.display="block";
+    } else {chipOwner=owner;await loadDrinks();renderMenu();}
+  } catch(e){console.error(e);alert("Fout bij laden.");}
+  finally{showLoading(false);}
 }
 
-/* =============== DRANKJES =============== */
-async function loadDrinks(){
-  drinks = await fetch(`${apiUrl}?action=getDrinks`).then(r=>r.json());
-  if(!drinks || drinks.length===0){
-    drinks = [
-      {name:"Kleine bier", price:4.4},
-      {name:"Grote bier", price:8.0},
-      {name:"Desperados", price:5.5},
-      {name:"Wijn", price:6.0},
-      {name:"0.0 bier", price:4.0},
-      {name:"Frisdrank", price:4.0}
-    ];
-  }
-}
-async function saveDrinks(){ await fetch(`${apiUrl}?action=setDrinks`,{method:"POST",body:new URLSearchParams({drinks:JSON.stringify(drinks)})}); }
+/* ========== DRANKJES ========== */
+async function loadDrinks(){drinks=await fetch(`${apiUrl}?action=getDrinks`).then(r=>r.json());if(drinks.length===0)drinks=[{name:"Kleine bier",price:4.4},{name:"Grote bier",price:8},{name:"Desperados",price:6.5},{name:"Wijn",price:6},{name:"0.0 bier",price:4},{name:"Frisdrank",price:4}];}
+async function saveDrinks(){await fetch(`${apiUrl}?action=setDrinks`,{method:"POST",body:new URLSearchParams({drinks:JSON.stringify(drinks)})});}
 
-/* =============== MENU =============== */
+/* ========== MENU ========== */
 function renderMenu(){
   hideAll();
   $("menuTitle").textContent=`Wat wil je dat ${chipOwner} voor je haalt?`;
-  const div=$("drinks"); div.innerHTML="";
-  drinks.forEach(d=>{
-    const btn=document.createElement("button");
-    btn.className="secondary";
-    btn.textContent=d.name;
-    btn.onclick=()=>placeOrder(d);
-    div.appendChild(btn);
-  });
+  const div=$("drinks");div.innerHTML="";
+  drinks.forEach(d=>{const btn=document.createElement("button");btn.className="secondary";btn.textContent=d.name;btn.onclick=()=>placeOrder(d);div.appendChild(btn);});
   $("menu").style.display="block";
 }
 
-/* =============== DRANK TOEVOEGEN =============== */
+/* ========== DRANK TOEVOEGEN ========== */
 async function addCustomDrink(){
-  const name=prompt("Naam van het nieuwe drankje?");
-  if(!name) return;
-  const price=parseFloat(prompt(`Prijs van "${name}"? (€)`).replace(",","."));
-  if(isNaN(price)||price<=0) return alert("Ongeldige prijs!");
+  const name=prompt("Naam van het nieuwe drankje?");if(!name)return;
+  const price=parseFloat(prompt(`Prijs van "${name}"? (€)`).replace(",", "."));if(isNaN(price)||price<=0)return alert("Ongeldige prijs!");
   drinks.push({name:name.trim(),price});
-  await saveDrinks();
-  renderMenu();
+  await saveDrinks();renderMenu();
 }
 
-/* =============== BESTELLING =============== */
+/* ========== BESTELLING ========== */
 async function placeOrder(drink){
   showLoading(true,"Verwerken...");
   try{
     await fetch(apiUrl,{method:"POST",body:new URLSearchParams({action:"addScan",chipId,scanner:scannerName,drink:drink.name,amount:drink.price})});
-    hideAll();
-    $("confirmText").textContent=`${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`;
-    $("confirm").style.display="block";
-  }catch{ alert("Fout bij plaatsen order."); }
-  finally{ showLoading(false); }
+    hideAll();$("confirmText").textContent=`${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`;$("confirm").style.display="block";
+  } catch{alert("Fout bij plaatsen order.");}
+  finally{showLoading(false);}
 }
 
-/* =============== BESTELLIJST =============== */
+/* ========== BESTELLIJST ========== */
 async function showBestellijst(){
   showLoading(true,"Bestellijst laden...");
   try{
     const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
     const now=Date.now();
     const FIFTEEN_MIN=15*60*1000;
-    const recent=scans.filter(s=>s.owner===chipOwner && now - new Date(s.timestamp).getTime()<=FIFTEEN_MIN);
-
+    const recent=scans.filter(s=>s.owner===chipOwner && now-new Date(s.timestamp).getTime()<=FIFTEEN_MIN);
     const grouped={};
-    recent.forEach(s=>{ if(!grouped[s.scanner]) grouped[s.scanner]=[]; grouped[s.scanner].push(s.drink); });
-
+    recent.forEach(s=>{if(!grouped[s.scanner])grouped[s.scanner]=[];grouped[s.scanner].push(s.drink);});
     let html=`<p><strong>${chipOwner}</strong> gaat deze drankjes halen:</p><ul>`;
-    for(const [scanner,drinks] of Object.entries(grouped)){
-      html+=`<li><strong>${scanner}</strong>: ${drinks.join(", ")}</li>`;
-    }
-    html+="</ul>";
-    hideAll();
-    $("bestellijstContent").innerHTML=html;
-    $("bestellijst").style.display="block";
-  }catch(e){ console.error(e); alert("Fout bij laden bestellijst."); }
-  finally{ showLoading(false); }
+    for(const [scanner,drinks] of Object.entries(grouped)){html+=`<li><strong>${scanner}</strong>: ${drinks.join(", ")}</li>`;}
+    html+="</ul><p style='margin-top:10px;font-size:0.9em;opacity:0.8;'>(Laatste 15 minuten)</p>";
+    hideAll();$("bestellijstContent").innerHTML=html;$("bestellijst").style.display="block";
+  } catch(e){console.error(e);alert("Fout bij laden bestellijst.");}
+  finally{showLoading(false);}
 }
 
-/* =============== TUSSENSTAND EN EINDAFREKENING =============== */
-function showScores(){ alert("Tussenstand functie nog in te voegen (werkt met scans van 15 minuten per ronde)."); }
-function showFinal(){ alert("Eindafrekening functie nog in te voegen (werkt met Settlement tabblad)."); }
-function backToMenu(){ renderMenu(); }
-function newRound(){ renderMenu(); }
+/* ========== TUSSENSTAND ========== */
+async function showScores(){
+  showLoading(true,"Tussenstand laden...");
+  try{
+    const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
+    const now=Date.now();
+    const FIFTEEN_MIN=15*60*1000;
+    const grouped={};
+    scans.forEach(s=>{
+      if(!grouped[s.owner])grouped[s.owner]=[];
+      grouped[s.owner].push({time:new Date(s.timestamp).getTime(),scanner:s.scanner,drink:s.drink,amount:s.amount});
+    });
+    let html="<ul>";
+    for(const [owner,arr] of Object.entries(grouped)){
+      arr.sort((a,b)=>a.time-b.time);
+      let rounds=0,lastTime=0,total=0;
+      arr.forEach(scan=>{total+=parseFloat(scan.amount);if(scan.time-lastTime>FIFTEEN_MIN){rounds++;lastTime=scan.time;}});
+      html+=`<li><strong>${owner}</strong> — ${rounds} rondje${rounds===1?"":"s"} (€${total.toFixed(2)})</li>`;
+    }
+    html+="</ul>";
+    hideAll();$("scoreList").innerHTML=html;$("scores").style.display="block";
+  } catch(e){console.error(e);alert("Fout bij laden tussenstand.");}
+  finally{showLoading(false);}
+}
+
+/* ========== EINDAFREKENING ========== */
+async function showFinal(){
+  showLoading(true,"Eindafrekening laden...");
+  try{
+    const [scans,settlements]=await Promise.all([fetch(`${apiUrl}?action=getScans`).then(r=>r.json())]);
+    const now=Date.now();const FIFTEEN_MIN=15*60*1000;
+    const grouped={};
+    scans.forEach(s=>{if(!grouped[s.owner])grouped[s.owner]=[];grouped[s.owner].push({time:new Date(s.timestamp).getTime(),scanner:s.scanner,drink:s.drink,amount:s.amount});});
+    let html="<ul>";
+    for(const [owner,arr] of Object.entries(grouped)){
+      arr.sort((a,b)=>a.time-b.time);
+      let rounds=0,lastTime=0,total=0;
+      arr.forEach(scan=>{total+=parseFloat(scan.amount);if(scan.time-lastTime>FIFTEEN_MIN){rounds++;lastTime=scan.time;}});
+      html+=`<li><strong>${owner}</strong> — ${rounds} rondje${rounds===1?"":"s"} (€${total.toFixed(2)})</li>`;
+    }
+    html+="</ul>";
+    hideAll();$("finalWinner").innerHTML="<h3>🏆 Eindafrekening</h3>";
+    $("finalList").innerHTML=html;$("final").style.display="block";
+  } catch(e){console.error(e);alert("Fout bij laden eindafrekening.");}
+  finally{showLoading(false);}
+}
+
+function backToMenu(){renderMenu();}
+function newRound(){renderMenu();}
 
 init();
 </script>
