@@ -1,211 +1,710 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NextDrink NFC</title>
-<style>
-html, body {height:100%; margin:0; padding:0;}
-body {font-family: Arial, sans-serif; text-align:center; background: linear-gradient(135deg, #7e22ce, #f97316); color:#fff; display:flex; justify-content:center; align-items:flex-start;}
-.card {background:transparent; color:#fff; max-width:400px; width:100%; padding:20px; border-radius:16px;}
-h1,h2,h3 {margin:12px 0;}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NextDrink NFC</title>
+  <style>
+    /* ========== Basis layout ========== */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
 
-/* Knoppen grid */
-.drinks-grid {display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;}
-button {width:100%; aspect-ratio:1 / 1; font-size:20px; font-weight:bold; border:none; border-radius:14px; cursor:pointer; padding:12px;}
-.primary {background:#7e22ce; color:#fff;}
-.secondary {background:#f97316; color:#fff;}
-.outline {background: rgba(255,255,255,0.2); color:#fff; border:1px solid #fff; width:100%; aspect-ratio:auto; padding:14px; margin-top:12px; font-size:16px; border-radius:10px;}
-.bestellijst-btn {background:#10b981; color:#fff;}
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background: linear-gradient(135deg, #7e22ce, #f97316);
+      color: #fff;
+    }
 
-/* Laad overlay */
-#loadingOverlay {display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center; flex-direction:column;}
-.spinner {border:8px solid rgba(255,255,255,0.3); border-top:8px solid #fff; border-radius:50%; width:80px; height:80px; animation:spin 1s linear infinite; margin-bottom:16px;}
-@keyframes spin {from{transform:rotate(0deg);} to{transform:rotate(360deg);}}
-#logo {max-width:150px; margin:0 auto 16px; display:block;}
-</style>
+    .card {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      box-sizing: border-box;
+      border-radius: 14px;
+      background: transparent;
+      margin-top: 20px;
+    }
+
+    #logo {
+      display: block;
+      margin: 0 auto 16px;
+      max-width: 150px;
+      height: auto;
+    }
+
+    h1, h2, h3 { margin: 12px 0; }
+
+    /* ========== Knoppen & grid ========== */
+    .drinks-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, 1fr); /* 2 naast elkaar */
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 18px;
+      padding: 12px;
+    }
+
+    /* square buttons for drinks */
+    .drinks-grid button {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .primary {
+      background: #7e22ce;
+      color: #fff;
+    }
+
+    .secondary {
+      background: #f97316;
+      color: #fff;
+    }
+
+    /* Outline style used for "Tussenstand", "Terug" and "Ik wil afrekenen" */
+    .outline {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: #fff;
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .bestellijst-btn {
+      background: #10b981;
+      color: #fff;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+      width: 100%;
+      font-weight: 700;
+    }
+
+    /* Loading overlay */
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .spinner {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 8px solid rgba(255,255,255,0.25);
+      border-top-color: #fff;
+      animation: spin 1s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+    /* Lists */
+    ul { text-align: left; padding-left: 20px; }
+    .settle-ok { color: #a7f3d0; } /* green-ish */
+    .settle-wait { color: #fef08a; } /* yellow-ish */
+
+    /* small helper for final rows */
+    .final-total { font-weight:700; margin-bottom:8px; }
+
+    /* ensure clickable buttons don't overflow on small screens */
+    @media (max-width: 420px) {
+      .card { padding: 16px; }
+      button { font-size: 16px; }
+    }
+
+  </style>
 </head>
 <body>
-<div id="loadingOverlay">
-<div class="spinner"></div>
-<div id="loadingText">Bezig met laden...</div>
-</div>
+  <!-- Loading overlay -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div id="loadingText">Bezig met laden...</div>
+  </div>
 
-<div class="card">
-<img src="images/nextdrink-logo.png" alt="NextDrink Logo" id="logo">
+  <div class="card">
+    <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink Logo" />
 
-<!-- Menu -->
-<div id="menu" style="display:none;">
-<h2 id="menuTitle"></h2>
-<div id="drinks" class="drinks-grid"></div>
-<button class="outline" onclick="addCustomDrink()">+ Drankje toevoegen</button>
-<button class="outline bestellijst-btn" onclick="showBestellijst()">Bekijk bestellijst</button>
-<button class="outline" onclick="showScores()">Bekijk tussenstand</button>
-<button class="outline" onclick="showFinal()">Eindafrekening</button>
-</div>
+    <!-- MENU -->
+    <div id="menu" style="display:none;">
+      <h2 id="menuTitle">Wat wil je dat ... voor je haalt?</h2>
 
-<!-- Bevestiging -->
-<div id="confirm" style="display:none;">
-<h2>✅ Verwerkt!</h2>
-<p id="confirmText"></p>
-<button class="secondary" onclick="newRound()">Nieuw rondje</button>
-<button class="outline" onclick="showScores()">Bekijk tussenstand</button>
-<button class="outline" onclick="showFinal()">Eindafrekening</button>
-</div>
+      <div id="drinks" class="drinks-grid"></div>
 
-<!-- Eerste keer -->
-<div id="firstTime" style="display:none;">
-<h2>Welkom!</h2>
-<p id="firstTimeText"></p>
-</div>
+      <button id="addDrinkBtn" class="outline" onclick="addCustomDrink()">+ Drankje toevoegen</button>
+      <button id="bestelOverzichtBtn" class="bestellijst-btn" onclick="showBestellijst()">Bekijk bestellijst</button>
+      <button id="scoresBtn" class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button id="finalBtn" class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
 
-<!-- Tussenstand -->
-<div id="scores" style="display:none;">
-<h2>Tussenstand</h2>
-<div id="scoreList"></div>
-<button class="primary" onclick="backToMenu()">Terug</button>
-</div>
+    <!-- CONFIRM -->
+    <div id="confirm" style="display:none;">
+      <h2>✅ Verwerkt!</h2>
+      <p id="confirmText"></p>
+      <button class="secondary" onclick="newRound()">Nieuw rondje</button>
+      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
 
-<!-- Eindafrekening -->
-<div id="final" style="display:none;">
-<h2>🏁 Eindafrekening</h2>
-<div id="finalList"></div>
-<div id="finalPayList"></div>
-<button class="primary" onclick="backToMenu()">Terug</button>
-</div>
+    <!-- FIRST TIME -->
+    <div id="firstTime" style="display:none;">
+      <h2>Welkom!</h2>
+      <p id="firstTimeText"></p>
+      <button class="outline" onclick="renderMenuFromFirst()">Verder</button>
+    </div>
 
-<!-- Bestellijst -->
-<div id="bestellijst" style="display:none;">
-<h2>📝 Bestellijst</h2>
-<div id="bestellijstContent"></div>
-<button class="primary" onclick="backToMenu()">Terug</button>
-</div>
+    <!-- SCORES (tussenstand) -->
+    <div id="scores" style="display:none;">
+      <h2>Tussenstand</h2>
+      <div id="scoreList"></div>
+      <button class="outline" onclick="backToMenu()">Terug</button>
+    </div>
 
-</div>
+    <!-- FINAL (eindafrekening) -->
+    <div id="final" style="display:none;">
+      <h2>🏁 Eindafrekening</h2>
+      <div id="finalTotals"></div>
+      <div id="finalSettlements"></div>
 
-<script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbxwgCnzRQOIhJ2SjV7sq1aFn4Deq75pkoiVdxzuHYksfc7YBCB9y5U0foDC4B6Yjb5_Fw/exec";
-const chipId = new URLSearchParams(window.location.search).get("chipId");
+      <div style="margin-top:12px;">
+        <!-- 'Ik wil afrekenen' is outline style to match tussenstand/terug -->
+        <button id="myPayBtn" class="outline" onclick="markMyPaid()">Ik wil afrekenen</button>
+      </div>
 
-if(!chipId){alert("Geen chipId in URL!"); throw new Error("Geen chipId");}
+      <div style="margin-top:12px;">
+        <button class="outline" onclick="backToMenu()">Terug</button>
+      </div>
+    </div>
 
-let chipOwner = "";
-let scannerName = localStorage.getItem("scannerName");
-let drinks = [];
-let payStatus = {};
+    <!-- BESTELLIJST -->
+    <div id="bestellijst" style="display:none;">
+      <h2>📝 Bestellijst</h2>
+      <div id="bestellijstContent"></div>
+      <button class="outline" onclick="backToMenu()">Terug</button>
+    </div>
+  </div>
 
-/* Hulpfuncties */
-const $ = id => document.getElementById(id);
-function hideAll(){["menu","confirm","scores","final","firstTime","bestellijst"].forEach(id=>$(id).style.display="none");}
-function showLoading(show,text="Bezig..."){ $("loadingText").textContent=text; $("loadingOverlay").style.display=show?"flex":"none"; document.querySelectorAll("button").forEach(b=>b.disabled=show);}
+  <script>
+    /* ============================
+       Config
+       ============================ */
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxSh3oej4NoZrL7t_EetSAkqpLKr7IDm6P2MoLtNf9qmB4powPX63eUSEH4rvr_bn-n5Q/exec";
 
-/* Init */
-async function init(){
-showLoading(true,"Initialiseren...");
-try{
-if(!scannerName){scannerName=prompt("Wat is jouw naam (scanner)?")?.trim(); if(!scannerName) scannerName="Onbekend"; localStorage.setItem("scannerName",scannerName);}
-const owner=await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`).then(r=>r.text()).then(t=>t.trim());
-if(!owner){chipOwner=prompt("Wat is jouw naam (chip eigenaar)?")?.trim(); if(!chipOwner){alert("Geen naam ingevoerd."); showLoading(false); return;} await fetch(apiUrl,{method:"POST",body:new URLSearchParams({action:"setOwner",chipId,owner:chipOwner})}); $("firstTimeText").innerHTML=`Welkom ${chipOwner}!<br>Plak nu de NFC sticker op je telefoon en laat deze scannen als jij een rondje haalt.`; hideAll(); $("firstTime").style.display="block"; }
-else { chipOwner=owner; await loadDrinks(); renderMenu(); }
-}catch(e){console.error(e); alert("Fout bij laden.");}
-finally{showLoading(false);}
-}
+    /* ============================
+       State
+       ============================ */
+    let chipId = new URLSearchParams(window.location.search).get("chipId");
+    if (!chipId) {
+      alert("Geen chipId in URL!");
+      throw new Error("Geen chipId");
+    }
 
-/* Drankjes */
-async function loadDrinks(){ drinks=await fetch(`${apiUrl}?action=getDrinks`).then(r=>r.json());}
-async function saveDrinks(){ await fetch(`${apiUrl}?action=setDrinks`,{method:"POST",body:new URLSearchParams({drinks:JSON.stringify(drinks)})});}
+    let scannerName = localStorage.getItem("scannerName") || "";
+    let chipOwner = ""; // loaded from server
+    let drinks = [];
+    let settlementPollInterval = null;
 
-/* Menu */
-function renderMenu(){
-hideAll(); $("menuTitle").textContent=`Wat wil je dat ${chipOwner} voor je haalt?`;
-const div=$("drinks"); div.innerHTML="";
-drinks.forEach(d=>{const btn=document.createElement("button"); btn.className="secondary"; btn.textContent=d.name; btn.onclick=()=>placeOrder(d); div.appendChild(btn);});
-$("menu").style.display="block";
-}
+    /* ============================
+       Helpers & UI utils
+       ============================ */
+    const $ = (id) => document.getElementById(id);
 
-/* Drank toevoegen */
-async function addCustomDrink(){
-const name=prompt("Naam van het nieuwe drankje?"); if(!name) return;
-const price=parseFloat(prompt(`Prijs van "${name}"? (€)`).replace(",","."));
-if(isNaN(price)||price<=0) return alert("Ongeldige prijs!");
-drinks.push({name:name.trim(),price}); await saveDrinks(); renderMenu();
-}
+    function showLoading(show, text = "Bezig...") {
+      $("loadingText").textContent = text;
+      $("loadingOverlay").style.display = show ? "flex" : "none";
+      // disable buttons when loading
+      document.querySelectorAll("button").forEach(b => b.disabled = show);
+    }
 
-/* Plaats bestelling */
-async function placeOrder(drink){
-showLoading(true,"Verwerken...");
-try{ await fetch(apiUrl,{method:"POST",body:new URLSearchParams({action:"addScan",chipId,scanner:scannerName,drink:drink.name,amount:drink.price})}); hideAll(); $("confirmText").textContent=`${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`; $("confirm").style.display="block"; }
-catch{alert("Fout bij plaatsen order.");}
-finally{showLoading(false);}
-}
+    function hideAll() {
+      ["menu","confirm","scores","final","firstTime","bestellijst"].forEach(id => {
+        const el = $(id);
+        if (el) el.style.display = "none";
+      });
+    }
 
-/* Bestellijst */
-async function showBestellijst(){
-showLoading(true,"Bestellijst laden...");
-try{
-const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
-const now=Date.now(), FIFTEEN_MIN=15*60*1000;
-const recent=scans.filter(s=>s.owner===chipOwner && now-new Date(s.timestamp).getTime()<=FIFTEEN_MIN);
-const grouped={};
-recent.forEach(s=>{ if(!grouped[s.scanner]) grouped[s.scanner]=[]; grouped[s.scanner].push(s.drink); });
-let html=`<p><strong>${chipOwner}</strong> gaat deze drankjes halen:</p><ul>`;
-for(const [scanner,drinks] of Object.entries(grouped)){ html+=`<li><strong>${scanner}</strong>: ${drinks.join(", ")}</li>`;}
-html+="</ul><p style='margin-top:10px;font-size:0.9em;opacity:0.8;'>(Laatste 15 minuten)</p>";
-hideAll(); $("bestellijstContent").innerHTML=html; $("bestellijst").style.display="block";
-}catch(e){console.error(e); alert("Fout bij laden bestellijst.");}
-finally{showLoading(false);}
-}
+    /* ============================
+       Init logic: single name prompt rules
+       ============================ */
+    async function init() {
+      showLoading(true, "Initialiseren...");
 
-/* Tussenstand */
-async function showScores(){
-showLoading(true,"Scores laden...");
-try{
-const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
-const now=Date.now(), FIFTEEN_MIN=15*60*1000;
-const rounds={};
-scans.forEach(s=>{
-let ts=new Date(s.timestamp).getTime();
-if(ts>now-FIFTEEN_MIN){if(!rounds[s.scanner]) rounds[s.scanner]={}; if(!rounds[s.scanner][s.owner]) rounds[s.scanner][s.owner]=[]; rounds[s.scanner][s.owner].push(s.drink);}
-});
-let html="<ul>";
-for(const [scanner,owners] of Object.entries(rounds)){html+=`<li><strong>${scanner}</strong><ul>`; for(const [owner,drinksList] of Object.entries(owners)){html+=`<li>${owner}: ${drinksList.join(", ")}</li>`;} html+="</ul></li>";}
-html+="</ul>";
-hideAll(); $("scoreList").innerHTML=html; $("scores").style.display="block";
-}catch(e){console.error(e); alert("Fout bij laden scores.");}finally{showLoading(false);}
-}
+      try {
+        // 1) Get chip owner from server
+        const ownerResp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
+        chipOwner = (await ownerResp.text()).trim();
 
-/* Eindafrekening */
-async function showFinal(){
-showLoading(true,"Eindafrekening laden...");
-try{
-const scans=await fetch(`${apiUrl}?action=getScans`).then(r=>r.json());
-const payers={}; scans.forEach(s=>{if(s.owner===chipOwner){if(!payers[s.scanner]) payers[s.scanner]={paid:false,drinks:[]}; payers[s.scanner].drinks.push(s.drink);}});
-payStatus=JSON.parse(JSON.stringify(payers));
-let html="<ul>";
-for(const [name,obj] of Object.entries(payers)){html+=`<li>${name}: ${obj.drinks.join(", ")} <button onclick="markPaid('${name}')">${obj.paid?'✅':'Ik wil afrekenen'}</button></li>`;}
-html+="</ul>";
-hideAll(); $("finalList").innerHTML=html; $("final").style.display="block";
-}catch(e){console.error(e); alert("Fout bij laden eindafrekening.");}finally{showLoading(false);}
-}
+        // Cases:
+        // A) scannerName empty && chipOwner empty  -> ask once -> set both (localStorage + setOwner)
+        // B) scannerName empty && chipOwner exists -> ask scannerName only -> set localStorage
+        // C) scannerName exists && chipOwner empty -> ask chipOwner only -> setOwner only (do not overwrite scannerName)
+        // D) both exist -> nothing to ask
 
-function markPaid(name){payStatus[name].paid=true; updateFinalList();}
-function updateFinalList(){
-let html="<ul>";
-let allPaid=true;
-for(const [name,obj] of Object.entries(payStatus)){
-html+=`<li>${name}: ${obj.drinks.join(", ")} <button onclick="markPaid('${name}')" ${obj.paid?'disabled':''}>${obj.paid?'✅':'Ik wil afrekenen'}</button></li>`;
-if(!obj.paid) allPaid=false;
-}
-html+="</ul>";
-$("finalList").innerHTML=html;
-if(allPaid){alert("Alle deelnemers hebben aangegeven dat ze willen afrekenen!");}
-}
+        if (!scannerName && !chipOwner) {
+          // Ask once for both
+          const name = prompt("Wat is jouw naam?")?.trim();
+          if (!name) {
+            alert("Geen naam ingevoerd. Stop.");
+            showLoading(false);
+            return;
+          }
+          scannerName = name;
+          chipOwner = name;
 
-/* Overige */
-function backToMenu(){ renderMenu(); }
-function newRound(){ renderMenu(); }
+          localStorage.setItem("scannerName", scannerName);
 
-init();
-</script>
+          // send to server to set owner for this chip
+          await fetch(apiUrl, {
+            method: "POST",
+            body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
+          });
+
+          $("firstTimeText").innerHTML = `Welkom ${chipOwner}!<br/>Plak nu de NFC sticker op je telefoon en laat deze scannen als jij een rondje haalt.`;
+          hideAll();
+          $("firstTime").style.display = "block";
+          showLoading(false);
+          return;
+        }
+
+        if (!scannerName && chipOwner) {
+          // ask only for scannerName
+          const name = prompt("Wat is jouw naam?")?.trim();
+          if (!name) {
+            scannerName = "Onbekend";
+          } else {
+            scannerName = name;
+          }
+          localStorage.setItem("scannerName", scannerName);
+        }
+
+        if (scannerName && !chipOwner) {
+          // ask only for chip owner; do not overwrite scannerName
+          const name = prompt("Wat is jouw naam?")?.trim();
+          if (!name) {
+            alert("Geen naam ingevoerd voor chip-eigenaar. Stop.");
+            showLoading(false);
+            return;
+          }
+          chipOwner = name;
+          await fetch(apiUrl, {
+            method: "POST",
+            body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
+          });
+
+          $("firstTimeText").innerHTML = `Welkom ${chipOwner}!<br/>Plak nu de NFC sticker op je telefoon en laat deze scannen als jij een rondje haalt.`;
+          hideAll();
+          $("firstTime").style.display = "block";
+          showLoading(false);
+          return;
+        }
+
+        // If we reach here both exist: load drinks and show menu
+        await loadDrinks();
+        renderMenu();
+
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij initialiseren.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function renderMenuFromFirst() {
+      // called when user clicks 'Verder' on firstTime screen
+      loadDrinks().then(renderMenu);
+    }
+
+    /* ============================
+       Drinks management
+       ============================ */
+    async function loadDrinks() {
+      try {
+        const resp = await fetch(`${apiUrl}?action=getDrinks`);
+        drinks = await resp.json();
+      } catch (e) {
+        console.warn("Fout bij ophalen drankjes, gebruik default lijst", e);
+        drinks = [
+          { name: "Kleine bier", price: 4.40 },
+          { name: "Grote bier", price: 8.00 },
+          { name: "Desperados", price: 6.50 },
+          { name: "Wijn", price: 6.00 },
+          { name: "0.0 bier", price: 4.00 },
+          { name: "Frisdrank", price: 4.00 }
+        ];
+      }
+    }
+
+    async function saveDrinks() {
+      try {
+        await fetch(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({ action: "setDrinks", drinks: JSON.stringify(drinks) })
+        });
+      } catch (e) {
+        console.error("Fout bij opslaan drankjes", e);
+      }
+    }
+
+    /* ============================
+       Render menu / place order
+       ============================ */
+    function renderMenu() {
+      hideAll();
+      $("menuTitle").textContent = `Wat wil je dat ${chipOwner} voor je haalt?`;
+
+      const div = $("drinks");
+      div.innerHTML = "";
+
+      drinks.forEach(d => {
+        const btn = document.createElement("button");
+        btn.className = "secondary";
+        btn.textContent = d.name;
+        btn.onclick = () => placeOrder(d);
+        div.appendChild(btn);
+      });
+
+      $("menu").style.display = "block";
+    }
+
+    async function addCustomDrink() {
+      const name = prompt("Naam van het nieuwe drankje?");
+      if (!name) return;
+      const priceStr = prompt(`Prijs van "${name}"? (€)`);
+      if (!priceStr) return;
+      const price = parseFloat(String(priceStr).replace(",", "."));
+      if (isNaN(price) || price <= 0) return alert("Ongeldige prijs!");
+      drinks.push({ name: name.trim(), price });
+      await saveDrinks();
+      renderMenu();
+    }
+
+    async function placeOrder(drink) {
+      showLoading(true, "Verwerken...");
+      try {
+        await fetch(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({
+            action: "addScan",
+            chipId,
+            scanner: scannerName,
+            drink: drink.name,
+            amount: drink.price
+          })
+        });
+
+        hideAll();
+        $("confirmText").textContent = `${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`;
+        $("confirm").style.display = "block";
+
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij plaatsen order.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    /* ============================
+       Bestellijst (laatste 15 minuten voor chipOwner)
+       ============================ */
+    async function showBestellijst() {
+      showLoading(true, "Bestellijst laden...");
+      try {
+        const resp = await fetch(`${apiUrl}?action=getScans`);
+        const scans = await resp.json();
+
+        const now = Date.now();
+        const FIFTEEN_MIN = 15 * 60 * 1000;
+
+        const recent = scans.filter(s => {
+          return s.owner === chipOwner && (now - new Date(s.timestamp).getTime() <= FIFTEEN_MIN);
+        });
+
+        const grouped = {};
+        recent.forEach(s => {
+          if (!grouped[s.scanner]) grouped[s.scanner] = [];
+          grouped[s.scanner].push(s.drink);
+        });
+
+        let html = `<p><strong>${chipOwner}</strong> gaat deze drankjes halen:</p><ul>`;
+        for (const [scanner, drinksList] of Object.entries(grouped)) {
+          html += `<li><strong>${scanner}</strong>: ${drinksList.join(", ")}</li>`;
+        }
+        html += "</ul>";
+        html += `<p style="margin-top:10px;font-size:0.9em;opacity:0.8;">(Laatste 15 minuten)</p>`;
+
+        hideAll();
+        $("bestellijstContent").innerHTML = html;
+        $("bestellijst").style.display = "block";
+
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij laden bestellijst.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    /* ============================
+       Tussenstand (rondes per chipowner)
+       - Ronde: alle scans *ontvangen door chipOwner* binnen 15-min window
+       ============================ */
+    async function showScores() {
+      showLoading(true, "Tussenstand laden...");
+      try {
+        const resp = await fetch(`${apiUrl}?action=getScans`);
+        const scans = await resp.json();
+
+        const FIFTEEN_MIN = 15 * 60 * 1000;
+        const roundsByOwner = {};
+
+        // collect timestamps per owner (owner = chipOwner)
+        scans.forEach(s => {
+          const owner = s.owner;
+          const ts = new Date(s.timestamp).getTime();
+          if (!roundsByOwner[owner]) roundsByOwner[owner] = [];
+          roundsByOwner[owner].push(ts);
+        });
+
+        // count rounds: sort times and count start of new round when gap > 15min
+        const results = [];
+        for (const [owner, times] of Object.entries(roundsByOwner)) {
+          const sorted = times.sort((a,b) => a - b);
+          let rounds = 0;
+          let last = -Infinity;
+          for (const t of sorted) {
+            if (t - last > FIFTEEN_MIN) {
+              rounds += 1;
+              last = t;
+            } else {
+              last = Math.max(last, t);
+            }
+          }
+          results.push({ owner, rounds });
+        }
+
+        // sort descending by rounds
+        results.sort((a,b) => b.rounds - a.rounds);
+
+        let html = "<ul>";
+        if (results.length === 0) html += "<li>Nog geen data</li>";
+        else {
+          results.forEach(r => {
+            html += `<li><strong>${r.owner}</strong> — ${r.rounds} rondje${r.rounds === 1 ? "" : "s"} gehaald</li>`;
+          });
+        }
+        html += "</ul>";
+
+        hideAll();
+        $("scoreList").innerHTML = html;
+        $("scores").style.display = "block";
+
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij laden tussenstand.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    /* ============================
+       Eindafrekening
+       - toont totaalbedrag per persoon
+       - genereert lijst "wie betaalt aan wie en hoeveel"
+       - 'Ik wil afrekenen' knop voor gebruiker om zichzelf te markeren
+       - toont status van wie heeft gedrukt (central via getSettlement if available)
+       ============================ */
+    async function showFinal() {
+      showLoading(true, "Eindafrekening laden...");
+      try {
+        // get final calculation
+        const resp = await fetch(`${apiUrl}?action=getFinal`);
+        const finalData = await resp.json();
+        // finalData: { result: [{name, balance}], settlements: [{from,to,amount}] }
+
+        const totals = finalData.result || [];
+        const settlements = finalData.settlements || [];
+
+        // build totals HTML
+        let htmlTotals = "";
+        if (!totals.length) {
+          htmlTotals = "<p>Nog geen data</p>";
+        } else {
+          totals.sort((a,b)=> b.balance - a.balance);
+          htmlTotals += '<div class="final-total">Totaal uitgegeven per persoon:</div>';
+          htmlTotals += "<ul>";
+          totals.forEach(t => {
+            const bal = Number(t.balance).toFixed(2);
+            htmlTotals += `<li><strong>${t.name}</strong> — €${bal} (${Number(t.balance)>=0 ? 'positief' : 'negatief'})</li>`;
+          });
+          htmlTotals += "</ul>";
+        }
+
+        // build settlement HTML (wie betaalt aan wie)
+        let htmlSettle = "";
+        if (!settlements.length) {
+          htmlSettle = "<p>Geen verrekeningen nodig.</p>";
+        } else {
+          htmlSettle += '<div style="margin-top:8px;font-weight:700;">Verrekeningen</div>';
+          htmlSettle += "<ul>";
+          settlements.forEach(s => {
+            htmlSettle += `<li>${s.from} betaalt €${Number(s.amount).toFixed(2)} aan ${s.to}</li>`;
+          });
+          htmlSettle += "</ul>";
+        }
+
+        hideAll();
+
+        $("finalTotals").innerHTML = htmlTotals;
+        $("finalSettlements").innerHTML = htmlSettle;
+
+        // Start polling settlement-status (who clicked "ik wil afrekenen") if endpoint exists
+        startSettlementPolling();
+
+        $("final").style.display = "block";
+
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij laden eindafrekening.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    /* ============================
+       Settlement / 'Ik wil afrekenen' handling
+       - markMyPaid -> POST markAsPaid with name=scannerName
+       - startSettlementPolling -> tries to fetch a 'getSettlement' endpoint,
+         if present it parses who has paid. Falls back to nothing.
+       ============================ */
+
+    async function markMyPaid() {
+      showLoading(true, "Bezig met bevestigen...");
+      try {
+        await fetch(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({ action: "markAsPaid", name: scannerName })
+        });
+        // immediate UI update (optimistic)
+        await pollSettlementOnce();
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij registreren 'Ik wil afrekenen'.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Poll once (tried) for settlement data (who clicked)
+    async function pollSettlementOnce() {
+      try {
+        const resp = await fetch(`${apiUrl}?action=getSettlement`);
+        if (!resp.ok) return; // endpoint not available - nothing to do
+        const items = await resp.json(); // expect [{timestamp,chipOwner,scanner,paid}, ...] or [{name,hasPaid}]
+        renderSettlementStatus(items);
+      } catch (err) {
+        // ignore if endpoint doesn't exist or fails
+        // console.info("getSettlement not available:", err);
+      }
+    }
+
+    // periodic poll
+    function startSettlementPolling() {
+      // clear existing
+      if (settlementPollInterval) clearInterval(settlementPollInterval);
+
+      // do an immediate poll, then every 3s
+      pollSettlementOnce();
+      settlementPollInterval = setInterval(pollSettlementOnce, 3000);
+    }
+
+    // render settlement status if we got a settlement array
+    function renderSettlementStatus(items) {
+      // normalize items to map name->paid
+      const map = {};
+      if (!items || !Array.isArray(items)) return;
+      items.forEach(it => {
+        // support formats: {name, hasPaid} or {chipOwner, scanner, paid}
+        if (it.name !== undefined && it.hasPaid !== undefined) {
+          map[it.name] = !!it.hasPaid;
+        } else if (it.scanner !== undefined && it.paid !== undefined) {
+          map[it.scanner] = !!it.paid;
+        } else if (it.scanner && it.paid === true) {
+          map[it.scanner] = true;
+        }
+      });
+
+      // update DOM: add a block under finalSettlements showing who clicked
+      let html = "<div style='margin-top:10px;font-weight:700;'>Bevestigingen</div><ul>";
+      for (const [name, paid] of Object.entries(map)) {
+        html += `<li>${name} — ${paid ? '<span class="settle-ok">✅ bevestigd</span>' : '<span class="settle-wait">⏳ nog niet'}</span></li>`;
+      }
+      html += "</ul>";
+
+      // put after the settlements block
+      const target = $("finalSettlements");
+      if (target) {
+        target.insertAdjacentHTML("afterend", html);
+      }
+    }
+
+    /* ============================
+       Navigation helpers
+       ============================ */
+    function backToMenu() {
+      if (settlementPollInterval) {
+        clearInterval(settlementPollInterval);
+        settlementPollInterval = null;
+      }
+      renderMenu();
+    }
+
+    function newRound() {
+      renderMenu();
+    }
+
+    /* ============================
+       Start
+       ============================ */
+    init();
+
+    // expose some functions to global for potential inline onclick use
+    window.showBestellijst = showBestellijst;
+    window.showScores = showScores;
+    window.showFinal = showFinal;
+    window.addCustomDrink = addCustomDrink;
+    window.newRound = newRound;
+    window.backToMenu = backToMenu;
+    window.markMyPaid = markMyPaid;
+    window.renderMenuFromFirst = renderMenuFromFirst;
+
+  </script>
 </body>
 </html>
