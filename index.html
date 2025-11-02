@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NextDrink NFC</title>
   <style>
-    /* ========== Basis layout ========== */
     html, body {
       height: 100%;
       margin: 0;
@@ -25,10 +24,10 @@
       width: 100%;
       max-width: 420px;
       padding: 20px;
-      box-sizing: border-box;
       border-radius: 14px;
       background: transparent;
       margin-top: 20px;
+      box-sizing: border-box;
     }
 
     #logo {
@@ -38,13 +37,10 @@
       height: auto;
     }
 
-    h1, h2, h3 { margin: 12px 0; }
-
-    /* ========== Knoppen & grid ========== */
     .drinks-grid {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(2, 1fr); /* 2 naast elkaar */
+      grid-template-columns: repeat(2, 1fr);
     }
 
     button {
@@ -54,9 +50,11 @@
       font-weight: 700;
       font-size: 18px;
       padding: 12px;
+      transition: opacity .2s ease;
     }
 
-    /* square buttons for drinks */
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .drinks-grid button {
       width: 100%;
       aspect-ratio: 1 / 1;
@@ -65,17 +63,9 @@
       justify-content: center;
     }
 
-    .primary {
-      background: #7e22ce;
-      color: #fff;
-    }
+    .primary { background: #7e22ce; color: #fff; }
+    .secondary { background: #f97316; color: #fff; }
 
-    .secondary {
-      background: #f97316;
-      color: #fff;
-    }
-
-    /* Outline style used for "Tussenstand", "Terug" and "Ik wil afrekenen" */
     .outline {
       background: rgba(255,255,255,0.12);
       border: 1px solid rgba(255,255,255,0.22);
@@ -98,7 +88,6 @@
       font-weight: 700;
     }
 
-    /* Loading overlay */
     #loadingOverlay {
       display: none;
       position: fixed;
@@ -125,24 +114,18 @@
 
     @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 
-    /* Lists */
     ul { text-align: left; padding-left: 20px; }
-    .settle-ok { color: #a7f3d0; } /* green-ish */
-    .settle-wait { color: #fef08a; } /* yellow-ish */
-
-    /* small helper for final rows */
+    .settle-ok { color: #a7f3d0; }
+    .settle-wait { color: #fef08a; }
     .final-total { font-weight:700; margin-bottom:8px; }
 
-    /* ensure clickable buttons don't overflow on small screens */
     @media (max-width: 420px) {
       .card { padding: 16px; }
       button { font-size: 16px; }
     }
-
   </style>
 </head>
 <body>
-  <!-- Loading overlay -->
   <div id="loadingOverlay">
     <div class="spinner"></div>
     <div id="loadingText">Bezig met laden...</div>
@@ -151,19 +134,15 @@
   <div class="card">
     <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink Logo" />
 
-    <!-- MENU -->
     <div id="menu" style="display:none;">
-      <h2 id="menuTitle">Wat wil je dat ... voor je haalt?</h2>
-
+      <h2 id="menuTitle"></h2>
       <div id="drinks" class="drinks-grid"></div>
-
       <button id="addDrinkBtn" class="outline" onclick="addCustomDrink()">+ Drankje toevoegen</button>
       <button id="bestelOverzichtBtn" class="bestellijst-btn" onclick="showBestellijst()">Bekijk bestellijst</button>
       <button id="scoresBtn" class="outline" onclick="showScores()">Bekijk tussenstand</button>
       <button id="finalBtn" class="outline" onclick="showFinal()">Eindafrekening</button>
     </div>
 
-    <!-- CONFIRM -->
     <div id="confirm" style="display:none;">
       <h2>✅ Verwerkt!</h2>
       <p id="confirmText"></p>
@@ -172,37 +151,32 @@
       <button class="outline" onclick="showFinal()">Eindafrekening</button>
     </div>
 
-    <!-- FIRST TIME -->
     <div id="firstTime" style="display:none;">
       <h2>Welkom!</h2>
       <p id="firstTimeText"></p>
       <button class="outline" onclick="renderMenuFromFirst()">Verder</button>
     </div>
 
-    <!-- SCORES (tussenstand) -->
     <div id="scores" style="display:none;">
       <h2>Tussenstand</h2>
       <div id="scoreList"></div>
       <button class="outline" onclick="backToMenu()">Terug</button>
     </div>
 
-    <!-- FINAL (eindafrekening) -->
     <div id="final" style="display:none;">
       <h2>🏁 Eindafrekening</h2>
       <div id="finalTotals"></div>
       <div id="finalSettlements"></div>
-
+      <!-- place for settlement status (kept empty initially) -->
+      <div id="finalSettlementStatus"></div>
       <div style="margin-top:12px;">
-        <!-- 'Ik wil afrekenen' is outline style to match tussenstand/terug -->
         <button id="myPayBtn" class="outline" onclick="markMyPaid()">Ik wil afrekenen</button>
       </div>
-
       <div style="margin-top:12px;">
         <button class="outline" onclick="backToMenu()">Terug</button>
       </div>
     </div>
 
-    <!-- BESTELLIJST -->
     <div id="bestellijst" style="display:none;">
       <h2>📝 Bestellijst</h2>
       <div id="bestellijstContent"></div>
@@ -211,123 +185,107 @@
   </div>
 
   <script>
-    /* ============================
-       Config
-       ============================ */
     const apiUrl = "https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
+    const $ = id => document.getElementById(id);
+    const cacheTTL = 30000; // 30s
 
-    /* ============================
-       State
-       ============================ */
     let chipId = new URLSearchParams(window.location.search).get("chipId");
-    if (!chipId) {
-      alert("Geen chipId in URL!");
-      throw new Error("Geen chipId");
-    }
+    if (!chipId) { alert("Geen chipId in URL!"); throw new Error("Geen chipId"); }
 
     let scannerName = localStorage.getItem("scannerName") || "";
-    let chipOwner = ""; // loaded from server
+    let chipOwner = "";
     let drinks = [];
     let settlementPollInterval = null;
+    let settlementPollingActive = false;
 
-    /* ============================
-       Helpers & UI utils
-       ============================ */
-    const $ = (id) => document.getElementById(id);
-
-    function showLoading(show, text = "Bezig...") {
+    const showLoading = (show, text = "Bezig...") => {
       $("loadingText").textContent = text;
       $("loadingOverlay").style.display = show ? "flex" : "none";
-      // disable buttons when loading
       document.querySelectorAll("button").forEach(b => b.disabled = show);
-    }
+    };
 
-    function hideAll() {
-      ["menu","confirm","scores","final","firstTime","bestellijst"].forEach(id => {
-        const el = $(id);
-        if (el) el.style.display = "none";
-      });
-    }
+    const hideAll = () => {
+      ["menu","confirm","scores","final","firstTime","bestellijst"]
+        .forEach(id => { const el = $(id); if (el) el.style.display = "none"; });
+    };
 
-    /* ============================
-       Init logic: single name prompt rules
-       ============================ */
+    const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return res;
+      } catch (err) {
+        clearTimeout(id);
+        throw err;
+      }
+    };
+
+    const cacheGet = key => {
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return null;
+        const { data, time } = JSON.parse(raw);
+        if (Date.now() - time > cacheTTL) return null;
+        return data;
+      } catch (e) { return null; }
+    };
+
+    const cacheSet = (key, data) => {
+      try { sessionStorage.setItem(key, JSON.stringify({ data, time: Date.now() })); } catch(e){}
+    };
+
     async function init() {
       showLoading(true, "Initialiseren...");
-
       try {
-        // 1) Get chip owner from server
-        const ownerResp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-        chipOwner = (await ownerResp.text()).trim();
+        // parallel owner + drinks (best effort)
+        const ownerPromise = fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`, {}, 5000);
+        const drinksPromise = fetchWithTimeout(`${apiUrl}?action=getDrinks`, {}, 5000);
 
-        // Cases:
-        // A) scannerName empty && chipOwner empty  -> ask once -> set both (localStorage + setOwner)
-        // B) scannerName empty && chipOwner exists -> ask scannerName only -> set localStorage
-        // C) scannerName exists && chipOwner empty -> ask chipOwner only -> setOwner only (do not overwrite scannerName)
-        // D) both exist -> nothing to ask
+        const [ownerRes, drinksRes] = await Promise.allSettled([ownerPromise, drinksPromise]);
 
+        chipOwner = (ownerRes.status === "fulfilled") ? (await ownerRes.value.text()).trim() : "";
+        drinks = (drinksRes.status === "fulfilled") ? await drinksRes.value.json() : [];
+
+        if (!drinks || !drinks.length) {
+          drinks = [
+            { name: "Kleine bier", price: 4.40 },
+            { name: "Grote bier", price: 8.00 },
+            { name: "Desperados", price: 6.50 },
+            { name: "Wijn", price: 6.00 },
+            { name: "0.0 bier", price: 4.00 },
+            { name: "Frisdrank", price: 4.00 }
+          ];
+        }
+
+        // Cases for first-time prompts (keeps original behavior)
         if (!scannerName && !chipOwner) {
-          // Ask once for both
           const name = prompt("Wat is jouw naam?")?.trim();
-          if (!name) {
-            alert("Geen naam ingevoerd. Stop.");
-            showLoading(false);
-            return;
-          }
-          scannerName = name;
-          chipOwner = name;
-
+          if (!name) { alert("Geen naam ingevoerd. Stop."); showLoading(false); return; }
+          scannerName = chipOwner = name;
           localStorage.setItem("scannerName", scannerName);
-
-          // send to server to set owner for this chip
-          await fetch(apiUrl, {
-            method: "POST",
-            body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
-          });
-
-          $("firstTimeText").innerHTML = `Welkom ${chipOwner}!<br/>Plak nu de NFC sticker op je telefoon en laat deze scannen als jij een rondje haalt.`;
-          hideAll();
-          $("firstTime").style.display = "block";
-          showLoading(false);
-          return;
+          await fetch(apiUrl, { method: "POST", body: new URLSearchParams({ action: "setOwner", chipId, owner: name }) });
+          $("firstTimeText").innerHTML = `Welkom ${name}!<br/>Plak nu de NFC sticker op je telefoon en laat deze scannen als jij een rondje haalt.`;
+          hideAll(); $("firstTime").style.display = "block"; showLoading(false); return;
         }
 
         if (!scannerName && chipOwner) {
-          // ask only for scannerName
           const name = prompt("Wat is jouw naam?")?.trim();
-          if (!name) {
-            scannerName = "Onbekend";
-          } else {
-            scannerName = name;
-          }
+          scannerName = name ? name : "Onbekend";
           localStorage.setItem("scannerName", scannerName);
         }
 
         if (scannerName && !chipOwner) {
-          // ask only for chip owner; do not overwrite scannerName
           const name = prompt("Wat is jouw naam?")?.trim();
-          if (!name) {
-            alert("Geen naam ingevoerd voor chip-eigenaar. Stop.");
-            showLoading(false);
-            return;
-          }
+          if (!name) { alert("Geen naam ingevoerd voor chip-eigenaar. Stop."); showLoading(false); return; }
           chipOwner = name;
-          await fetch(apiUrl, {
-            method: "POST",
-            body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner })
-          });
-
+          await fetch(apiUrl, { method: "POST", body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner }) });
           $("firstTimeText").innerHTML = `Welkom ${chipOwner}!<br/>Plak nu de NFC sticker op je telefoon en laat deze scannen als jij een rondje haalt.`;
-          hideAll();
-          $("firstTime").style.display = "block";
-          showLoading(false);
-          return;
+          hideAll(); $("firstTime").style.display = "block"; showLoading(false); return;
         }
 
-        // If we reach here both exist: load drinks and show menu
-        await loadDrinks();
         renderMenu();
-
       } catch (err) {
         console.error(err);
         alert("Fout bij initialiseren.");
@@ -336,60 +294,20 @@
       }
     }
 
-    function renderMenuFromFirst() {
-      // called when user clicks 'Verder' on firstTime screen
-      loadDrinks().then(renderMenu);
-    }
-
-    /* ============================
-       Drinks management
-       ============================ */
-    async function loadDrinks() {
-      try {
-        const resp = await fetch(`${apiUrl}?action=getDrinks`);
-        drinks = await resp.json();
-      } catch (e) {
-        console.warn("Fout bij ophalen drankjes, gebruik default lijst", e);
-        drinks = [
-          { name: "Kleine bier", price: 4.40 },
-          { name: "Grote bier", price: 8.00 },
-          { name: "Desperados", price: 6.50 },
-          { name: "Wijn", price: 6.00 },
-          { name: "0.0 bier", price: 4.00 },
-          { name: "Frisdrank", price: 4.00 }
-        ];
-      }
-    }
-
-    async function saveDrinks() {
-      try {
-        await fetch(apiUrl, {
-          method: "POST",
-          body: new URLSearchParams({ action: "setDrinks", drinks: JSON.stringify(drinks) })
-        });
-      } catch (e) {
-        console.error("Fout bij opslaan drankjes", e);
-      }
-    }
-
-    /* ============================
-       Render menu / place order
-       ============================ */
     function renderMenu() {
       hideAll();
       $("menuTitle").textContent = `Wat wil je dat ${chipOwner} voor je haalt?`;
-
       const div = $("drinks");
       div.innerHTML = "";
-
-      drinks.forEach(d => {
+      const frag = document.createDocumentFragment();
+      for (const d of drinks) {
         const btn = document.createElement("button");
         btn.className = "secondary";
         btn.textContent = d.name;
         btn.onclick = () => placeOrder(d);
-        div.appendChild(btn);
-      });
-
+        frag.appendChild(btn);
+      }
+      div.appendChild(frag);
       $("menu").style.display = "block";
     }
 
@@ -401,14 +319,18 @@
       const price = parseFloat(String(priceStr).replace(",", "."));
       if (isNaN(price) || price <= 0) return alert("Ongeldige prijs!");
       drinks.push({ name: name.trim(), price });
-      await saveDrinks();
+      try {
+        await fetch(apiUrl, { method: "POST", body: new URLSearchParams({ action: "setDrinks", drinks: JSON.stringify(drinks) }) });
+      } catch (e) {
+        console.error("Fout bij opslaan drankjes", e);
+      }
       renderMenu();
     }
 
     async function placeOrder(drink) {
       showLoading(true, "Verwerken...");
       try {
-        await fetch(apiUrl, {
+        await fetchWithTimeout(apiUrl, {
           method: "POST",
           body: new URLSearchParams({
             action: "addScan",
@@ -417,12 +339,10 @@
             drink: drink.name,
             amount: drink.price
           })
-        });
-
+        }, 6000);
         hideAll();
         $("confirmText").textContent = `${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`;
         $("confirm").style.display = "block";
-
       } catch (err) {
         console.error(err);
         alert("Fout bij plaatsen order.");
@@ -431,39 +351,30 @@
       }
     }
 
-    /* ============================
-       Bestellijst (laatste 15 minuten voor chipOwner)
-       ============================ */
     async function showBestellijst() {
       showLoading(true, "Bestellijst laden...");
       try {
-        const resp = await fetch(`${apiUrl}?action=getScans`);
-        const scans = await resp.json();
-
+        const cacheKey = "scans";
+        let scans = cacheGet(cacheKey);
+        if (!scans) {
+          const resp = await fetchWithTimeout(`${apiUrl}?action=getScans`, {}, 6000);
+          scans = await resp.json();
+          cacheSet(cacheKey, scans);
+        }
         const now = Date.now();
         const FIFTEEN_MIN = 15 * 60 * 1000;
-
-        const recent = scans.filter(s => {
-          return s.owner === chipOwner && (now - new Date(s.timestamp).getTime() <= FIFTEEN_MIN);
-        });
-
+        const recent = scans.filter(s => s.owner === chipOwner && (now - new Date(s.timestamp).getTime() <= FIFTEEN_MIN));
         const grouped = {};
-        recent.forEach(s => {
-          if (!grouped[s.scanner]) grouped[s.scanner] = [];
-          grouped[s.scanner].push(s.drink);
-        });
-
+        recent.forEach(s => { if (!grouped[s.scanner]) grouped[s.scanner] = []; grouped[s.scanner].push(s.drink); });
         let html = `<p><strong>${chipOwner}</strong> gaat deze drankjes halen:</p><ul>`;
         for (const [scanner, drinksList] of Object.entries(grouped)) {
           html += `<li><strong>${scanner}</strong>: ${drinksList.join(", ")}</li>`;
         }
         html += "</ul>";
         html += `<p style="margin-top:10px;font-size:0.9em;opacity:0.8;">(Laatste 15 minuten)</p>`;
-
         hideAll();
         $("bestellijstContent").innerHTML = html;
         $("bestellijst").style.display = "block";
-
       } catch (err) {
         console.error(err);
         alert("Fout bij laden bestellijst.");
@@ -472,20 +383,19 @@
       }
     }
 
-    /* ============================
-       Tussenstand (rondes per chipowner)
-       - Ronde: alle scans *ontvangen door chipOwner* binnen 15-min window
-       ============================ */
     async function showScores() {
       showLoading(true, "Tussenstand laden...");
       try {
-        const resp = await fetch(`${apiUrl}?action=getScans`);
-        const scans = await resp.json();
+        const cacheKey = "scans";
+        let scans = cacheGet(cacheKey);
+        if (!scans) {
+          const resp = await fetchWithTimeout(`${apiUrl}?action=getScans`, {}, 6000);
+          scans = await resp.json();
+          cacheSet(cacheKey, scans);
+        }
 
         const FIFTEEN_MIN = 15 * 60 * 1000;
         const roundsByOwner = {};
-
-        // collect timestamps per owner (owner = chipOwner)
         scans.forEach(s => {
           const owner = s.owner;
           const ts = new Date(s.timestamp).getTime();
@@ -493,10 +403,9 @@
           roundsByOwner[owner].push(ts);
         });
 
-        // count rounds: sort times and count start of new round when gap > 15min
         const results = [];
         for (const [owner, times] of Object.entries(roundsByOwner)) {
-          const sorted = times.sort((a,b) => a - b);
+          const sorted = times.sort((a, b) => a - b);
           let rounds = 0;
           let last = -Infinity;
           for (const t of sorted) {
@@ -510,7 +419,6 @@
           results.push({ owner, rounds });
         }
 
-        // sort descending by rounds
         results.sort((a,b) => b.rounds - a.rounds);
 
         let html = "<ul>";
@@ -525,7 +433,6 @@
         hideAll();
         $("scoreList").innerHTML = html;
         $("scores").style.display = "block";
-
       } catch (err) {
         console.error(err);
         alert("Fout bij laden tussenstand.");
@@ -534,30 +441,26 @@
       }
     }
 
-    /* ============================
-       Eindafrekening
-       - toont totaalbedrag per persoon
-       - genereert lijst "wie betaalt aan wie en hoeveel"
-       - 'Ik wil afrekenen' knop voor gebruiker om zichzelf te markeren
-       - toont status van wie heeft gedrukt (central via getSettlement if available)
-       ============================ */
     async function showFinal() {
       showLoading(true, "Eindafrekening laden...");
       try {
-        // get final calculation
-        const resp = await fetch(`${apiUrl}?action=getFinal`);
-        const finalData = await resp.json();
-        // finalData: { result: [{name, balance}], settlements: [{from,to,amount}] }
+        const cacheKey = "finalData";
+        let finalData = cacheGet(cacheKey);
+        if (!finalData) {
+          const resp = await fetchWithTimeout(`${apiUrl}?action=getFinal`, {}, 7000);
+          finalData = await resp.json();
+          cacheSet(cacheKey, finalData);
+        }
 
         const totals = finalData.result || [];
         const settlements = finalData.settlements || [];
 
-        // build totals HTML
+        // totals
         let htmlTotals = "";
         if (!totals.length) {
           htmlTotals = "<p>Nog geen data</p>";
         } else {
-          totals.sort((a,b)=> b.balance - a.balance);
+          totals.sort((a,b) => Number(b.balance) - Number(a.balance));
           htmlTotals += '<div class="final-total">Totaal uitgegeven per persoon:</div>';
           htmlTotals += "<ul>";
           totals.forEach(t => {
@@ -567,7 +470,7 @@
           htmlTotals += "</ul>";
         }
 
-        // build settlement HTML (wie betaalt aan wie)
+        // settlements
         let htmlSettle = "";
         if (!settlements.length) {
           htmlSettle = "<p>Geen verrekeningen nodig.</p>";
@@ -575,21 +478,22 @@
           htmlSettle += '<div style="margin-top:8px;font-weight:700;">Verrekeningen</div>';
           htmlSettle += "<ul>";
           settlements.forEach(s => {
-            htmlSettle += `<li>${s.from} betaalt €${Number(s.amount).toFixed(2)} aan ${s.to}</li>`;
+            const amt = Number(s.amount).toFixed(2);
+            htmlSettle += `<li>${s.from} betaalt €${amt} aan ${s.to}</li>`;
           });
           htmlSettle += "</ul>";
         }
 
         hideAll();
-
         $("finalTotals").innerHTML = htmlTotals;
         $("finalSettlements").innerHTML = htmlSettle;
+        // reset settlement status area
+        $("finalSettlementStatus").innerHTML = "";
 
-        // Start polling settlement-status (who clicked "ik wil afrekenen") if endpoint exists
+        // start polling settlement status while final view is visible
         startSettlementPolling();
 
         $("final").style.display = "block";
-
       } catch (err) {
         console.error(err);
         alert("Fout bij laden eindafrekening.");
@@ -598,21 +502,14 @@
       }
     }
 
-    /* ============================
-       Settlement / 'Ik wil afrekenen' handling
-       - markMyPaid -> POST markAsPaid with name=scannerName
-       - startSettlementPolling -> tries to fetch a 'getSettlement' endpoint,
-         if present it parses who has paid. Falls back to nothing.
-       ============================ */
-
     async function markMyPaid() {
       showLoading(true, "Bezig met bevestigen...");
       try {
-        await fetch(apiUrl, {
+        await fetchWithTimeout(apiUrl, {
           method: "POST",
           body: new URLSearchParams({ action: "markAsPaid", name: scannerName })
-        });
-        // immediate UI update (optimistic)
+        }, 6000);
+        // optimistic refresh of settlement status
         await pollSettlementOnce();
       } catch (err) {
         console.error(err);
@@ -622,80 +519,99 @@
       }
     }
 
-    // Poll once (tried) for settlement data (who clicked)
     async function pollSettlementOnce() {
       try {
-        const resp = await fetch(`${apiUrl}?action=getSettlement`);
-        if (!resp.ok) return; // endpoint not available - nothing to do
-        const items = await resp.json(); // expect [{timestamp,chipOwner,scanner,paid}, ...] or [{name,hasPaid}]
+        const resp = await fetchWithTimeout(`${apiUrl}?action=getSettlement`, {}, 5000);
+        if (!resp.ok) return;
+        const items = await resp.json();
         renderSettlementStatus(items);
       } catch (err) {
-        // ignore if endpoint doesn't exist or fails
-        // console.info("getSettlement not available:", err);
+        // ignore if not available
       }
     }
 
-    // periodic poll
     function startSettlementPolling() {
-      // clear existing
-      if (settlementPollInterval) clearInterval(settlementPollInterval);
-
-      // do an immediate poll, then every 3s
+      // stop previous
+      stopSettlementPolling();
+      settlementPollingActive = true;
+      // do immediate poll and then interval
       pollSettlementOnce();
-      settlementPollInterval = setInterval(pollSettlementOnce, 3000);
+      settlementPollInterval = setInterval(() => {
+        // only poll if final screen visible
+        const finalVisible = $( "final" ) && $( "final" ).style.display !== "none";
+        if (!finalVisible) { stopSettlementPolling(); return; }
+        pollSettlementOnce();
+      }, 3000);
     }
 
-    // render settlement status if we got a settlement array
+    function stopSettlementPolling() {
+      if (settlementPollInterval) {
+        clearInterval(settlementPollInterval);
+        settlementPollInterval = null;
+      }
+      settlementPollingActive = false;
+    }
+
     function renderSettlementStatus(items) {
       // normalize items to map name->paid
-      const map = {};
       if (!items || !Array.isArray(items)) return;
+      const map = {};
       items.forEach(it => {
-        // support formats: {name, hasPaid} or {chipOwner, scanner, paid}
         if (it.name !== undefined && it.hasPaid !== undefined) {
           map[it.name] = !!it.hasPaid;
         } else if (it.scanner !== undefined && it.paid !== undefined) {
           map[it.scanner] = !!it.paid;
         } else if (it.scanner && it.paid === true) {
           map[it.scanner] = true;
+        } else if (it.name && it.paid !== undefined) {
+          map[it.name] = !!it.paid;
         }
       });
 
-      // update DOM: add a block under finalSettlements showing who clicked
       let html = "<div style='margin-top:10px;font-weight:700;'>Bevestigingen</div><ul>";
       for (const [name, paid] of Object.entries(map)) {
-        html += `<li>${name} — ${paid ? '<span class="settle-ok">✅ bevestigd</span>' : '<span class="settle-wait">⏳ nog niet'}</span></li>`;
+        html += `<li>${name} — ${paid ? '<span class="settle-ok">✅ bevestigd</span>' : '<span class="settle-wait">⏳ nog niet</span>'}</li>`;
       }
       html += "</ul>";
 
-      // put after the settlements block
-      const target = $("finalSettlements");
+      const target = $("finalSettlementStatus");
       if (target) {
-        target.insertAdjacentHTML("afterend", html);
+        target.innerHTML = html;
+      } else {
+        // fallback: insert after settlements if target missing
+        const fs = $("finalSettlements");
+        if (fs) {
+          // remove previous injected block if any
+          const prev = document.querySelector("[data-injected-settlement-status]");
+          if (prev) prev.remove();
+          const div = document.createElement("div");
+          div.setAttribute("data-injected-settlement-status", "1");
+          div.innerHTML = html;
+          fs.insertAdjacentElement("afterend", div);
+        }
       }
     }
 
-    /* ============================
-       Navigation helpers
-       ============================ */
     function backToMenu() {
-      if (settlementPollInterval) {
-        clearInterval(settlementPollInterval);
-        settlementPollInterval = null;
-      }
+      stopSettlementPolling();
       renderMenu();
     }
 
     function newRound() {
+      // same behavior as before
       renderMenu();
     }
 
-    /* ============================
-       Start
-       ============================ */
+    function renderMenuFromFirst() {
+      // used when clicking 'Verder' on firstTime screen
+      // just load drinks (already loaded) and render
+      renderMenu();
+    }
+
+    // start app
     init();
 
-    // expose some functions to global for potential inline onclick use
+    // expose functions for onclick usage
     window.showBestellijst = showBestellijst;
     window.showScores = showScores;
     window.showFinal = showFinal;
@@ -704,7 +620,6 @@
     window.backToMenu = backToMenu;
     window.markMyPaid = markMyPaid;
     window.renderMenuFromFirst = renderMenuFromFirst;
-
   </script>
 </body>
 </html>
