@@ -266,7 +266,7 @@
           scannerName = chipOwner = name;
           localStorage.setItem("scannerName", scannerName);
           await fetch(apiUrl, { method: "POST", body: new URLSearchParams({ action: "setOwner", chipId, owner: name }) });
-          $("firstTimeText").innerHTML = `Welkom ${name}!<br/>Plak nu de NFC sticker op je telefoon en laat deze scannen als jij een rondje haalt.`;
+          $("firstTimeText").innerHTML = `Welkom ${name}!<br/>Plak nu de NFC sticker aan de onderkant op de achterkant telefoon en laat deze scannen als jij een rondje haalt.`;
           hideAll(); $("firstTime").style.display = "block"; showLoading(false); return;
         }
 
