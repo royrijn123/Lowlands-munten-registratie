@@ -1,223 +1,676 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NFC Bestelling</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NextDrink NFC</title>
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f7f7f7;
-      color: #222;
+    html, body {
+      height: 100%;
       margin: 0;
       padding: 0;
-      text-align: center;
     }
 
-    .hidden { display: none; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background: linear-gradient(135deg, #7e22ce, #f97316);
+      color: #fff;
+    }
 
-    .button {
-      background: rgba(255,255,255,0.6);
+    .card {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      border-radius: 14px;
+      background: transparent;
+      margin-top: 20px;
+      box-sizing: border-box;
+    }
+
+    #logo {
+      display: block;
+      margin: 0 auto 16px;
+      max-width: 150px;
+      height: auto;
+    }
+
+    .drinks-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    button {
       border: none;
-      border-radius: 12px;
-      padding: 12px 20px;
-      font-size: 16px;
+      border-radius: 14px;
       cursor: pointer;
-      margin: 6px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      transition: background 0.2s;
+      font-weight: 700;
+      font-size: 18px;
+      padding: 12px;
+      transition: opacity .2s ease;
     }
 
-    .button:hover {
-      background: rgba(255,255,255,0.8);
-    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    #modalOverlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(255,255,255,0.85);
+    .drinks-grid button {
+      width: 100%;
+      aspect-ratio: 1 / 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 999;
     }
 
-    #modalBox {
-      background: rgba(255,255,255,0.85);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      max-width: 320px;
-      width: 80%;
-      text-align: center;
-    }
+    .primary { background: #7e22ce; color: #fff; }
+    .secondary { background: #f97316; color: #fff; }
 
-    #modalBox input {
-      padding: 10px;
+    .outline {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: #fff;
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      border-radius: 10px;
       font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      width: 90%;
-      margin-top: 10px;
+      box-sizing: border-box;
     }
 
-    #modalBox button {
-      margin-top: 15px;
+    .bestellijst-btn {
+      background: #10b981;
+      color: #fff;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+      width: 100%;
+      font-weight: 700;
     }
 
-    #mainContent {
-      padding: 20px;
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
     }
 
-    #bestellijst {
-      text-align: left;
-      display: inline-block;
-      margin-top: 15px;
-      background: rgba(255,255,255,0.6);
-      border-radius: 12px;
-      padding: 12px 16px;
+    .spinner {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 8px solid rgba(255,255,255,0.25);
+      border-top-color: #fff;
+      animation: spin 1s linear infinite;
+      margin-bottom: 12px;
     }
 
-    #bevestiging {
-      font-weight: bold;
-      margin-top: 20px;
-    }
+    @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 
-    #settlementList {
-      margin-top: 15px;
-      text-align: left;
-      display: inline-block;
-    }
+    ul { text-align: left; padding-left: 20px; }
+    .settle-ok { color: #a7f3d0; }
+    .settle-wait { color: #fef08a; }
+    .final-total { font-weight:700; margin-bottom:8px; }
 
-    .paid { color: green; }
-    .not-paid { color: red; }
+    @media (max-width: 420px) {
+      .card { padding: 16px; }
+      button { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
-  <div id="modalOverlay" class="hidden">
-    <div id="modalBox">
-      <h3 id="modalTitle"></h3>
-      <input type="text" id="nameInput" placeholder="Typ hier..." />
-      <button class="button" id="saveNameBtn">Opslaan</button>
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div id="loadingText">Bezig met laden...</div>
+  </div>
+
+  <div class="card">
+    <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink Logo" />
+
+    <div id="menu" style="display:none;">
+      <h2 id="menuTitle"></h2>
+      <div id="drinks" class="drinks-grid"></div>
+      <button id="addDrinkBtn" class="outline" onclick="addCustomDrink()">+ Drankje toevoegen</button>
+      <button id="bestelOverzichtBtn" class="bestellijst-btn" onclick="showBestellijst()">Bekijk bestellijst</button>
+      <button id="scoresBtn" class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button id="finalBtn" class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
+
+    <div id="confirm" style="display:none;">
+      <h2>✅ Verwerkt!</h2>
+      <p id="confirmText"></p>
+      <button class="secondary" onclick="newRound()">Nieuw rondje</button>
+      <button class="outline" onclick="showScores()">Bekijk tussenstand</button>
+      <button class="outline" onclick="showFinal()">Eindafrekening</button>
+    </div>
+
+    <div id="firstTime" style="display:none;">
+      <h2>Welkom!</h2>
+      <p id="firstTimeText"></p>
+      <button class="outline" onclick="renderMenuFromFirst()">Verder</button>
+    </div>
+
+    <div id="scores" style="display:none;">
+      <h2>Tussenstand</h2>
+      <div id="scoreList"></div>
+      <button class="outline" onclick="backToMenu()">Terug</button>
+    </div>
+
+    <div id="final" style="display:none;">
+      <h2>🏁 Eindafrekening</h2>
+      <div id="finalTotals"></div>
+      <div id="finalSettlements"></div>
+      <!-- place for settlement status (kept empty initially) -->
+      <div id="finalSettlementStatus"></div>
+      <div style="margin-top:12px;">
+        <button id="myPayBtn" class="outline" onclick="markMyPaid()">Ik wil afrekenen</button>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="outline" onclick="backToMenu()">Terug</button>
+      </div>
+    </div>
+
+    <div id="bestellijst" style="display:none;">
+      <h2>📝 Bestellijst</h2>
+      <div id="bestellijstContent"></div>
+      <button class="outline" onclick="backToMenu()">Terug</button>
     </div>
   </div>
 
-  <div id="mainContent">
-    <h2 id="title">NFC Bestelling</h2>
-    <div id="status"></div>
-    <div id="bestellijst" class="hidden"></div>
-    <div id="bevestiging"></div>
-
-    <button id="tussenstandBtn" class="button hidden">Tussenstand</button>
-    <button id="eindafrekeningBtn" class="button hidden">Eindafrekening</button>
-
-    <div id="settlementList" class="hidden"></div>
-  </div>
-
   <script>
-    const apiUrl = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
-    const modalOverlay = document.getElementById('modalOverlay');
-    const modalTitle = document.getElementById('modalTitle');
-    const nameInput = document.getElementById('nameInput');
-    const saveNameBtn = document.getElementById('saveNameBtn');
+    const apiUrl = "https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
+    const $ = id => document.getElementById(id);
+    const cacheTTL = 30000; // 30s
 
-    const title = document.getElementById('title');
-    const statusDiv = document.getElementById('status');
-    const bestellijst = document.getElementById('bestellijst');
-    const bevestiging = document.getElementById('bevestiging');
-    const settlementList = document.getElementById('settlementList');
-    const tussenstandBtn = document.getElementById('tussenstandBtn');
-    const eindafrekeningBtn = document.getElementById('eindafrekeningBtn');
+    let chipId = new URLSearchParams(window.location.search).get("chipId");
+    if (!chipId) { alert("Geen chipId in URL!"); throw new Error("Geen chipId"); }
 
-    let scannerName = localStorage.getItem('scannerName');
-    let chipOwner = localStorage.getItem('chipOwner');
+    let scannerName = localStorage.getItem("scannerName") || "";
+    let chipOwner = "";
+    let drinks = [];
+    let settlementPollInterval = null;
+    let settlementPollingActive = false;
 
-    function showModal(titleText, callback) {
-      modalTitle.textContent = titleText;
-      nameInput.value = '';
-      modalOverlay.classList.remove('hidden');
-      saveNameBtn.onclick = () => {
-        const name = nameInput.value.trim();
-        if (name) {
-          modalOverlay.classList.add('hidden');
-          callback(name);
-        }
-      };
-    }
+    const showLoading = (show, text = "Bezig...") => {
+      $("loadingText").textContent = text;
+      $("loadingOverlay").style.display = show ? "flex" : "none";
+      document.querySelectorAll("button").forEach(b => b.disabled = show);
+    };
 
-    function saveScannerName(name) {
-      scannerName = name;
-      localStorage.setItem('scannerName', name);
-    }
+    const hideAll = () => {
+      ["menu","confirm","scores","final","firstTime","bestellijst"]
+        .forEach(id => { const el = $(id); if (el) el.style.display = "none"; });
+    };
 
-    function saveChipOwner(name) {
-      chipOwner = name;
-      localStorage.setItem('chipOwner', name);
-    }
+    const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return res;
+      } catch (err) {
+        clearTimeout(id);
+        throw err;
+      }
+    };
 
+    const cacheGet = key => {
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return null;
+        const { data, time } = JSON.parse(raw);
+        if (Date.now() - time > cacheTTL) return null;
+        return data;
+      } catch (e) { return null; }
+    };
+
+    const cacheSet = (key, data) => {
+      try { sessionStorage.setItem(key, JSON.stringify({ data, time: Date.now() })); } catch(e){}
+    };
+
+    /* ============================
+       Init logic (PROMPT-based)
+       ============================ */
     async function init() {
-      if (!scannerName && chipOwner) {
-        showModal("Wat is jouw naam?", (name) => {
-          saveScannerName(name);
-          startApp();
+      showLoading(true, "Initialiseren...");
+      try {
+        // fetch owner + drinks in parallel
+        const ownerPromise = fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`, {}, 5000);
+        const drinksPromise = fetchWithTimeout(`${apiUrl}?action=getDrinks`, {}, 5000);
+
+        const [ownerRes, drinksRes] = await Promise.allSettled([ownerPromise, drinksPromise]);
+
+        // get chipOwner from server if available (trim whitespace)
+        chipOwner = (ownerRes.status === "fulfilled") ? (await ownerRes.value.text()).trim() : "";
+        if (chipOwner === "") chipOwner = ""; // ensure empty string, not whitespace
+
+        drinks = (drinksRes.status === "fulfilled") ? await drinksRes.value.json() : [];
+        if (!drinks || !drinks.length) {
+          drinks = [
+            { name: "Kleine bier", price: 4.40 },
+            { name: "Grote bier", price: 8.00 },
+            { name: "Desperados", price: 6.50 },
+            { name: "Wijn", price: 6.00 },
+            { name: "0.0 bier", price: 4.00 },
+            { name: "Frisdrank", price: 4.00 }
+          ];
+        }
+
+        // --- Now apply your exact desired prompting logic ---
+        // 1) scannerName unknown & chipOwner known  -> ask "Wat is jouw naam?" => store scannerName
+        // 2) scannerName known & chipOwner unknown  -> ask "Wiens sticker heb je gescand?" => set chipOwner on server
+        // 3) both unknown -> ask "Wat is jouw naam?" => set both (localStorage + setOwner) and show firstTime screen
+
+        // Normalize scannerName (trim) so empty strings not considered set
+        scannerName = (scannerName || "").trim();
+
+        // CASE 3: both unknown
+        if (!scannerName && !chipOwner) {
+          const name = prompt("Wat is jouw naam?")?.trim();
+          if (!name) {
+            alert("Geen naam ingevoerd. Stop.");
+            showLoading(false);
+            return;
+          }
+          scannerName = name;
+          chipOwner = name;
+          localStorage.setItem("scannerName", scannerName);
+
+          // send setOwner to server
+          try {
+            await fetch(apiUrl, { method: "POST", body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner }) });
+          } catch (e) {
+            // ignore but log
+            console.warn("Kon chipOwner niet opslaan op server:", e);
+          }
+
+          $("firstTimeText").innerHTML = `Welkom ${chipOwner}!<br/>Je naam is opgeslagen.<br/><br/>Plak nu de NFC-sticker aan de onderkant op de achterkant van je telefoon en laat deze scannen als jij een rondje haalt.`;
+          hideAll();
+          $("firstTime").style.display = "block";
+          showLoading(false);
+          return;
+        }
+
+        // CASE 1: scannerName unknown & chipOwner known
+        if (!scannerName && chipOwner) {
+          const name = prompt("Wat is jouw naam?")?.trim();
+          if (!name) {
+            // if user cancels or enters empty, treat as unknown and stop
+            alert("Geen naam ingevoerd. Stop.");
+            showLoading(false);
+            return;
+          }
+          scannerName = name;
+          localStorage.setItem("scannerName", scannerName);
+          // continue to menu
+        }
+
+        // CASE 2: scannerName known & chipOwner unknown
+        if (scannerName && !chipOwner) {
+          const ownerName = prompt("Wiens sticker heb je gescand?")?.trim();
+          if (!ownerName) {
+            alert("Geen naam ingevoerd voor de sticker-eigenaar. Stop.");
+            showLoading(false);
+            return;
+          }
+          chipOwner = ownerName;
+          try {
+            await fetch(apiUrl, { method: "POST", body: new URLSearchParams({ action: "setOwner", chipId, owner: chipOwner }) });
+          } catch (e) {
+            console.warn("Kon chipOwner niet opslaan op server:", e);
+          }
+        }
+
+        // At this point: scannerName and chipOwner should be set (either pre-existing or newly provided)
+        renderMenu();
+
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij initialiseren.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    /* ============================
+       Remainder of script (unchanged functionality)
+       ============================ */
+
+    function renderMenu() {
+      hideAll();
+      $("menuTitle").textContent = `Wat wil je dat ${chipOwner} voor je haalt?`;
+
+      const div = $("drinks");
+      div.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      for (const d of drinks) {
+        const btn = document.createElement("button");
+        btn.className = "secondary";
+        btn.textContent = d.name;
+        btn.onclick = () => placeOrder(d);
+        frag.appendChild(btn);
+      }
+      div.appendChild(frag);
+      $("menu").style.display = "block";
+    }
+
+    async function addCustomDrink() {
+      const name = prompt("Naam van het nieuwe drankje?");
+      if (!name) return;
+      const priceStr = prompt(`Prijs van "${name}"? (€)`);
+      if (!priceStr) return;
+      const price = parseFloat(String(priceStr).replace(",", "."));
+      if (isNaN(price) || price <= 0) return alert("Ongeldige prijs!");
+      drinks.push({ name: name.trim(), price });
+      try {
+        await fetch(apiUrl, { method: "POST", body: new URLSearchParams({ action: "setDrinks", drinks: JSON.stringify(drinks) }) });
+      } catch (e) {
+        console.error("Fout bij opslaan drankjes", e);
+      }
+      renderMenu();
+    }
+
+    async function placeOrder(drink) {
+      showLoading(true, "Verwerken...");
+      try {
+        await fetchWithTimeout(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({
+            action: "addScan",
+            chipId,
+            scanner: scannerName,
+            drink: drink.name,
+            amount: drink.price
+          })
+        }, 6000);
+        hideAll();
+        $("confirmText").textContent = `${drink.name} (€${drink.price}) is doorgegeven aan ${chipOwner}.`;
+        $("confirm").style.display = "block";
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij plaatsen order.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function showBestellijst() {
+      showLoading(true, "Bestellijst laden...");
+      try {
+        const cacheKey = "scans";
+        let scans = cacheGet(cacheKey);
+        if (!scans) {
+          const resp = await fetchWithTimeout(`${apiUrl}?action=getScans`, {}, 6000);
+          scans = await resp.json();
+          cacheSet(cacheKey, scans);
+        }
+        const now = Date.now();
+        const FIFTEEN_MIN = 15 * 60 * 1000;
+        const recent = scans.filter(s => s.owner === chipOwner && (now - new Date(s.timestamp).getTime() <= FIFTEEN_MIN));
+
+        const grouped = {};
+        recent.forEach(s => {
+          if (!grouped[s.scanner]) grouped[s.scanner] = {};
+          grouped[s.scanner][s.drink] = (grouped[s.scanner][s.drink] || 0) + 1;
         });
-      } else if (scannerName && !chipOwner) {
-        showModal("Wiens sticker heb je gescand?", (name) => {
-          saveChipOwner(name);
-          startApp();
+
+        let html = `<p><strong>${chipOwner}</strong> gaat deze drankjes halen:</p>`;
+        for (const [scanner, drinksObj] of Object.entries(grouped)) {
+          html += `<p><strong>${scanner}</strong>:</p><ul>`;
+          for (const [drinkName, count] of Object.entries(drinksObj)) {
+            html += `<li>${count} × ${drinkName}</li>`;
+          }
+          html += `</ul>`;
+        }
+        html += `<p style="margin-top:12px;font-weight:700;">En vergeet natuurlijk niet je eigen drankje!</p>`;
+        html += `<p style="margin-top:10px;font-size:0.9em;opacity:0.8;">(Laatste 15 minuten)</p>`;
+
+        hideAll();
+        $("bestellijstContent").innerHTML = html;
+        $("bestellijst").style.display = "block";
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij laden bestellijst.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function showScores() {
+      showLoading(true, "Tussenstand laden...");
+      try {
+        const cacheKey = "scans";
+        let scans = cacheGet(cacheKey);
+        if (!scans) {
+          const resp = await fetchWithTimeout(`${apiUrl}?action=getScans`, {}, 6000);
+          scans = await resp.json();
+          cacheSet(cacheKey, scans);
+        }
+
+        const FIFTEEN_MIN = 15 * 60 * 1000;
+        const roundsByOwner = {};
+
+        scans.forEach(s => {
+          const owner = s.owner;
+          const ts = new Date(s.timestamp).getTime();
+          if (!roundsByOwner[owner]) roundsByOwner[owner] = [];
+          roundsByOwner[owner].push(ts);
         });
-      } else if (!scannerName && !chipOwner) {
-        showModal("Wat is jouw naam?", (name) => {
-          saveScannerName(name);
-          bevestiging.innerHTML = `
-            <p>Naam opgeslagen als <strong>${name}</strong>.</p>
-            <p>Plak nu je NFC-sticker aan de onderkant, achter op je telefoon.</p>
-            <p>Daarna kun je starten met scannen! 🍻</p>
-          `;
-        });
+
+        const results = [];
+        for (const [owner, times] of Object.entries(roundsByOwner)) {
+          const sorted = times.sort((a, b) => a - b);
+          let rounds = 0;
+          let last = -Infinity;
+          for (const t of sorted) {
+            if (t - last > FIFTEEN_MIN) {
+              rounds += 1;
+              last = t;
+            } else {
+              last = Math.max(last, t);
+            }
+          }
+          results.push({ owner, rounds });
+        }
+
+        results.sort((a,b) => b.rounds - a.rounds);
+
+        let html = "<ul>";
+        if (results.length === 0) html += "<li>Nog geen data</li>";
+        else {
+          results.forEach(r => {
+            html += `<li><strong>${r.owner}</strong> — ${r.rounds} rondje${r.rounds === 1 ? "" : "s"} gehaald</li>`;
+          });
+        }
+        html += "</ul>";
+
+        hideAll();
+        $("scoreList").innerHTML = html;
+        $("scores").style.display = "block";
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij laden tussenstand.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function showFinal() {
+      showLoading(true, "Eindafrekening laden...");
+      try {
+        const cacheKey = "finalData";
+        let finalData = cacheGet(cacheKey);
+        if (!finalData) {
+          const resp = await fetchWithTimeout(`${apiUrl}?action=getFinal`, {}, 7000);
+          finalData = await resp.json();
+          cacheSet(cacheKey, finalData);
+        }
+
+        const totals = finalData.result || [];
+        const settlements = finalData.settlements || [];
+
+        // totals
+        let htmlTotals = "";
+        if (!totals.length) {
+          htmlTotals = "<p>Nog geen data</p>";
+        } else {
+          totals.sort((a,b) => Number(b.balance) - Number(a.balance));
+          htmlTotals += '<div class="final-total">Totaal uitgegeven per persoon:</div>';
+          htmlTotals += "<ul>";
+          totals.forEach(t => {
+            const bal = Number(t.balance).toFixed(2);
+            htmlTotals += `<li><strong>${t.name}</strong> — €${bal} (${Number(t.balance)>=0 ? 'positief' : 'negatief'})</li>`;
+          });
+          htmlTotals += "</ul>";
+        }
+
+        // settlements
+        let htmlSettle = "";
+        if (!settlements.length) {
+          htmlSettle = "<p>Geen verrekeningen nodig.</p>";
+        } else {
+          htmlSettle += '<div style="margin-top:8px;font-weight:700;">Verrekeningen</div>';
+          htmlSettle += "<ul>";
+          settlements.forEach(s => {
+            const amt = Number(s.amount).toFixed(2);
+            htmlSettle += `<li>${s.from} betaalt €${amt} aan ${s.to}</li>`;
+          });
+          htmlSettle += "</ul>";
+        }
+
+        hideAll();
+        $("finalTotals").innerHTML = htmlTotals;
+        $("finalSettlements").innerHTML = htmlSettle;
+        // reset settlement status area
+        $("finalSettlementStatus").innerHTML = "";
+
+        // start polling settlement-status
+        startSettlementPolling();
+
+        $("final").style.display = "block";
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij laden eindafrekening.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function markMyPaid() {
+      showLoading(true, "Bezig met bevestigen...");
+      try {
+        await fetchWithTimeout(apiUrl, {
+          method: "POST",
+          body: new URLSearchParams({ action: "markAsPaid", name: scannerName })
+        }, 6000);
+        // optimistic refresh of settlement status
+        await pollSettlementOnce();
+      } catch (err) {
+        console.error(err);
+        alert("Fout bij registreren 'Ik wil afrekenen'.");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function pollSettlementOnce() {
+      try {
+        const resp = await fetchWithTimeout(`${apiUrl}?action=getSettlement`, {}, 5000);
+        if (!resp.ok) return;
+        const items = await resp.json();
+        renderSettlementStatus(items);
+      } catch (err) {
+        // ignore if endpoint doesn't exist or fails
+      }
+    }
+
+    function startSettlementPolling() {
+      // stop existing
+      if (settlementPollInterval) clearInterval(settlementPollInterval);
+
+      // do an immediate poll, then every 3s
+      pollSettlementOnce();
+      settlementPollInterval = setInterval(pollSettlementOnce, 3000);
+    }
+
+    function stopSettlementPolling() {
+      if (settlementPollInterval) {
+        clearInterval(settlementPollInterval);
+        settlementPollInterval = null;
+      }
+    }
+
+    function renderSettlementStatus(items) {
+      // normalize items to map name->paid
+      if (!items || !Array.isArray(items)) return;
+      const map = {};
+      items.forEach(it => {
+        if (it.name !== undefined && it.hasPaid !== undefined) {
+          map[it.name] = !!it.hasPaid;
+        } else if (it.scanner !== undefined && it.paid !== undefined) {
+          map[it.scanner] = !!it.paid;
+        } else if (it.scanner && it.paid === true) {
+          map[it.scanner] = true;
+        } else if (it.name && it.paid !== undefined) {
+          map[it.name] = !!it.paid;
+        }
+      });
+
+      let html = "<div style='margin-top:10px;font-weight:700;'>Bevestigingen</div><ul>";
+      for (const [name, paid] of Object.entries(map)) {
+        html += `<li>${name} — ${paid ? '<span class="settle-ok">✅ bevestigd</span>' : '<span class="settle-wait">⏳ nog niet</span>'}</li>`;
+      }
+      html += "</ul>";
+
+      const target = $("finalSettlementStatus");
+      if (target) {
+        target.innerHTML = html;
       } else {
-        startApp();
+        const fs = $("finalSettlements");
+        if (fs) {
+          const prev = document.querySelector("[data-injected-settlement-status]");
+          if (prev) prev.remove();
+          const div = document.createElement("div");
+          div.setAttribute("data-injected-settlement-status", "1");
+          div.innerHTML = html;
+          fs.insertAdjacentElement("afterend", div);
+        }
       }
     }
 
-    function startApp() {
-      bevestiging.innerHTML = "";
-      tussenstandBtn.classList.remove('hidden');
-      eindafrekeningBtn.classList.remove('hidden');
-      statusDiv.textContent = `Welkom ${scannerName}, je scant voor ${chipOwner}.`;
-
-      // Voorbeelddata voor bestellijst (vervang later met API-data)
-      const bestellingen = ["grote bier", "grote bier", "kleine bier"];
-      const telling = {};
-      bestellingen.forEach(item => {
-        telling[item] = (telling[item] || 0) + 1;
-      });
-
-      let lijstHtml = "";
-      for (const [item, aantal] of Object.entries(telling)) {
-        lijstHtml += `${aantal} × ${item}<br>`;
-      }
-      bestellijst.innerHTML = lijstHtml + "<br><strong>En vergeet natuurlijk niet je eigen drankje!</strong>";
-      bestellijst.classList.remove('hidden');
-
-      eindafrekeningBtn.onclick = loadSettlement;
+    function backToMenu() {
+      stopSettlementPolling();
+      renderMenu();
     }
 
-    async function loadSettlement() {
-      const res = await fetch(`${apiUrl}?action=getSettlement`);
-      const data = await res.json();
-      settlementList.classList.remove('hidden');
-      settlementList.innerHTML = "<h3>Eindafrekening</h3>";
-
-      data.forEach(person => {
-        const icon = person.hasPaid ? "✅" : "❌";
-        const cssClass = person.hasPaid ? "paid" : "not-paid";
-        settlementList.innerHTML += `<div class="${cssClass}">${person.name} ${icon}</div>`;
-      });
+    function newRound() {
+      renderMenu();
     }
 
+    function renderMenuFromFirst() {
+      renderMenu();
+    }
+
+    // start app
     init();
+
+    // expose functions for onclick usage
+    window.showBestellijst = showBestellijst;
+    window.showScores = showScores;
+    window.showFinal = showFinal;
+    window.addCustomDrink = addCustomDrink;
+    window.newRound = newRound;
+    window.backToMenu = backToMenu;
+    window.markMyPaid = markMyPaid;
+    window.renderMenuFromFirst = renderMenuFromFirst;
   </script>
 </body>
 </html>
