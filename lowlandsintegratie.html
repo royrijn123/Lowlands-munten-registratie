@@ -310,8 +310,8 @@
 
     function escapeHtml(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-    // start
-    init();
+// start only after DOM ready
+window.addEventListener('DOMContentLoaded', init);
 
     // expose
     window.showBestellijst = showBestellijst; window.showScores = showScores; window.showFinal = showFinal; window.addCustomDrink = addCustomDrink; window.newRound = newRound; window.backToMenu = backToMenu; window.markMyPaid = markMyPaid; window.renderMenuFromFirst = renderMenuFromFirst;
