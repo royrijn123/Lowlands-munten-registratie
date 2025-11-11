@@ -1,32 +1,35 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>NextDrink NFC — Festival Style</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NextDrink NFC — Lowlands Style</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<style>
-button{ -webkit-tap-highlight-color: transparent; transition: transform 0.1s; }
-button:hover{ transform: scale(1.03); }
-.tile:hover{ background: #fef3c7; transform: scale(1.02); }
-body{ font-family: 'Poppins', sans-serif; }
-</style>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Poppins', sans-serif; }
+button { -webkit-tap-highlight-color: transparent; transition: transform 0.1s; }
+button:hover { transform: scale(1.03); }
+.tile:hover { background: #fde68a; transform: scale(1.02); }
+.bg-lowlands { background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 50%, #fbc2eb 100%); }
+.text-lowlands { color: #4b0082; }
+</style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-purple-300 via-pink-200 to-orange-200 flex items-start justify-center p-6">
+<body class="min-h-screen bg-lowlands flex items-start justify-center p-6">
 
 <main class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6">
+
 <header class="flex items-center gap-3 mb-5">
 <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink" class="w-14 h-14 rounded-lg object-cover"/>
 <div>
-<h1 class="text-2xl font-bold text-purple-700">NextDrink</h1>
-<p id="menuSubtitle" class="text-sm text-purple-800">Laad je NFC-sticker en kies je drankje 🍹</p>
+<h1 class="text-2xl font-bold text-lowlands">NextDrink</h1>
+<p id="menuSubtitle" class="text-sm text-purple-700">Laad je NFC-sticker en kies je drankje 🍹</p>
 </div>
 </header>
 
 <!-- MENU -->
 <section id="menu" class="hidden">
-<h2 id="menuTitle" class="text-lg font-semibold text-purple-700 mb-3"></h2>
+<h2 id="menuTitle" class="text-lg font-semibold text-lowlands mb-3"></h2>
 <div id="drinks" class="grid grid-cols-2 gap-4 mb-4"></div>
 <div class="grid grid-cols-1 gap-3">
 <button id="addDrinkBtn" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold shadow hover:bg-yellow-300">+ Drankje toevoegen</button>
@@ -40,8 +43,8 @@ body{ font-family: 'Poppins', sans-serif; }
 
 <!-- FIRST TIME -->
 <section id="firstTime" class="hidden text-center">
-<h3 id="firstTimeTitle" class="text-xl font-bold text-purple-700 mb-2"></h3>
-<p id="firstTimeText" class="text-purple-800 mb-3"></p>
+<h3 id="firstTimeTitle" class="text-xl font-bold text-lowlands mb-2"></h3>
+<p id="firstTimeText" class="text-purple-700 mb-3"></p>
 <div class="mt-3">
 <button id="firstTimeContinueBtn" class="w-full py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-500">Verder</button>
 </div>
@@ -50,7 +53,7 @@ body{ font-family: 'Poppins', sans-serif; }
 <!-- CONFIRM -->
 <section id="confirm" class="hidden text-center">
 <div class="text-5xl">✅</div>
-<div id="confirmText" class="mt-3 font-semibold text-purple-700"></div>
+<div id="confirmText" class="mt-3 font-semibold text-lowlands"></div>
 <div class="mt-4 flex gap-3">
 <button id="newRoundBtn" class="flex-1 py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-500">Nieuw rondje 🎉</button>
 <button id="confirmScoresBtn" class="flex-1 py-3 rounded-xl bg-pink-400 text-white font-bold hover:bg-pink-300">Tussenstand 📊</button>
@@ -59,7 +62,7 @@ body{ font-family: 'Poppins', sans-serif; }
 
 <!-- SCORES -->
 <section id="scores" class="hidden">
-<h3 class="text-purple-700 font-bold mb-2">Tussenstand</h3>
+<h3 class="text-lowlands font-bold mb-2">Tussenstand</h3>
 <div id="scoreList" class="text-purple-800"></div>
 <div class="mt-4">
 <button id="backToMenuFromScores" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-700 font-bold hover:bg-yellow-300">Terug</button>
@@ -68,7 +71,7 @@ body{ font-family: 'Poppins', sans-serif; }
 
 <!-- BESTELLIJST -->
 <section id="bestellijst" class="hidden">
-<h3 class="text-purple-700 font-bold mb-2">📝 Bestellijst</h3>
+<h3 class="text-lowlands font-bold mb-2">📝 Bestellijst</h3>
 <div id="bestellijstContent" class="text-purple-800"></div>
 <div class="mt-4">
 <button id="backToMenuFromBestel" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-700 font-bold hover:bg-yellow-300">Terug</button>
@@ -77,7 +80,7 @@ body{ font-family: 'Poppins', sans-serif; }
 
 <!-- FINAL -->
 <section id="final" class="hidden">
-<h3 class="text-purple-700 font-bold mb-2">🏁 Eindafrekening</h3>
+<h3 class="text-lowlands font-bold mb-2">🏁 Eindafrekening</h3>
 <div id="finalTotals" class="text-purple-800"></div>
 <div id="finalSettlements" class="text-purple-800 mt-2"></div>
 <div id="finalSettlementStatus" class="text-purple-800 mt-2"></div>
@@ -89,10 +92,10 @@ body{ font-family: 'Poppins', sans-serif; }
 
 <!-- LOADING OVERLAY -->
 <div id="loadingOverlay" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
-  <div class="text-center text-white">
-    <div class="inline-block w-16 h-16 rounded-full border-8 border-white/30 border-t-white animate-spin"></div>
-    <div id="loadingText" class="mt-3">Bezig met laden...</div>
-  </div>
+<div class="text-center text-white">
+<div class="inline-block w-16 h-16 rounded-full border-8 border-white/30 border-t-white animate-spin"></div>
+<div id="loadingText" class="mt-3">Bezig met laden...</div>
+</div>
 </div>
 
 </main>
@@ -103,184 +106,173 @@ const apiUrl="https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3
 const cacheTTL=30000;
 let chipId=new URLSearchParams(window.location.search).get('chipId');
 if(!chipId){alert('Geen chipId in URL!');throw new Error('Geen chipId');}
-
 let scannerName=localStorage.getItem('scannerName')||'';
 let chipOwner='';
 let drinks=[];
 let settlementPollInterval=null;
 
 function showLoading(show,text='Bezig...'){
-  $('loadingOverlay').style.display=show?'flex':'none';
-  $('loadingText').textContent=text;
-  document.querySelectorAll('button').forEach(b=>b.disabled=show);
+$('loadingOverlay').style.display=show?'flex':'none';
+$('loadingText').textContent=text;
+document.querySelectorAll('button').forEach(b=>b.disabled=show);
 }
-
 async function fetchWithTimeout(url,options={},timeout=5000){
-  const controller=new AbortController();
-  const id=setTimeout(()=>controller.abort(),timeout);
-  try{const res=await fetch(url,{...options,signal:controller.signal}); clearTimeout(id); return res;}catch(err){clearTimeout(id); throw err;}
+const controller=new AbortController();
+const id=setTimeout(()=>controller.abort(),timeout);
+try{const res=await fetch(url,{...options,signal:controller.signal}); clearTimeout(id); return res;}catch(err){clearTimeout(id); throw err;}
 }
-
 function cacheGet(key){try{const raw=sessionStorage.getItem(key);if(!raw)return null;const {data,time}=JSON.parse(raw);if(Date.now()-time>cacheTTL)return null;return data;}catch(e){return null;}}
 function cacheSet(key,data){try{sessionStorage.setItem(key,JSON.stringify({data,time:Date.now()}));}catch(e){}}
-
 function hideAll(){['menu','confirm','scores','final','firstTime','bestellijst'].forEach(id=>{const el=$(id);if(el)el.classList.add('hidden');});}
 function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ---------------- INIT ----------------
 async function init(){
-  showLoading(true,'Initialiseren...');
-  try{
-    const ownerResp=await fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-    chipOwner=(await ownerResp.text()).trim();
-    const drinksResp=await fetchWithTimeout(`${apiUrl}?action=getDrinks`);
-    drinks=await drinksResp.json();
-    if(!drinks||!drinks.length)drinks=[{name:'Kleine bier',price:4.4},{name:'Grote bier',price:8},{name:'Desperados',price:6.5},{name:'Wijn',price:6},{name:'0.0 bier',price:4},{name:'Frisdrank',price:4}];
+showLoading(true,'Initialiseren...');
+try{
+const ownerResp=await fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
+chipOwner=(await ownerResp.text()).trim();
+const drinksResp=await fetchWithTimeout(`${apiUrl}?action=getDrinks`);
+drinks=await drinksResp.json();
+if(!drinks||!drinks.length)drinks=[{name:'Kleine bier',price:4.4},{name:'Grote bier',price:8},{name:'Desperados',price:6.5},{name:'Wijn',price:6},{name:'0.0 bier',price:4},{name:'Frisdrank',price:4}];
 
-    // FIRST TIME LOGIC
-    if(!scannerName && !chipOwner){
-      $('firstTimeTitle').textContent='Welkom!';
-      $('firstTimeText').innerHTML='Hoi! Je naam wordt eerst opgeslagen.';
-      hideAll();$('firstTime').classList.remove('hidden');
-      $('firstTimeContinueBtn').onclick=async()=>{
-        const name=prompt('Wat is je naam?')?.trim();
-        if(!name){alert('Geen naam ingevoerd.'); return;}
-        scannerName=chipOwner=name;
-        localStorage.setItem('scannerName',scannerName);
-        try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setOwner',chipId,owner:chipOwner})});}catch(e){console.warn(e);}
-        $('firstTimeText').innerHTML=`Hoi ${chipOwner}! Je naam is correct opgeslagen.<br/>Haal nu de QR code van de sticker af en plak de sticker onderin op de achterkant van je telefoon.`;
-        $('firstTimeContinueBtn').onclick=renderMenu;
-      };
-      showLoading(false); return;
-    }
-    if(chipOwner && !scannerName){
-      const name=prompt(`Je hebt de chip van ${chipOwner} gescand. Wat is jouw naam?`)?.trim();
-      if(!name){alert('Geen naam ingevoerd.'); return;}
-      scannerName=name;
-      localStorage.setItem('scannerName',scannerName);
-    }
-    if(scannerName && !chipOwner){
-      const ownerName=prompt('Wiens chip heb je gescand?')?.trim();
-      if(!ownerName){alert('Geen naam ingevoerd.'); return;}
-      chipOwner=ownerName;
-      try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setOwner',chipId,owner:chipOwner})});}catch(e){console.warn(e);}
-    }
-    renderMenu();
-  }catch(err){console.error(err);alert('Fout bij initialiseren.');}finally{showLoading(false);}
+// FIRST TIME LOGIC
+if(!scannerName && !chipOwner){
+$('firstTimeTitle').textContent='Welkom!';
+$('firstTimeText').innerHTML='Hoi! Je naam wordt eerst opgeslagen.';
+hideAll();$('firstTime').classList.remove('hidden');
+$('firstTimeContinueBtn').onclick=async()=>{
+const name=prompt('Wat is je naam?')?.trim();
+if(!name){alert('Geen naam ingevoerd.'); return;}
+scannerName=chipOwner=name;
+localStorage.setItem('scannerName',scannerName);
+try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setOwner',chipId,owner:chipOwner})});}catch(e){console.warn(e);}
+$('firstTimeText').innerHTML=`Hoi ${chipOwner}! Je naam is correct opgeslagen.<br/>Haal nu de QR code van de sticker af en plak de sticker onderin op de achterkant van je telefoon.`;
+$('firstTimeContinueBtn').onclick=renderMenu;
+};
+showLoading(false); return;
+}
+if(chipOwner && !scannerName){
+const name=prompt(`Je hebt de chip van ${chipOwner} gescand. Wat is jouw naam?`)?.trim();
+if(!name){alert('Geen naam ingevoerd.'); return;}
+scannerName=name;
+localStorage.setItem('scannerName',scannerName);
+}
+if(scannerName && !chipOwner){
+const ownerName=prompt('Wiens chip heb je gescand?')?.trim();
+if(!ownerName){alert('Geen naam ingevoerd.'); return;}
+chipOwner=ownerName;
+try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setOwner',chipId,owner:chipOwner})});}catch(e){console.warn(e);}
+}
+renderMenu();
+}catch(err){console.error(err);alert('Fout bij initialiseren.');}finally{showLoading(false);}
 }
 
-// ---------------- MENU ----------------
 function renderMenu(){
-  hideAll();
-  $('menuTitle').textContent=`Wat wil je dat ${chipOwner} voor je haalt?`;
-  const div=$('drinks');div.innerHTML='';
-  const frag=document.createDocumentFragment();
-  for(const d of drinks){
-    const btn=document.createElement('button');
-    btn.type='button';
-    btn.className='tile block w-full rounded-lg p-3 bg-white shadow-sm ring-1 ring-gray-100 text-left';
-    btn.innerHTML=`<div class="font-semibold text-gray-800">${escapeHtml(d.name)}</div><div class="text-sm text-gray-500 mt-1">€${Number(d.price).toFixed(2)}</div>`;
-    btn.onclick=()=>placeOrder(d);
-    const wrapper=document.createElement('div');wrapper.appendChild(btn);frag.appendChild(wrapper);
-  }
-  div.appendChild(frag);
-  $('menu').classList.remove('hidden');
+hideAll();
+$('menuTitle').textContent=`Wat wil je dat ${chipOwner} voor je haalt?`;
+const div=$('drinks');div.innerHTML='';
+const frag=document.createDocumentFragment();
+for(const d of drinks){
+const btn=document.createElement('button');
+btn.type='button';
+btn.className='tile block w-full rounded-lg p-3 bg-white shadow-sm ring-1 ring-gray-100 text-left';
+btn.innerHTML=`<div class="font-semibold text-gray-800">${escapeHtml(d.name)}</div><div class="text-sm text-gray-500 mt-1">€${Number(d.price).toFixed(2)}</div>`;
+btn.onclick=()=>placeOrder(d);
+const wrapper=document.createElement('div');wrapper.appendChild(btn);frag.appendChild(wrapper);
+}
+div.appendChild(frag);
+$('menu').classList.remove('hidden');
 }
 
-// ---------------- ORDERS ----------------
 async function addCustomDrink(){
-  const name=prompt('Naam van het nieuwe drankje?');if(!name)return;
-  const priceStr=prompt(`Prijs van "${name}"? (€)`);if(!priceStr)return;
-  const price=parseFloat(String(priceStr).replace(',','.'));
-  if(isNaN(price)||price<=0)return alert('Ongeldige prijs!');
-  drinks.push({name:name.trim(),price});
-  try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setDrinks',drinks:JSON.stringify(drinks)})});}catch(e){console.error(e);}
-  renderMenu();
+const name=prompt('Naam van het nieuwe drankje?');if(!name)return;
+const priceStr=prompt(`Prijs van "${name}"? (€)`);if(!priceStr)return;
+const price=parseFloat(String(priceStr).replace(',','.'));
+if(isNaN(price)||price<=0)return alert('Ongeldige prijs!');
+drinks.push({name:name.trim(),price});
+try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setDrinks',drinks:JSON.stringify(drinks)})});}catch(e){console.error(e);}
+renderMenu();
 }
 
 async function placeOrder(drink){
-  showLoading(true,'Verwerken...');
-  try{
-    await fetchWithTimeout(apiUrl,{method:'POST',body:new URLSearchParams({action:'addScan',chipId,scanner:scannerName,drink:drink.name,amount:drink.price})},6000);
-    hideAll();
-    $('confirmText').innerHTML=`${escapeHtml(drink.name)} (&euro;${Number(drink.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner)}.`;
-    $('confirm').classList.remove('hidden');
-  }catch(err){console.error(err);alert('Fout bij plaatsen order.');}
-  finally{showLoading(false);}
+showLoading(true,'Verwerken...');
+try{
+await fetchWithTimeout(apiUrl,{method:'POST',body:new URLSearchParams({action:'addScan',chipId,scanner:scannerName,drink:drink.name,amount:drink.price})},6000);
+hideAll();
+$('confirmText').innerHTML=`${escapeHtml(drink.name)} (&euro;${Number(drink.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner)}.`;
+$('confirm').classList.remove('hidden');
+}catch(err){console.error(err);alert('Fout bij plaatsen order.');}
+finally{showLoading(false);}
 }
 
-// ---------------- BESTELLIJST ----------------
 async function showBestellijst(){
-  showLoading(true,'Bestellijst laden...');
-  try{
-    const cacheKey='scans';let scans=cacheGet(cacheKey);
-    if(!scans){const resp=await fetchWithTimeout(`${apiUrl}?action=getScans`);scans=await resp.json();cacheSet(cacheKey,scans);}
-    const now=Date.now(); const FIFTEEN_MIN=15*60*1000;
-    const recent=scans.filter(s=>s.owner===chipOwner && (now-new Date(s.timestamp).getTime()<=FIFTEEN_MIN));
-    const grouped={};
-    recent.forEach(s=>{if(!grouped[s.scanner])grouped[s.scanner]={};grouped[s.scanner][s.drink]=(grouped[s.scanner][s.drink]||0)+1;});
-    let html=`<p class="font-semibold">${escapeHtml(chipOwner)}</p>`;
-    for(const [scanner,drinksObj] of Object.entries(grouped)){
-      html+=`<p class="mt-2 font-semibold">${escapeHtml(scanner)}</p><ul class="list-disc ml-5">`;
-      for(const [drinkName,count] of Object.entries(drinksObj)) html+=`<li>${count} × ${escapeHtml(drinkName)}</li>`;
-      html+=`</ul>`;
-    }
-    html+=`<p class="mt-3 font-semibold">En vergeet natuurlijk niet je eigen drankje!</p>`;
-    hideAll();$('bestellijstContent').innerHTML=html;$('bestellijst').classList.remove('hidden');
-  }catch(err){console.error(err);alert('Fout bij laden bestellijst.');}
-  finally{showLoading(false);}
+showLoading(true,'Bestellijst laden...');
+try{
+let scans=cacheGet('scans');
+if(!scans){const resp=await fetchWithTimeout(`${apiUrl}?action=getScans`);scans=await resp.json();cacheSet('scans',scans);}
+const now=Date.now(); const FIFTEEN_MIN=15*60*1000;
+const recent=scans.filter(s=>s.owner===chipOwner && (now-new Date(s.timestamp).getTime()<=FIFTEEN_MIN));
+const grouped={};
+recent.forEach(s=>{if(!grouped[s.scanner])grouped[s.scanner]={};grouped[s.scanner][s.drink]=(grouped[s.scanner][s.drink]||0)+1;});
+let html=`<p class="font-semibold">${escapeHtml(chipOwner)}</p>`;
+for(const [scanner,drinksObj] of Object.entries(grouped)){
+html+=`<p class="mt-2 font-semibold">${escapeHtml(scanner)}</p><ul class="list-disc ml-5">`;
+for(const [drinkName,count] of Object.entries(drinksObj)) html+=`<li>${count} × ${escapeHtml(drinkName)}</li>`;
+html+=`</ul>`;
+}
+html+=`<p class="mt-3 font-semibold">En vergeet natuurlijk niet je eigen drankje!</p>`;
+hideAll();$('bestellijstContent').innerHTML=html;$('bestellijst').classList.remove('hidden');
+}catch(err){console.error(err);alert('Fout bij laden bestellijst.');}finally{showLoading(false);}
 }
 
-// ---------------- SCORES ----------------
 async function showScores(){
-  showLoading(true,'Tussenstand laden...');
-  try{
-    const cacheKey='scans';let scans=cacheGet(cacheKey);
-    if(!scans){const resp=await fetchWithTimeout(`${apiUrl}?action=getScans`);scans=await resp.json();cacheSet(cacheKey,scans);}
-    const FIFTEEN_MIN=15*60*1000;const roundsByOwner={};
-    scans.forEach(s=>{const owner=s.owner;const ts=new Date(s.timestamp).getTime();if(!roundsByOwner[owner])roundsByOwner[owner]=[];roundsByOwner[owner].push(ts);});
-    const results=[];
-    for(const [owner,times] of Object.entries(roundsByOwner)){const sorted=times.sort((a,b)=>a-b);let rounds=0,last=-Infinity;for(const t of sorted){if(t-last>FIFTEEN_MIN){rounds+=1;last=t;}else{last=Math.max(last,t);}}results.push({owner,rounds});}
-    results.sort((a,b)=>b.rounds-a.rounds);
-    let html='<ul class="list-disc ml-5">';if(results.length===0)html+='<li>Nog geen data</li>';else{results.forEach(r=>{html+=`<li><strong>${escapeHtml(r.owner)}</strong> — ${r.rounds} rondje${r.rounds===1?'':'s'}</li>`;});}html+='</ul>';
-    hideAll();$('scoreList').innerHTML=html;$('scores').classList.remove('hidden');
-  }catch(err){console.error(err);alert('Fout bij laden tussenstand.');}finally{showLoading(false);}
+showLoading(true,'Tussenstand laden...');
+try{
+let scans=cacheGet('scans');
+if(!scans){const resp=await fetchWithTimeout(`${apiUrl}?action=getScans`);scans=await resp.json();cacheSet('scans',scans);}
+const FIFTEEN_MIN=15*60*1000;const roundsByOwner={};
+scans.forEach(s=>{const owner=s.owner;const ts=new Date(s.timestamp).getTime();if(!roundsByOwner[owner])roundsByOwner[owner]=[];roundsByOwner[owner].push(ts);});
+const results=[];
+for(const [owner,times] of Object.entries(roundsByOwner)){const sorted=times.sort((a,b)=>a-b);let rounds=0,last=-Infinity;for(const t of sorted){if(t-last>FIFTEEN_MIN){rounds+=1;last=t;}else{last=Math.max(last,t);}}results.push({owner,rounds});}
+results.sort((a,b)=>b.rounds-a.rounds);
+let html='<ul class="list-disc ml-5">';if(results.length===0)html+='<li>Nog geen data</li>';else{results.forEach(r=>{html+=`<li><strong>${escapeHtml(r.owner)}</strong> — ${r.rounds} rondje${r.rounds===1?'':'s'}</li>`;});}html+='</ul>';
+hideAll();$('scoreList').innerHTML=html;$('scores').classList.remove('hidden');
+}catch(err){console.error(err);alert('Fout bij laden tussenstand.');}finally{showLoading(false);}
 }
 
-// ---------------- FINAL ----------------
 async function showFinal(){
-  showLoading(true,'Eindafrekening laden...');
-  try{
-    const cacheKey='finalData';let finalData=cacheGet(cacheKey);
-    if(!finalData){const resp=await fetchWithTimeout(`${apiUrl}?action=getFinal`);finalData=await resp.json();cacheSet(cacheKey,finalData);}
-    const totals=finalData.result||[]; const settlements=finalData.settlements||[];
-    let htmlTotals=''; if(!totals.length) htmlTotals='<p>Nog geen data</p>'; else{totals.sort((a,b)=>Number(b.balance)-Number(a.balance)); htmlTotals+='<div class="font-semibold mb-2">Totaal uitgegeven per persoon:</div><ul class="list-disc ml-5">'; totals.forEach(t=>{const bal=Number(t.balance).toFixed(2);htmlTotals+=`<li><strong>${escapeHtml(t.name)}</strong> — €${bal} (${Number(t.balance)>=0?'positief':'negatief'})</li>`;});htmlTotals+='</ul>';}
-    let htmlSettle=''; if(!settlements.length) htmlSettle='<p>Geen verrekeningen nodig.</p>'; else{htmlSettle+='<div class="font-semibold mt-2">Verrekeningen</div><ul class="list-disc ml-5">'; settlements.forEach(s=>{const amt=Number(s.amount).toFixed(2);htmlSettle+=`<li>${escapeHtml(s.from)} betaalt €${amt} aan ${escapeHtml(s.to)}</li>`;});htmlSettle+='</ul>';}
-    hideAll();$('finalTotals').innerHTML=htmlTotals;$('finalSettlements').innerHTML=htmlSettle;$('finalSettlementStatus').innerHTML='';startSettlementPolling();$('final').classList.remove('hidden');
-  }catch(err){console.error(err);alert('Fout bij laden eindafrekening.');}finally{showLoading(false);}
+showLoading(true,'Eindafrekening laden...');
+try{
+let finalData=cacheGet('finalData');
+if(!finalData){const resp=await fetchWithTimeout(`${apiUrl}?action=getFinal`);finalData=await resp.json();cacheSet('finalData',finalData);}
+const totals=finalData.result||[]; const settlements=finalData.settlements||[];
+let htmlTotals=''; if(!totals.length) htmlTotals='<p>Nog geen data</p>'; else{totals.sort((a,b)=>Number(b.balance)-Number(a.balance)); htmlTotals+='<div class="font-semibold mb-2">Totaal uitgegeven per persoon:</div><ul class="list-disc ml-5">'; totals.forEach(t=>{const bal=Number(t.balance).toFixed(2);htmlTotals+=`<li><strong>${escapeHtml(t.name)}</strong> — €${bal} (${Number(t.balance)>=0?'positief':'negatief'})</li>`;});htmlTotals+='</ul>';}
+let htmlSettle=''; if(!settlements.length) htmlSettle='<p>Geen verrekeningen nodig.</p>'; else{htmlSettle+='<div class="font-semibold mt-2">Verrekeningen</div><ul class="list-disc ml-5">'; settlements.forEach(s=>{const amt=Number(s.amount).toFixed(2);htmlSettle+=`<li>${escapeHtml(s.from)} betaalt €${amt} aan ${escapeHtml(s.to)}</li>`;});htmlSettle+='</ul>';}
+hideAll();$('finalTotals').innerHTML=htmlTotals;$('finalSettlements').innerHTML=htmlSettle;$('finalSettlementStatus').innerHTML='';startSettlementPolling();$('final').classList.remove('hidden');
+}catch(err){console.error(err);alert('Fout bij laden eindafrekening.');}finally{showLoading(false);}
 }
 
-// ---------------- MARK PAID ----------------
 async function markMyPaid(){showLoading(true,'Bezig met bevestigen...');try{await fetchWithTimeout(apiUrl,{method:'POST',body:new URLSearchParams({action:'markPaid',owner:scannerName})});$('finalSettlementStatus').textContent='✅ Betaald geregistreerd!';}catch(err){console.error(err);alert('Fout bij afrekenen');}finally{showLoading(false);}}
 
+function startSettlementPolling(){if(settlementPollInterval)clearInterval(settlementPollInterval);settlementPollInterval=setInterval(showFinal,15000);}
+
+function renderMenuFromFirst(){renderMenu();}
+function backToMenu(){stopSettlementPolling();renderMenu();}
+function stopSettlementPolling(){if(settlementPollInterval){clearInterval(settlementPollInterval);settlementPollInterval=null;}}
+
 // ---------------- EVENT LISTENERS ----------------
-window.addEventListener('load',init);
+window.addEventListener('DOMContentLoaded',init);
 $('addDrinkBtn').onclick=addCustomDrink;
 $('bestelOverzichtBtn').onclick=showBestellijst;
 $('scoresBtn').onclick=showScores;
 $('finalBtn').onclick=showFinal;
 $('newRoundBtn').onclick=renderMenu;
 $('confirmScoresBtn').onclick=showScores;
-$('backToMenuFromScores').onclick=renderMenu;
-$('backToMenuFromBestel').onclick=renderMenu;
-$('backToMenuFromFinal').onclick=renderMenu;
+$('backToMenuFromScores').onclick=backToMenu;
+$('backToMenuFromBestel').onclick=backToMenu;
+$('backToMenuFromFinal').onclick=backToMenu;
 $('markPaidBtn').onclick=markMyPaid;
-
-// ---------------- SETTLEMENT POLLING ----------------
-function startSettlementPolling(){
-  if(settlementPollInterval)clearInterval(settlementPollInterval);
-  settlementPollInterval=setInterval(showFinal,15000);
-}
+$('firstTimeContinueBtn').onclick=renderMenuFromFirst;
 </script>
 </body>
 </html>
