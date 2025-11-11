@@ -3,263 +3,318 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NextDrink — Preo-stijl</title>
+  <title>NextDrink NFC — Tailwind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Basis reset */
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
-    body{
-      background: linear-gradient(180deg, #f2e7ff 0%, #fffaf0 100%);
-      display:flex;align-items:flex-start;justify-content:center;padding:28px 12px; color:#111;
-    }
-
-    /* Card wrapper (white container like screenshot) */
-    .shell{
-      width:100%;max-width:440px;background:linear-gradient(180deg,#ffffff 0%, #fbfbfe 100%);
-      border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(16,24,40,0.12);overflow:hidden;
-      border:1px solid rgba(16,24,40,0.04);
-    }
-
-    header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-    #logo{width:48px;height:48px;border-radius:10px;object-fit:cover}
-    .title{font-size:18px;font-weight:700}
-    .subtitle{font-size:13px;opacity:0.7}
-
-    /* Grid of product tiles */
-    .drinks-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
-
-    .tile{
-      background:#fff;border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      box-shadow:0 6px 18px rgba(16,24,40,0.06);cursor:pointer;border:1px solid rgba(16,24,40,0.03);
-      transition:transform .12s ease, box-shadow .12s ease;
-      min-height:110px;text-align:center
-    }
-    .tile:active{transform:translateY(2px)}
-    .tile .name{font-weight:700;font-size:15px;margin-bottom:6px}
-    .tile .meta{font-size:13px;opacity:0.75}
-
-    /* subtle tag for price / deposit */
-    .price-pill{background:linear-gradient(90deg,#f3ecff,#fff0ee);padding:6px 10px;border-radius:999px;font-weight:700;margin-top:8px;font-size:13px}
-
-    /* action / utility buttons below */
-    .utilities{margin-top:14px;display:flex;gap:10px}
-    .btn{flex:1;padding:11px;border-radius:12px;border:0;font-weight:700;cursor:pointer}
-    .btn.ghost{background:transparent;border:1px solid rgba(16,24,40,0.06)}
-    .btn.primary{background:#6d28d9;color:white}
-
-    /* loading overlay */
-    #loadingOverlay{position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(4,4,6,0.45);display:none;align-items:center;justify-content:center;z-index:9999}
-    .spinner{width:64px;height:64px;border-radius:50%;border:8px solid rgba(255,255,255,0.18);border-top-color:#fff;animation:spin 1s linear infinite}
-    @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-
-    /* small screens adjustments */
-    @media(max-width:380px){.drinks-grid{grid-template-columns:repeat(2,1fr);gap:10px}.tile{min-height:96px}}
+    /* small helper so native buttons don't jump on iOS */
+    button { -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
-<body>
-  <div id="loadingOverlay"><div style="text-align:center;color:white"><div class="spinner"></div><div style="margin-top:10px">Bezig...</div></div></div>
+<body class="min-h-screen bg-gradient-to-br from-purple-50 via-purple-100 to-orange-50 flex items-start justify-center p-6">
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+    <div class="text-center text-white">
+      <div class="inline-block w-16 h-16 rounded-full border-8 border-white/30 border-t-white animate-spin"></div>
+      <div id="loadingText" class="mt-3">Bezig met laden...</div>
+    </div>
+  </div>
 
-  <main class="shell">
-    <header>
-      <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink"/>
+  <main class="w-full max-w-md bg-white rounded-2xl shadow-lg p-5">
+    <header class="flex items-center gap-3">
+      <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink" class="w-12 h-12 rounded-lg object-cover"/>
       <div>
-        <div class="title">NextDrink</div>
-        <div class="subtitle" id="menuSubtitle">Laad een NFC-sticker en kies een drankje</div>
+        <h1 class="text-lg font-semibold">NextDrink</h1>
+        <p id="menuSubtitle" class="text-sm text-gray-500">Laad een NFC-sticker en kies een drankje</p>
       </div>
     </header>
 
-    <!-- menu -->
-    <section id="menu">
-      <h3 style="margin:0 0 8px 0;font-size:14px;font-weight:700">Wat wil je laten halen?</h3>
-      <div id="drinks" class="drinks-grid"></div>
+    <!-- MENU -->
+    <section id="menu" class="mt-4">
+      <h2 id="menuTitle" class="text-sm font-semibold text-gray-700 mb-2"></h2>
+      <div id="drinks" class="grid grid-cols-2 gap-3"></div>
 
-      <div class="utilities">
-        <button class="btn ghost" onclick="showBestellijst()">📝 Bestellijst</button>
-        <button class="btn ghost" onclick="showScores()">📊 Tussenstand</button>
-        <button class="btn primary" onclick="showFinal()">🏁 Eindafrekening</button>
+      <div class="mt-4 grid grid-cols-1 gap-3">
+        <button id="addDrinkBtn" class="w-full py-3 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700" onclick="addCustomDrink()">+ Drankje toevoegen</button>
+        <button id="bestelOverzichtBtn" class="w-full py-3 rounded-lg bg-emerald-500 text-white text-sm font-semibold" onclick="showBestellijst()">📝 Bekijk bestellijst</button>
+        <div class="flex gap-3">
+          <button id="scoresBtn" class="flex-1 py-3 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700" onclick="showScores()">📊 Tussenstand</button>
+          <button id="finalBtn" class="flex-1 py-3 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700" onclick="showFinal()">🏁 Eindafrekening</button>
+        </div>
       </div>
     </section>
 
-    <!-- confirmation -->
-    <section id="confirm" style="display:none;margin-top:12px;text-align:center">
-      <div style="font-size:28px">✅</div>
-      <div id="confirmText" style="margin-top:8px;font-weight:700"></div>
-      <div style="margin-top:12px;display:flex;gap:10px">
-        <button class="btn primary" onclick="newRound()">Nieuw rondje</button>
-        <button class="btn ghost" onclick="showScores()">Tussenstand</button>
+    <!-- CONFIRM -->
+    <section id="confirm" class="mt-4 hidden text-center">
+      <div class="text-4xl">✅</div>
+      <div id="confirmText" class="mt-3 font-semibold text-gray-700"></div>
+      <div class="mt-4 flex gap-3">
+        <button class="flex-1 py-3 rounded-lg bg-purple-600 text-white font-semibold" onclick="newRound()">Nieuw rondje</button>
+        <button class="flex-1 py-3 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700" onclick="showScores()">Tussenstand</button>
       </div>
     </section>
 
-    <!-- first time message -->
-    <section id="firstTime" style="display:none;margin-top:12px">
-      <h3 style="margin-top:0">Welkom!</h3>
-      <p id="firstTimeText">Je naam is opgeslagen.</p>
-      <div style="display:flex;gap:10px;margin-top:10px">
-        <button class="btn primary" onclick="renderMenuFromFirst()">Verder</button>
+    <!-- FIRST TIME -->
+    <section id="firstTime" class="mt-4 hidden">
+      <h3 class="text-lg font-semibold">Welkom!</h3>
+      <p id="firstTimeText" class="text-gray-600 mt-2"></p>
+      <div class="mt-3">
+        <button class="w-full py-3 rounded-lg bg-purple-600 text-white font-semibold" onclick="renderMenuFromFirst()">Verder</button>
       </div>
     </section>
 
-    <!-- scores / bestellijst / final are kept as modifiable blocks (same ids as in jouw script) -->
-    <section id="scores" style="display:none;margin-top:10px">
-      <h3 style="margin:0 0 8px 0">Tussenstand</h3>
-      <div id="scoreList"></div>
-      <div style="margin-top:10px"><button class="btn ghost" onclick="backToMenu()">Terug</button></div>
+    <!-- SCORES -->
+    <section id="scores" class="mt-4 hidden">
+      <h3 class="text-sm font-semibold text-gray-700">Tussenstand</h3>
+      <div id="scoreList" class="mt-2 text-sm text-gray-700"></div>
+      <div class="mt-4"><button class="w-full py-3 rounded-lg border border-gray-200 text-gray-700" onclick="backToMenu()">Terug</button></div>
     </section>
 
-    <section id="bestellijst" style="display:none;margin-top:10px">
-      <h3 style="margin:0 0 8px 0">📝 Bestellijst</h3>
-      <div id="bestellijstContent"></div>
-      <div style="margin-top:10px"><button class="btn ghost" onclick="backToMenu()">Terug</button></div>
+    <!-- BESTELLIJST -->
+    <section id="bestellijst" class="mt-4 hidden">
+      <h3 class="text-sm font-semibold text-gray-700">📝 Bestellijst</h3>
+      <div id="bestellijstContent" class="mt-2 text-sm text-gray-700"></div>
+      <div class="mt-4"><button class="w-full py-3 rounded-lg border border-gray-200 text-gray-700" onclick="backToMenu()">Terug</button></div>
     </section>
 
-    <section id="final" style="display:none;margin-top:10px">
-      <h3 style="margin:0 0 8px 0">🏁 Eindafrekening</h3>
-      <div id="finalTotals"></div>
-      <div id="finalSettlements"></div>
-      <div id="finalSettlementStatus" style="margin-top:8px"></div>
-      <div style="margin-top:10px;display:flex;gap:8px">
-        <button class="btn ghost" onclick="markMyPaid()">Ik wil afrekenen</button>
-        <button class="btn ghost" onclick="backToMenu()">Terug</button>
+    <!-- FINAL -->
+    <section id="final" class="mt-4 hidden">
+      <h3 class="text-sm font-semibold text-gray-700">🏁 Eindafrekening</h3>
+      <div id="finalTotals" class="mt-2 text-sm text-gray-700"></div>
+      <div id="finalSettlements" class="mt-2 text-sm text-gray-700"></div>
+      <div id="finalSettlementStatus" class="mt-2 text-sm text-gray-700"></div>
+      <div class="mt-4 flex gap-2">
+        <button class="flex-1 py-3 rounded-lg border border-gray-200 text-gray-700" onclick="markMyPaid()">Ik wil afrekenen</button>
+        <button class="flex-1 py-3 rounded-lg border border-gray-200 text-gray-700" onclick="backToMenu()">Terug</button>
       </div>
     </section>
-
   </main>
 
   <script>
-    // --- API + shortcuts (kept from your original script) ---
     const apiUrl = "https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
     const $ = id => document.getElementById(id);
     const cacheTTL = 30000;
-    const showLoading = (show, text = 'Bezig...') => { $('loadingOverlay').style.display = show ? 'flex' : 'none'; document.querySelectorAll('button').forEach(b=>b.disabled = show); };
 
+    // require chipId in URL
     let chipId = new URLSearchParams(window.location.search).get('chipId');
     if (!chipId) { alert('Geen chipId in URL!'); throw new Error('Geen chipId'); }
 
     let scannerName = localStorage.getItem('scannerName') || '';
     let chipOwner = '';
     let drinks = [];
+    let settlementPollInterval = null;
+
+    const showLoading = (show, text = 'Bezig...') => {
+      $('loadingText').textContent = text;
+      $('loadingOverlay').style.display = show ? 'flex' : 'none';
+      document.querySelectorAll('button').forEach(b => b.disabled = show);
+    };
 
     const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
       const controller = new AbortController();
-      const id = setTimeout(()=>controller.abort(), timeout);
-      try { const res = await fetch(url, {...options, signal: controller.signal}); clearTimeout(id); return res; } catch(e){ clearTimeout(id); throw e; }
+      const id = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return res;
+      } catch (err) {
+        clearTimeout(id);
+        throw err;
+      }
     };
 
-    const cacheGet = key => { try{ const raw = sessionStorage.getItem(key); if(!raw) return null; const {data,time}=JSON.parse(raw); if(Date.now()-time>cacheTTL) return null; return data; }catch(e){return null} };
-    const cacheSet = (key,data) => { try{ sessionStorage.setItem(key, JSON.stringify({data,time:Date.now()})); }catch(e){} };
+    const cacheGet = key => {
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return null;
+        const { data, time } = JSON.parse(raw);
+        if (Date.now() - time > cacheTTL) return null;
+        return data;
+      } catch (e) { return null; }
+    };
+    const cacheSet = (key, data) => { try { sessionStorage.setItem(key, JSON.stringify({ data, time: Date.now() })); } catch (e) {} };
 
-    async function init(){
-      showLoading(true,'Initialiseren...');
-      try{
-        const ownerPromise = fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`,{},5000);
-        const drinksPromise = fetchWithTimeout(`${apiUrl}?action=getDrinks`,{},5000);
+    async function init() {
+      showLoading(true, 'Initialiseren...');
+      try {
+        const ownerPromise = fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
+        const drinksPromise = fetchWithTimeout(`${apiUrl}?action=getDrinks`);
         const [ownerRes, drinksRes] = await Promise.allSettled([ownerPromise, drinksPromise]);
-        chipOwner = (ownerRes.status==='fulfilled') ? (await ownerRes.value.text()).trim() : '';
-        drinks = (drinksRes.status==='fulfilled') ? await drinksRes.value.json() : [];
-        if(!drinks || !drinks.length){ drinks = [
-          {name:'Kleine bier', price:4.40},
-          {name:'Grote bier', price:8.00},
-          {name:'Desperados', price:6.50},
-          {name:'Wijn', price:6.00},
-          {name:'0.0 bier', price:4.00},
-          {name:'Frisdrank', price:4.00}
-        ]; }
 
-        scannerName = (scannerName||'').trim();
+        chipOwner = (ownerRes.status === 'fulfilled') ? (await ownerRes.value.text()).trim() : '';
+        drinks = (drinksRes.status === 'fulfilled') ? await drinksRes.value.json() : [];
 
-        // prompting logic (same behaviour as your original script)
-        if(!scannerName && !chipOwner){
-          const name = prompt('Wat is jouw naam?')?.trim(); if(!name){ alert('Geen naam ingevoerd. Stop.'); showLoading(false); return; }
-          scannerName = name; chipOwner = name; localStorage.setItem('scannerName', scannerName);
-          try{ await fetch(apiUrl,{method:'POST', body: new URLSearchParams({action:'setOwner', chipId, owner: chipOwner})}); }catch(e){console.warn(e)}
-          $('firstTimeText').innerHTML = `Welkom ${chipOwner}!<br/>Je naam is opgeslagen.<br/><br/>Plak de NFC-sticker onderaan op je telefoon en laat iemand scannen als je een rondje wil.`;
-          hideAll(); $('firstTime').style.display = 'block'; showLoading(false); return;
+        if (!drinks || !drinks.length) {
+          drinks = [
+            { name: 'Kleine bier', price: 4.40 },
+            { name: 'Grote bier', price: 8.00 },
+            { name: 'Desperados', price: 6.50 },
+            { name: 'Wijn', price: 6.00 },
+            { name: '0.0 bier', price: 4.00 },
+            { name: 'Frisdrank', price: 4.00 }
+          ];
         }
 
-        if(!scannerName && chipOwner){ const name = prompt('Wat is jouw naam?')?.trim(); if(!name){ alert('Geen naam ingevoerd. Stop.'); showLoading(false); return; } scannerName = name; localStorage.setItem('scannerName', scannerName); }
-        if(scannerName && !chipOwner){ const ownerName = prompt('Wiens sticker heb je gescand?')?.trim(); if(!ownerName){ alert('Geen naam ingevoerd voor de sticker-eigenaar. Stop.'); showLoading(false); return; } chipOwner = ownerName; try{ await fetch(apiUrl,{method:'POST', body: new URLSearchParams({action:'setOwner', chipId, owner: chipOwner})}); }catch(e){console.warn(e)} }
+        scannerName = (scannerName || '').trim();
+
+        if (!scannerName && !chipOwner) {
+          const name = prompt('Wat is jouw naam?')?.trim();
+          if (!name) { alert('Geen naam ingevoerd. Stop.'); showLoading(false); return; }
+          scannerName = name; chipOwner = name; localStorage.setItem('scannerName', scannerName);
+          try { await fetch(apiUrl, { method: 'POST', body: new URLSearchParams({ action: 'setOwner', chipId, owner: chipOwner }) }); } catch (e) { console.warn('Kon chipOwner niet opslaan:', e); }
+          $('firstTimeText').innerHTML = `Welkom ${chipOwner}!<br/>Je naam is opgeslagen.<br/><br/>Plak de NFC-sticker onderaan op je telefoon en laat iemand scannen als je een rondje wil.`;
+          hideAll(); $('firstTime').classList.remove('hidden'); showLoading(false); return;
+        }
+
+        if (!scannerName && chipOwner) {
+          const name = prompt('Wat is jouw naam?')?.trim(); if (!name) { alert('Geen naam ingevoerd. Stop.'); showLoading(false); return; } scannerName = name; localStorage.setItem('scannerName', scannerName);
+        }
+        if (scannerName && !chipOwner) {
+          const ownerName = prompt('Wiens sticker heb je gescand?')?.trim(); if (!ownerName) { alert('Geen naam ingevoerd voor de sticker-eigenaar. Stop.'); showLoading(false); return; } chipOwner = ownerName;
+          try { await fetch(apiUrl, { method: 'POST', body: new URLSearchParams({ action: 'setOwner', chipId, owner: chipOwner }) }); } catch (e) { console.warn('Kon chipOwner niet opslaan:', e); }
+        }
 
         renderMenu();
-      }catch(err){ console.error(err); alert('Fout bij initialiseren.'); }finally{ showLoading(false); }
+
+      } catch (err) {
+        console.error(err); alert('Fout bij initialiseren.');
+      } finally {
+        showLoading(false);
+      }
     }
 
-    function hideAll(){ ['menu','confirm','scores','final','firstTime','bestellijst'].forEach(id=>{ const el=$(id); if(el) el.style.display='none'; }); }
+    function hideAll() {
+      ['menu','confirm','scores','final','firstTime','bestellijst'].forEach(id => { const el = $(id); if (el) el.classList.add('hidden'); });
+    }
 
-    function renderMenu(){
+    function renderMenu() {
       hideAll();
-      $('menuSubtitle').textContent = `Wat wil je dat ${chipOwner} voor je haalt?`;
+      $('menuTitle').textContent = `Wat wil je dat ${chipOwner} voor je haalt?`;
       const div = $('drinks'); div.innerHTML = '';
       const frag = document.createDocumentFragment();
-      for(const d of drinks){
-        const t = document.createElement('button');
-        t.className = 'tile';
-        t.innerHTML = `<div class="name">${escapeHtml(d.name)}</div><div class="meta">€${Number(d.price).toFixed(2)}</div><div class="price-pill">Totaal</div>`;
-        t.onclick = ()=>placeOrder(d);
-        frag.appendChild(t);
+      for (const d of drinks) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tile block w-full rounded-lg p-3 bg-white shadow-sm ring-1 ring-gray-100 text-left';
+        btn.innerHTML = `
+          <div class="font-semibold text-gray-800">${escapeHtml(d.name)}</div>
+          <div class="text-sm text-gray-500 mt-1">€${Number(d.price).toFixed(2)}</div>
+        `;
+        btn.onclick = () => placeOrder(d);
+        const wrapper = document.createElement('div'); wrapper.appendChild(btn);
+        frag.appendChild(wrapper);
       }
       div.appendChild(frag);
-      $('menu').style.display = 'block';
+      $('menu').classList.remove('hidden');
     }
 
-    async function placeOrder(drink){
-      showLoading(true,'Verwerken...');
-      try{
-        await fetchWithTimeout(apiUrl, { method:'POST', body: new URLSearchParams({ action:'addScan', chipId, scanner: scannerName, drink: drink.name, amount: drink.price }) }, 6000);
-        hideAll(); $('confirmText').textContent = `${drink.name} (€${Number(drink.price).toFixed(2)}) is doorgegeven aan ${chipOwner}.`;
-        $('confirm').style.display = 'block';
-      }catch(err){ console.error(err); alert('Fout bij plaatsen order.'); }finally{ showLoading(false); }
+    async function addCustomDrink() {
+      const name = prompt('Naam van het nieuwe drankje?'); if (!name) return;
+      const priceStr = prompt(`Prijs van "${name}"? (€)`); if (!priceStr) return;
+      const price = parseFloat(String(priceStr).replace(',', '.'));
+      if (isNaN(price) || price <= 0) return alert('Ongeldige prijs!');
+      drinks.push({ name: name.trim(), price });
+      try { await fetch(apiUrl, { method: 'POST', body: new URLSearchParams({ action: 'setDrinks', drinks: JSON.stringify(drinks) }) }); } catch (e) { console.error('Fout bij opslaan drankjes', e); }
+      renderMenu();
     }
 
-    // other functions (kept identical behaviour and ids to remain compatible)
-    async function showBestellijst(){ showLoading(true,'Bestellijst laden...'); try{ const cacheKey='scans'; let scans = cacheGet(cacheKey); if(!scans){ const resp = await fetchWithTimeout(`${apiUrl}?action=getScans`,{},6000); scans = await resp.json(); cacheSet(cacheKey,scans); }
-      const now = Date.now(); const FIFTEEN_MIN = 15*60*1000; const recent = scans.filter(s=>s.owner===chipOwner && (now - new Date(s.timestamp).getTime() <= FIFTEEN_MIN));
-      const grouped = {}; recent.forEach(s=>{ if(!grouped[s.scanner]) grouped[s.scanner]={}; grouped[s.scanner][s.drink] = (grouped[s.scanner][s.drink]||0)+1; });
-      let html = `<p><strong>${chipOwner}</strong> gaat deze drankjes halen:</p>`;
-      for(const [scanner, drinksObj] of Object.entries(grouped)){ html += `<p><strong>${scanner}</strong>:</p><ul>`; for(const [drinkName,count] of Object.entries(drinksObj)){ html += `<li>${count} × ${drinkName}</li>` } html += `</ul>` }
-      html += `<p style="margin-top:12px;font-weight:700;">En vergeet natuurlijk niet je eigen drankje!</p>`;
-      hideAll(); $('bestellijstContent').innerHTML = html; $('bestellijst').style.display = 'block';
-    }catch(err){ console.error(err); alert('Fout bij laden bestellijst.'); }finally{ showLoading(false); } }
-
-    async function showScores(){ showLoading(true,'Tussenstand laden...'); try{ const cacheKey='scans'; let scans = cacheGet(cacheKey); if(!scans){ const resp = await fetchWithTimeout(`${apiUrl}?action=getScans`,{},6000); scans = await resp.json(); cacheSet(cacheKey,scans); }
-      const FIFTEEN_MIN = 15*60*1000; const roundsByOwner={}; scans.forEach(s=>{ const owner = s.owner; const ts = new Date(s.timestamp).getTime(); if(!roundsByOwner[owner]) roundsByOwner[owner]=[]; roundsByOwner[owner].push(ts); });
-      const results=[]; for(const [owner,times] of Object.entries(roundsByOwner)){ const sorted=times.sort((a,b)=>a-b); let rounds=0; let last=-Infinity; for(const t of sorted){ if(t-last>FIFTEEN_MIN){ rounds+=1; last=t; } else { last=Math.max(last,t); } } results.push({owner,rounds}); }
-      results.sort((a,b)=>b.rounds-a.rounds);
-      let html = '<ul>'; if(results.length===0) html += '<li>Nog geen data</li>'; else { results.forEach(r=>{ html += `<li><strong>${r.owner}</strong> — ${r.rounds} rondje${r.rounds===1? '':'s'} gehaald</li>`; }); } html += '</ul>';
-      hideAll(); $('scoreList').innerHTML = html; $('scores').style.display = 'block';
-    }catch(err){ console.error(err); alert('Fout bij laden tussenstand.'); }finally{ showLoading(false); } }
-
-    async function showFinal(){ showLoading(true,'Eindafrekening laden...'); try{ const cacheKey='finalData'; let finalData = cacheGet(cacheKey); if(!finalData){ const resp = await fetchWithTimeout(`${apiUrl}?action=getFinal`,{},7000); finalData = await resp.json(); cacheSet(cacheKey,finalData); }
-      const totals = finalData.result || []; const settlements = finalData.settlements || [];
-      let htmlTotals = ''; if(!totals.length){ htmlTotals = '<p>Nog geen data</p>'; } else { totals.sort((a,b)=>Number(b.balance)-Number(a.balance)); htmlTotals += '<div style="font-weight:700;margin-bottom:6px">Totaal uitgegeven per persoon:</div><ul>'; totals.forEach(t=>{ const bal = Number(t.balance).toFixed(2); htmlTotals += `<li><strong>${t.name}</strong> — €${bal} (${Number(t.balance)>=0? 'positief':'negatief'})</li>` }); htmlTotals += '</ul>'; }
-      let htmlSettle = ''; if(!settlements.length){ htmlSettle = '<p>Geen verrekeningen nodig.</p>'; } else { htmlSettle += '<div style="margin-top:8px;font-weight:700;">Verrekeningen</div><ul>'; settlements.forEach(s=>{ const amt = Number(s.amount).toFixed(2); htmlSettle += `<li>${s.from} betaalt €${amt} aan ${s.to}</li>` }); htmlSettle += '</ul>'; }
-      hideAll(); $('finalTotals').innerHTML = htmlTotals; $('finalSettlements').innerHTML = htmlSettle; $('finalSettlementStatus').innerHTML = '';
-      startSettlementPolling(); $('final').style.display='block';
-    }catch(err){ console.error(err); alert('Fout bij laden eindafrekening.'); }finally{ showLoading(false); } }
-
-    async function markMyPaid(){ showLoading(true,'Bezig met bevestigen...'); try{ await fetchWithTimeout(apiUrl,{ method:'POST', body: new URLSearchParams({ action:'markAsPaid', name: scannerName }) },6000); await pollSettlementOnce(); }catch(err){ console.error(err); alert("Fout bij registreren 'Ik wil afrekenen'."); }finally{ showLoading(false); } }
-
-    async function pollSettlementOnce(){ try{ const resp = await fetchWithTimeout(`${apiUrl}?action=getSettlement`,{},5000); if(!resp.ok) return; const items = await resp.json(); renderSettlementStatus(items); }catch(e){} }
-    let settlementPollInterval = null;
-    function startSettlementPolling(){ if(settlementPollInterval) clearInterval(settlementPollInterval); pollSettlementOnce(); settlementPollInterval = setInterval(pollSettlementOnce,3000); }
-    function stopSettlementPolling(){ if(settlementPollInterval){ clearInterval(settlementPollInterval); settlementPollInterval = null; } }
-
-    function renderSettlementStatus(items){ if(!items || !Array.isArray(items)) return; const map = {}; items.forEach(it=>{ if(it.name!==undefined && it.hasPaid!==undefined) map[it.name]=!!it.hasPaid; else if(it.scanner!==undefined && it.paid!==undefined) map[it.scanner]=!!it.paid; else if(it.scanner && it.paid===true) map[it.scanner]=true; else if(it.name && it.paid!==undefined) map[it.name]=!!it.paid; });
-      let html = '<div style="font-weight:700;margin-top:8px">Bevestigingen</div><ul>'; for(const [name,paid] of Object.entries(map)){ html += `<li>${name} — ${paid? '<span style="color:#10b981">✅ bevestigd</span>' : '<span style="color:#f59e0b">⏳ nog niet</span>'}</li>` } html += '</ul>';
-      const target = $('finalSettlementStatus'); if(target) target.innerHTML = html; else { const fs = $('finalSettlements'); if(fs){ const prev = document.querySelector('[data-injected-settlement-status]'); if(prev) prev.remove(); const div = document.createElement('div'); div.setAttribute('data-injected-settlement-status','1'); div.innerHTML = html; fs.insertAdjacentElement('afterend', div); } }
+    async function placeOrder(drink) {
+      showLoading(true, 'Verwerken...');
+      try {
+        await fetchWithTimeout(apiUrl, {
+          method: 'POST',
+          body: new URLSearchParams({ action: 'addScan', chipId, scanner: scannerName, drink: drink.name, amount: drink.price })
+        }, 6000);
+        hideAll();
+        $('confirmText').innerHTML = `${escapeHtml(drink.name)} (&euro;${Number(drink.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner)}.`;
+        $('confirm').classList.remove('hidden');
+      } catch (err) {
+        console.error(err); alert('Fout bij plaatsen order.');
+      } finally {
+        showLoading(false);
+      }
     }
 
-    function backToMenu(){ stopSettlementPolling(); renderMenu(); }
-    function newRound(){ renderMenu(); }
-    function renderMenuFromFirst(){ renderMenu(); }
+    async function showBestellijst() {
+      showLoading(true, 'Bestellijst laden...');
+      try {
+        const cacheKey = 'scans';
+        let scans = cacheGet(cacheKey);
+        if (!scans) {
+          const resp = await fetchWithTimeout(`${apiUrl}?action=getScans`, {}, 6000);
+          scans = await resp.json();
+          cacheSet(cacheKey, scans);
+        }
+        const now = Date.now(); const FIFTEEN_MIN = 15 * 60 * 1000;
+        const recent = scans.filter(s => s.owner === chipOwner && (now - new Date(s.timestamp).getTime() <= FIFTEEN_MIN));
+        const grouped = {};
+        recent.forEach(s => { if (!grouped[s.scanner]) grouped[s.scanner] = {}; grouped[s.scanner][s.drink] = (grouped[s.scanner][s.drink] || 0) + 1; });
+        let html = `<p class="font-semibold">${escapeHtml(chipOwner)}</p>`;
+        for (const [scanner, drinksObj] of Object.entries(grouped)) {
+          html += `<p class=\"mt-2 font-semibold\">${escapeHtml(scanner)}</p><ul class=\"list-disc ml-5\">`;
+          for (const [drinkName, count] of Object.entries(drinksObj)) html += `<li>${count} × ${escapeHtml(drinkName)}</li>`;
+          html += `</ul>`;
+        }
+        html += `<p class=\"mt-3 font-semibold\">En vergeet natuurlijk niet je eigen drankje!</p>`;
+        hideAll(); $('bestellijstContent').innerHTML = html; $('bestellijst').classList.remove('hidden');
+      } catch (err) { console.error(err); alert('Fout bij laden bestellijst.'); } finally { showLoading(false); }
+    }
 
-    function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    async function showScores() {
+      showLoading(true, 'Tussenstand laden...');
+      try {
+        const cacheKey = 'scans'; let scans = cacheGet(cacheKey);
+        if (!scans) { const resp = await fetchWithTimeout(`${apiUrl}?action=getScans`, {}, 6000); scans = await resp.json(); cacheSet(cacheKey, scans); }
+        const FIFTEEN_MIN = 15 * 60 * 1000; const roundsByOwner = {};
+        scans.forEach(s => { const owner = s.owner; const ts = new Date(s.timestamp).getTime(); if (!roundsByOwner[owner]) roundsByOwner[owner] = []; roundsByOwner[owner].push(ts); });
+        const results = [];
+        for (const [owner, times] of Object.entries(roundsByOwner)) { const sorted = times.sort((a,b) => a-b); let rounds = 0; let last = -Infinity; for (const t of sorted) { if (t - last > FIFTEEN_MIN) { rounds += 1; last = t; } else { last = Math.max(last, t); } } results.push({ owner, rounds }); }
+        results.sort((a,b) => b.rounds - a.rounds);
+        let html = '<ul class="list-disc ml-5">'; if (results.length === 0) html += '<li>Nog geen data</li>'; else { results.forEach(r => { html += `<li><strong>${escapeHtml(r.owner)}</strong> — ${r.rounds} rondje${r.rounds === 1 ? '' : 's'}</li>`; }); } html += '</ul>';
+        hideAll(); $('scoreList').innerHTML = html; $('scores').classList.remove('hidden');
+      } catch (err) { console.error(err); alert('Fout bij laden tussenstand.'); } finally { showLoading(false); }
+    }
+
+    async function showFinal() {
+      showLoading(true, 'Eindafrekening laden...');
+      try {
+        const cacheKey = 'finalData'; let finalData = cacheGet(cacheKey);
+        if (!finalData) { const resp = await fetchWithTimeout(`${apiUrl}?action=getFinal`, {}, 7000); finalData = await resp.json(); cacheSet(cacheKey, finalData); }
+        const totals = finalData.result || []; const settlements = finalData.settlements || [];
+        let htmlTotals = '';
+        if (!totals.length) htmlTotals = '<p>Nog geen data</p>'; else { totals.sort((a,b) => Number(b.balance) - Number(a.balance)); htmlTotals += '<div class="font-semibold mb-2">Totaal uitgegeven per persoon:</div><ul class="list-disc ml-5">'; totals.forEach(t => { const bal = Number(t.balance).toFixed(2); htmlTotals += `<li><strong>${escapeHtml(t.name)}</strong> — €${bal} (${Number(t.balance)>=0 ? 'positief' : 'negatief'})</li>`; }); htmlTotals += '</ul>'; }
+        let htmlSettle = '';
+        if (!settlements.length) htmlSettle = '<p>Geen verrekeningen nodig.</p>'; else { htmlSettle += '<div class="font-semibold mt-2">Verrekeningen</div><ul class="list-disc ml-5">'; settlements.forEach(s => { const amt = Number(s.amount).toFixed(2); htmlSettle += `<li>${escapeHtml(s.from)} betaalt €${amt} aan ${escapeHtml(s.to)}</li>`; }); htmlSettle += '</ul>'; }
+        hideAll(); $('finalTotals').innerHTML = htmlTotals; $('finalSettlements').innerHTML = htmlSettle; $('finalSettlementStatus').innerHTML = '';
+        startSettlementPolling(); $('final').classList.remove('hidden');
+      } catch (err) { console.error(err); alert('Fout bij laden eindafrekening.'); } finally { showLoading(false); }
+    }
+
+    async function markMyPaid() { showLoading(true, 'Bezig met bevestigen...'); try { await fetchWithTimeout(apiUrl, { method: 'POST', body: new URLSearchParams({ action: 'markAsPaid', name: scannerName }) }, 6000); await pollSettlementOnce(); } catch (err) { console.error(err); alert("Fout bij registreren 'Ik wil afrekenen'."); } finally { showLoading(false); } }
+
+    async function pollSettlementOnce() { try { const resp = await fetchWithTimeout(`${apiUrl}?action=getSettlement`, {}, 5000); if (!resp.ok) return; const items = await resp.json(); renderSettlementStatus(items); } catch (err) {} }
+    function startSettlementPolling() { if (settlementPollInterval) clearInterval(settlementPollInterval); pollSettlementOnce(); settlementPollInterval = setInterval(pollSettlementOnce, 3000); }
+    function stopSettlementPolling() { if (settlementPollInterval) { clearInterval(settlementPollInterval); settlementPollInterval = null; } }
+
+    function renderSettlementStatus(items) {
+      if (!items || !Array.isArray(items)) return; const map = {}; items.forEach(it => { if (it.name !== undefined && it.hasPaid !== undefined) { map[it.name] = !!it.hasPaid; } else if (it.scanner !== undefined && it.paid !== undefined) { map[it.scanner] = !!it.paid; } else if (it.scanner && it.paid === true) { map[it.scanner] = true; } else if (it.name && it.paid !== undefined) { map[it.name] = !!it.paid; } });
+      let html = '<div class="font-semibold mt-2">Bevestigingen</div><ul class="list-disc ml-5">'; for (const [name, paid] of Object.entries(map)) { html += `<li>${escapeHtml(name)} — ${paid ? '<span class="text-emerald-500">✅ bevestigd</span>' : '<span class="text-yellow-400">⏳ nog niet</span>'}</li>`; } html += '</ul>';
+      const target = $('finalSettlementStatus'); if (target) target.innerHTML = html; else { const fs = $('finalSettlements'); if (fs) { const prev = document.querySelector('[data-injected-settlement-status]'); if (prev) prev.remove(); const div = document.createElement('div'); div.setAttribute('data-injected-settlement-status', '1'); div.innerHTML = html; fs.insertAdjacentElement('afterend', div); } }
+    }
+
+    function backToMenu() { stopSettlementPolling(); renderMenu(); }
+    function newRound() { renderMenu(); }
+    function renderMenuFromFirst() { renderMenu(); }
+
+    function cacheGet(key) { try { const raw = sessionStorage.getItem(key); if (!raw) return null; const { data, time } = JSON.parse(raw); if (Date.now() - time > cacheTTL) return null; return data; } catch (e) { return null; } }
+    function cacheSet(key, data) { try { sessionStorage.setItem(key, JSON.stringify({ data, time: Date.now() })); } catch (e) {} }
+
+    function escapeHtml(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
     // start
     init();
 
-    // expose for inline onclick usage
-    window.showBestellijst = showBestellijst; window.showScores = showScores; window.showFinal = showFinal; window.addCustomDrink = ()=>{ const name = prompt('Naam van het nieuwe drankje?'); if(!name) return; const priceStr = prompt(`Prijs van "${name}"? (€)`); if(!priceStr) return; const price = parseFloat(String(priceStr).replace(',','.')); if(isNaN(price)||price<=0) return alert('Ongeldige prijs!'); drinks.push({name: name.trim(), price}); try{ fetch(apiUrl,{method:'POST', body: new URLSearchParams({ action:'setDrinks', drinks: JSON.stringify(drinks) })}); }catch(e){console.error(e)} renderMenu(); };
-    window.newRound = newRound; window.backToMenu = backToMenu; window.markMyPaid = markMyPaid; window.renderMenuFromFirst = renderMenuFromFirst;
+    // expose
+    window.showBestellijst = showBestellijst; window.showScores = showScores; window.showFinal = showFinal; window.addCustomDrink = addCustomDrink; window.newRound = newRound; window.backToMenu = backToMenu; window.markMyPaid = markMyPaid; window.renderMenuFromFirst = renderMenuFromFirst;
   </script>
 </body>
 </html>
