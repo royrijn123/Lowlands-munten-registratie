@@ -15,11 +15,14 @@ button:hover { transform: scale(1.05); }
 .text-lowlands { color: #4b0082; }
 .confetti { position: fixed; width: 10px; height: 10px; opacity: 0.8; pointer-events: none; z-index: 1000; animation: fall 2s linear forwards; }
 @keyframes fall { 0% {transform: translateY(0) rotate(0deg);} 100% {transform: translateY(600px) rotate(360deg); opacity:0;} }
+/* Fade-in animatie voor menu */
+.fade-in { opacity: 0; transition: opacity 0.5s ease-in; }
+.fade-in.show { opacity: 1; }
 </style>
 </head>
 <body class="min-h-screen bg-lowlands flex items-start justify-center p-6">
 
-<main class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6">
+<main id="mainContent" class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 fade-in">
 
 <header class="flex items-center gap-3 mb-5">
 <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink" class="w-14 h-14 rounded-lg object-cover"/>
@@ -132,7 +135,8 @@ function confettiBurst(){for(let i=0;i<30;i++){const d=document.createElement('d
 
 // INIT
 function init(){
-  $('menu').classList.add('hidden'); // menu blijft verborgen
+  $('menu').classList.add('hidden'); 
+  $('mainContent').classList.remove('show'); // start hidden
   let title='',text='';
   if(!scannerName && !chipOwner){ title="Wat is je naam?"; text="Je naam wordt opgeslagen voor deze sessie.";}
   else if(chipOwner && !scannerName){ title=`Je hebt de chip van ${chipOwner} gescand.`; text="Wat is jouw eigen naam?";}
@@ -151,6 +155,8 @@ $('nameContinueBtn').onclick = () => {
   $('nameInput').value='';
   $('nameSetup').classList.add('hidden');
   renderMenu();
+  // fade-in animatie voor het menu
+  $('mainContent').classList.add('show');
 };
 
 // Menu
