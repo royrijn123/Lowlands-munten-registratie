@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NextDrink X Lowlands</title>
+<title>NextDrink NFC — Lowlands Style</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
 body { font-family: 'Poppins', sans-serif; }
-button { -webkit-tap-highlight-color: transparent; transition: transform 0.1s, background 0.2s; }
-button:hover { transform: scale(1.05); }
-.tile:hover { background: #fde68a; transform: scale(1.03); }
+button { -webkit-tap-highlight-color: transparent; transition: transform 0.1s; }
+button:hover { transform: scale(1.03); }
+.tile:hover { background: #fde68a; transform: scale(1.02); }
 .bg-lowlands { background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 50%, #fbc2eb 100%); }
 .text-lowlands { color: #4b0082; }
 .confetti { position: fixed; width: 10px; height: 10px; opacity: 0.8; pointer-events: none; z-index: 1000; animation: fall 2s linear forwards; }
@@ -24,40 +24,31 @@ button:hover { transform: scale(1.05); }
 <header class="flex items-center gap-3 mb-5">
 <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink" class="w-14 h-14 rounded-lg object-cover"/>
 <div>
-<h1 class="text-2xl font-bold text-lowlands">NextDrink x Lowlands</h1>
-<p id="menuSubtitle" class="text-sm text-purple-700">Kies je drankje 🍹</p>
+<h1 class="text-2xl font-bold text-lowlands">NextDrink</h1>
+<p id="menuSubtitle" class="text-sm text-purple-700">Laad je NFC-sticker en kies je drankje 🍹</p>
 </div>
 </header>
-
-<!-- NAME SETUP -->
-<section id="nameSetup" class="text-center hidden">
-<h3 id="nameSetupTitle" class="text-xl font-bold text-lowlands mb-2"></h3>
-<p id="nameSetupText" class="text-purple-700 mb-3"></p>
-<div class="mt-3">
-<input id="nameInput" type="text" placeholder="Voer naam in" class="w-full py-2 px-3 rounded-lg border border-gray-300 mb-2 text-gray-700">
-<button id="nameContinueBtn" class="w-full py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-500">Verder</button>
-</div>
-</section>
 
 <!-- MENU -->
 <section id="menu" class="hidden">
 <h2 id="menuTitle" class="text-lg font-semibold text-lowlands mb-3"></h2>
 <div id="drinks" class="grid grid-cols-2 gap-4 mb-4"></div>
-
-<!-- inline add drink -->
-<div id="addDrinkInline" class="mb-4 hidden">
-<input id="newDrinkName" type="text" placeholder="Naam nieuw drankje" class="w-full py-2 px-3 rounded-lg border border-gray-300 mb-2">
-<input id="newDrinkPrice" type="number" placeholder="Prijs (€)" class="w-full py-2 px-3 rounded-lg border border-gray-300 mb-2">
-<button id="confirmAddDrink" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold hover:bg-yellow-300">Voeg toe</button>
-</div>
-
 <div class="grid grid-cols-1 gap-3">
-<button id="showAddDrinkInlineBtn" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold shadow hover:bg-yellow-300">+ Drankje toevoegen</button>
+<button id="addDrinkBtn" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold shadow hover:bg-yellow-300">+ Drankje toevoegen</button>
 <button id="bestelOverzichtBtn" class="w-full py-3 rounded-xl bg-green-400 text-white font-bold shadow hover:bg-green-300">📝 Bekijk bestellijst</button>
 <div class="flex gap-3 mt-2">
 <button id="scoresBtn" class="flex-1 py-3 rounded-xl bg-pink-400 text-white font-bold shadow hover:bg-pink-300">📊 Tussenstand</button>
 <button id="finalBtn" class="flex-1 py-3 rounded-xl bg-purple-500 text-white font-bold shadow hover:bg-purple-400">🏁 Eindafrekening</button>
 </div>
+</div>
+</section>
+
+<!-- FIRST TIME -->
+<section id="firstTime" class="hidden text-center">
+<h3 id="firstTimeTitle" class="text-xl font-bold text-lowlands mb-2"></h3>
+<p id="firstTimeText" class="text-purple-700 mb-3"></p>
+<div class="mt-3">
+<button id="firstTimeContinueBtn" class="w-full py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-500">Verder</button>
 </div>
 </section>
 
@@ -101,7 +92,7 @@ button:hover { transform: scale(1.05); }
 </div>
 </section>
 
-<!-- LOADING -->
+<!-- LOADING OVERLAY -->
 <div id="loadingOverlay" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
 <div class="text-center text-white">
 <div class="inline-block w-16 h-16 rounded-full border-8 border-white/30 border-t-white animate-spin"></div>
@@ -113,123 +104,157 @@ button:hover { transform: scale(1.05); }
 
 <script>
 const $=id=>document.getElementById(id);
-const apiUrl="https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec"; // vervang met jouw script
+const apiUrl="https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
+const cacheTTL=30000;
 let chipId=new URLSearchParams(window.location.search).get('chipId');
-if(!chipId){alert('Geen chipId!'); throw new Error('Geen chipId');}
-let scannerName='';
+if(!chipId){alert('Geen chipId in URL!');throw new Error('Geen chipId');}
+let scannerName=localStorage.getItem('scannerName')||'';
 let chipOwner='';
-let drinks=[{name:"Bier",price:3},{name:"Wijn",price:4},{name:"Cocktail",price:5}];
+let drinks=[];
+let settlementPollInterval=null;
 
-// helpers
 function showLoading(show,text='Bezig...'){
   $('loadingOverlay').style.display=show?'flex':'none';
   $('loadingText').textContent=text;
   document.querySelectorAll('button').forEach(b=>b.disabled=show);
 }
-function hideAll(){['menu','confirm','scores','final','nameSetup','bestellijst'].forEach(id=>{$(id)?.classList.add('hidden');});}
-function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function confettiBurst(){for(let i=0;i<30;i++){const d=document.createElement('div');d.className='confetti';d.style.left=Math.random()*window.innerWidth+'px';d.style.background=`hsl(${Math.random()*360},80%,60%)`;d.style.animationDuration=(Math.random()*1+1.5)+'s';document.body.appendChild(d);setTimeout(()=>d.remove(),2000);}
 
-// INIT
-function init(){
-  scannerName = localStorage.getItem('scannerName') || '';
-  hideAll(); // verberg alles eerst
-  if(!scannerName){ 
-    $('nameSetupTitle').textContent = "Wat is je naam?";
-    $('nameSetupText').textContent = "Je naam wordt opgeslagen voor deze sessie.";
-    $('nameSetup').classList.remove('hidden');
-  } else {
-    renderMenu();
-  }
+async function fetchWithTimeout(url,options={},timeout=5000){
+  const controller=new AbortController();
+  const id=setTimeout(()=>controller.abort(),timeout);
+  try{const res=await fetch(url,{...options,signal:controller.signal}); clearTimeout(id); return res;}catch(err){clearTimeout(id); throw err;}
 }
 
-// Naam setup
-$('nameContinueBtn').onclick = () => {
-  const val = $('nameInput').value.trim();
-  if(!val){alert('Vul een naam in!'); return;}
-  scannerName = val;
-  localStorage.setItem('scannerName', scannerName);
-  $('nameInput').value='';
-  $('nameSetup').classList.add('hidden');
-  renderMenu();
-};
+function cacheGet(key){try{const raw=sessionStorage.getItem(key);if(!raw)return null;const {data,time}=JSON.parse(raw);if(Date.now()-time>cacheTTL)return null;return data;}catch(e){return null;}}
+function cacheSet(key,data){try{sessionStorage.setItem(key,JSON.stringify({data,time:Date.now()}));}catch(e){}}
+function hideAll(){['menu','confirm','scores','final','firstTime','bestellijst'].forEach(id=>{$(id)?.classList.add('hidden');});}
+function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// Menu
+async function init(){
+  showLoading(true,'Initialiseren...');
+  try{
+    const ownerResp=await fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
+    chipOwner=(await ownerResp.text()).trim();
+    const drinksResp=await fetchWithTimeout(`${apiUrl}?action=getDrinks`);
+    drinks=await drinksResp.json();
+    if(!drinks || !drinks.length) drinks=[{name:'Kleine bier',price:4.4},{name:'Grote bier',price:8},{name:'Desperados',price:6.5},{name:'Wijn',price:6},{name:'0.0 bier',price:4},{name:'Frisdrank',price:4}];
+
+    if(!scannerName){
+      const namePrompt = prompt(chipOwner?`Je hebt de chip van ${chipOwner} gescand. Wat is jouw naam?`:'Wat is je naam?')?.trim();
+      if(!namePrompt){alert('Geen naam ingevoerd'); throw new Error('Geen naam');}
+      scannerName=namePrompt;
+      localStorage.setItem('scannerName',scannerName);
+    }
+
+    if(!chipOwner){
+      const ownerPrompt = prompt('Wiens chip heb je gescand?')?.trim();
+      if(!ownerPrompt){alert('Geen chip eigenaar ingevoerd'); throw new Error('Geen chip owner');}
+      chipOwner=ownerPrompt;
+      try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setOwner',chipId,owner:chipOwner})});}catch(e){console.warn(e);}
+    }
+
+    renderMenu();
+  }catch(err){console.error(err);alert('Fout bij initialiseren');}
+  finally{showLoading(false);}
+}
+
 function renderMenu(){
   hideAll();
-  $('menuTitle').textContent = `Wat wil je dat iemand voor je haalt, ${escapeHtml(scannerName)}?`;
-  const div = $('drinks'); div.innerHTML='';
+  $('menuTitle').textContent=`Wat wil je dat ${escapeHtml(chipOwner)} voor je haalt?`;
+  const div=$('drinks'); div.innerHTML='';
   drinks.forEach(d=>{
     const btn=document.createElement('button');
     btn.type='button';
     btn.className='tile block w-full rounded-lg p-3 bg-white shadow-sm ring-1 ring-gray-100 text-left';
     btn.innerHTML=`<div class="font-semibold text-gray-800">${escapeHtml(d.name)}</div><div class="text-sm text-gray-500 mt-1">€${Number(d.price).toFixed(2)}</div>`;
-    btn.onclick = ()=>placeOrder(d);
+    btn.onclick=()=>placeOrder(d);
     div.appendChild(btn);
   });
   $('menu').classList.remove('hidden');
 }
 
-// Place order
+async function addCustomDrink(){
+  const name=prompt('Naam van het nieuwe drankje?')?.trim(); if(!name)return;
+  const priceStr=prompt(`Prijs van "${name}"? (€)`); if(!priceStr)return;
+  const price=parseFloat(String(priceStr).replace(',','.'));
+  if(isNaN(price)||price<=0)return alert('Ongeldige prijs!');
+  drinks.push({name,price});
+  try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setDrinks',drinks:JSON.stringify(drinks)})});}catch(e){console.error(e);}
+  renderMenu();
+}
+
 async function placeOrder(drink){
   showLoading(true,'Verwerken...');
   try{
-    await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'addScan',chipId,scanner:scannerName,drink:drink.name,amount:drink.price})});
-    $('confirmText').innerHTML=`${escapeHtml(drink.name)} (€${Number(drink.price).toFixed(2)}) is doorgegeven.`;
-    hideAll(); $('confirm').classList.remove('hidden'); confettiBurst();
-  }catch(e){console.error(e);alert('Fout bij plaatsen order.');}finally{showLoading(false);}
+    await fetchWithTimeout(apiUrl,{method:'POST',body:new URLSearchParams({action:'addScan',chipId,scanner:scannerName,drink:drink.name,amount:drink.price})},6000);
+    hideAll();
+    $('confirmText').innerHTML=`${escapeHtml(drink.name)} (&euro;${Number(drink.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner)}.`;
+    $('confirm').classList.remove('hidden');
+    for(let i=0;i<30;i++){const d=document.createElement('div');d.className='confetti';d.style.left=Math.random()*window.innerWidth+'px';d.style.background=`hsl(${Math.random()*360},80%,60%)`;document.body.appendChild(d);setTimeout(()=>d.remove(),2000);}
+  }catch(err){console.error(err);alert('Fout bij plaatsen order');}
+  finally{showLoading(false);}
 }
 
-// Inline drink toevoegen
-$('showAddDrinkInlineBtn').onclick=()=>$('addDrinkInline').classList.toggle('hidden');
-$('confirmAddDrink').onclick=()=>{
-  const n=$('newDrinkName').value.trim(); 
-  const p=parseFloat($('newDrinkPrice').value);
-  if(!n||isNaN(p)||p<=0){alert('Voer een geldige naam en prijs in!'); return;}
-  drinks.push({name:n,price:p});
-  $('newDrinkName').value=''; $('newDrinkPrice').value='';
-  renderMenu();
-};
-
-// Bestellijst
 async function showBestellijst(){
-  showLoading(true);
+  showLoading(true,'Bestellijst laden...');
   try{
-    const resp=await fetch(`${apiUrl}?action=getScans`);
-    const scans=await resp.json();
-    const html = scans.filter(s=>s.owner===scannerName).map(s=>`<p>${escapeHtml(s.scanner)} haalde ${escapeHtml(s.drink)} (€${Number(s.amount).toFixed(2)})</p>`).join('') || '<p>Nog geen bestellingen</p>';
-    $('bestellijstContent').innerHTML=html;
-    hideAll(); $('bestellijst').classList.remove('hidden');
-  }catch(e){alert('Fout bij laden bestellijst');}finally{showLoading(false);}
+    let scans=cacheGet('scans');
+    if(!scans){const resp=await fetchWithTimeout(`${apiUrl}?action=getScans`); scans=await resp.json(); cacheSet('scans',scans);}
+    const now=Date.now(); const FIFTEEN_MIN=15*60*1000;
+    const recent=scans.filter(s=>s.owner===chipOwner && (now-new Date(s.timestamp).getTime()<=FIFTEEN_MIN));
+    const grouped={};
+    recent.forEach(s=>{if(!grouped[s.scanner])grouped[s.scanner]={};grouped[s.scanner][s.drink]=(grouped[s.scanner][s.drink]||0)+1;});
+    let html=`<p class="font-semibold">${escapeHtml(chipOwner)}</p>`;
+    for(const [scanner,drinksObj] of Object.entries(grouped)){
+      html+=`<p class="mt-2 font-semibold">${escapeHtml(scanner)}</p><ul class="list-disc ml-5">`;
+      for(const [drinkName,count] of Object.entries(drinksObj)) html+=`<li>${count} × ${escapeHtml(drinkName)}</li>`;
+      html+='</ul>';
+    }
+    html+=`<p class="mt-3 font-semibold">En vergeet natuurlijk niet je eigen drankje!</p>`;
+    hideAll(); $('bestellijstContent').innerHTML=html; $('bestellijst').classList.remove('hidden');
+  }catch(err){console.error(err);alert('Fout bij laden bestellijst.');}finally{showLoading(false);}
 }
 
-// Scores
 async function showScores(){
-  showLoading(true);
+  showLoading(true,'Tussenstand laden...');
   try{
-    const resp=await fetch(`${apiUrl}?action=getScans`);
-    const scans=await resp.json();
-    const tally={};
-    scans.forEach(s=>tally[s.owner]=(tally[s.owner]||0)+1);
-    const html='<ul>'+Object.entries(tally).map(([n,c])=>`<li>${escapeHtml(n)} — ${c} rondje${c===1?'':'s'}</li>`).join('')+'</ul>';
-    $('scoreList').innerHTML=html;
-    hideAll(); $('scores').classList.remove('hidden');
-  }catch(e){alert('Fout bij laden scores');}finally{showLoading(false);}
+    let scans=cacheGet('scans');
+    if(!scans){const resp=await fetchWithTimeout(`${apiUrl}?action=getScans`); scans=await resp.json(); cacheSet('scans',scans);}
+    const FIFTEEN_MIN=15*60*1000; const roundsByOwner={};
+    scans.forEach(s=>{const owner=s.owner; const ts=new Date(s.timestamp).getTime(); if(!roundsByOwner[owner])roundsByOwner[owner]=[]; roundsByOwner[owner].push(ts);});
+    const results=[];
+    for(const [owner,times] of Object.entries(roundsByOwner)){const sorted=times.sort((a,b)=>a-b); let rounds=0,last=-Infinity; for(const t of sorted){if(t-last>FIFTEEN_MIN){rounds+=1; last=t;}else{last=Math.max(last,t);}} results.push({owner,rounds});}
+    results.sort((a,b)=>b.rounds-a.rounds);
+    let html='<ul class="list-disc ml-5">'; if(results.length===0) html+='<li>Nog geen data</li>'; else{results.forEach(r=>{html+=`<li><strong>${escapeHtml(r.owner)}</strong> — ${r.rounds} rondje${r.rounds===1?'':'s'}</li>`;});} html+='</ul>';
+    hideAll(); $('scoreList').innerHTML=html; $('scores').classList.remove('hidden');
+  }catch(err){console.error(err);alert('Fout bij laden tussenstand.');}finally{showLoading(false);}
 }
 
-// Final
 async function showFinal(){
-  showLoading(true);
+  showLoading(true,'Eindafrekening laden...');
   try{
-    const resp=await fetch(`${apiUrl}?action=getFinal`);
-    const data=await resp.json();
-    $('finalTotals').innerHTML=(data.result||[]).map(t=>`<p>${escapeHtml(t.name)} — €${Number(t.balance).toFixed(2)}</p>`).join('')||'<p>Nog geen data</p>';
-    $('finalSettlements').innerHTML=(data.settlements||[]).map(s=>`<p>${escapeHtml(s.from)} betaalt €${Number(s.amount).toFixed(2)} aan ${escapeHtml(s.to)}</p>`).join('')||'<p>Geen verrekeningen</p>';
-    hideAll(); $('final').classList.remove('hidden');
-  }catch(e){alert('Fout bij laden eindafrekening');}finally{showLoading(false);}
+    let finalData=cacheGet('finalData');
+    if(!finalData){const resp=await fetchWithTimeout(`${apiUrl}?action=getFinal`); finalData=await resp.json(); cacheSet('finalData',finalData);}
+    const totals=finalData.result||[]; const settlements=finalData.settlements||[];
+    let htmlTotals=''; if(!totals.length) htmlTotals='<p>Nog geen data</p>'; else{totals.sort((a,b)=>Number(b.balance)-Number(a.balance)); htmlTotals+='<div class="font-semibold mb-2">Totaal uitgegeven per persoon:</div><ul class="list-disc ml-5">'; totals.forEach(t=>{const bal=Number(t.balance).toFixed(2); htmlTotals+=`<li><strong>${escapeHtml(t.name)}</strong> — €${bal} (${Number(t.balance)>=0?'positief':'negatief'})</li>`;}); htmlTotals+='</ul>';}
+    let htmlSettle=''; if(!settlements.length) htmlSettle='<p>Geen verrekeningen nodig.</p>'; else{htmlSettle+='<div class="font-semibold mt-2">Verrekeningen</div><ul class="list-disc ml-5">'; settlements.forEach(s=>{const amt=Number(s.amount).toFixed(2); htmlSettle+=`<li>${escapeHtml(s.from)} betaalt €${amt} aan ${escapeHtml(s.to)}</li>`;}); htmlSettle+='</ul>';}
+    hideAll(); $('finalTotals').innerHTML=htmlTotals; $('finalSettlements').innerHTML=htmlSettle; $('finalSettlementStatus').innerHTML=''; startSettlementPolling(); $('final').classList.remove('hidden');
+  }catch(err){console.error(err);alert('Fout bij laden eindafrekening.');}finally{showLoading(false);}
 }
 
-// Events
+async function markMyPaid(){
+  showLoading(true,'Bezig met bevestigen...');
+  try{await fetchWithTimeout(apiUrl,{method:'POST',body:new URLSearchParams({action:'markPaid',owner:scannerName})}); $('finalSettlementStatus').textContent='✅ Betaald geregistreerd!';}
+  catch(err){console.error(err); alert('Fout bij afrekenen');}
+  finally{showLoading(false);}
+}
+
+function startSettlementPolling(){if(settlementPollInterval)clearInterval(settlementPollInterval);settlementPollInterval=setInterval(showFinal,15000);}
+function stopSettlementPolling(){if(settlementPollInterval){clearInterval(settlementPollInterval);settlementPollInterval=null;}}
+
+// EVENT LISTENERS
+window.addEventListener('DOMContentLoaded',init);
+$('addDrinkBtn').onclick=addCustomDrink;
 $('bestelOverzichtBtn').onclick=showBestellijst;
 $('scoresBtn').onclick=showScores;
 $('finalBtn').onclick=showFinal;
@@ -238,17 +263,8 @@ $('confirmScoresBtn').onclick=showScores;
 $('backToMenuFromScores').onclick=renderMenu;
 $('backToMenuFromBestel').onclick=renderMenu;
 $('backToMenuFromFinal').onclick=renderMenu;
-$('markPaidBtn').onclick=async()=>{
-  showLoading(true);
-  try{
-    await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'markAsPaid',name:scannerName})});
-    alert('Afrekening bevestigd!');
-    showFinal();
-  }catch(e){alert('Fout bij afrekenen');}finally{showLoading(false);}
-};
+$('markPaidBtn').onclick=markMyPaid;
 
-window.addEventListener('DOMContentLoaded', init);
 </script>
-
 </body>
 </html>
