@@ -15,14 +15,11 @@ button:hover { transform: scale(1.05); }
 .text-lowlands { color: #4b0082; }
 .confetti { position: fixed; width: 10px; height: 10px; opacity: 0.8; pointer-events: none; z-index: 1000; animation: fall 2s linear forwards; }
 @keyframes fall { 0% {transform: translateY(0) rotate(0deg);} 100% {transform: translateY(600px) rotate(360deg); opacity:0;} }
-/* Fade-in animatie voor menu */
-.fade-in { opacity: 0; transition: opacity 0.5s ease-in; }
-.fade-in.show { opacity: 1; }
 </style>
 </head>
 <body class="min-h-screen bg-lowlands flex items-start justify-center p-6">
 
-<main id="mainContent" class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 fade-in">
+<main class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6">
 
 <header class="flex items-center gap-3 mb-5">
 <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink" class="w-14 h-14 rounded-lg object-cover"/>
@@ -33,7 +30,7 @@ button:hover { transform: scale(1.05); }
 </header>
 
 <!-- NAME SETUP -->
-<section id="nameSetup" class="text-center">
+<section id="nameSetup" class="text-center hidden">
 <h3 id="nameSetupTitle" class="text-xl font-bold text-lowlands mb-2"></h3>
 <p id="nameSetupText" class="text-purple-700 mb-3"></p>
 <div class="mt-3">
@@ -116,10 +113,10 @@ button:hover { transform: scale(1.05); }
 
 <script>
 const $=id=>document.getElementById(id);
-const apiUrl="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+const apiUrl="https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec"; // vervang met jouw script
 let chipId=new URLSearchParams(window.location.search).get('chipId');
 if(!chipId){alert('Geen chipId!'); throw new Error('Geen chipId');}
-let scannerName=localStorage.getItem('scannerName')||'';
+let scannerName='';
 let chipOwner='';
 let drinks=[{name:"Bier",price:3},{name:"Wijn",price:4},{name:"Cocktail",price:5}];
 
@@ -135,34 +132,32 @@ function confettiBurst(){for(let i=0;i<30;i++){const d=document.createElement('d
 
 // INIT
 function init(){
-  $('menu').classList.add('hidden'); 
-  $('mainContent').classList.remove('show'); // start hidden
-  let title='',text='';
-  if(!scannerName && !chipOwner){ title="Wat is je naam?"; text="Je naam wordt opgeslagen voor deze sessie.";}
-  else if(chipOwner && !scannerName){ title=`Je hebt de chip van ${chipOwner} gescand.`; text="Wat is jouw eigen naam?";}
-  else if(scannerName && !chipOwner){ title="Wiens chip heb je gescand?"; text="Voer de naam in van de eigenaar van de chip.";}
-  $('nameSetupTitle').textContent = title;
-  $('nameSetupText').textContent = text;
-  $('nameSetup').classList.remove('hidden');
+  scannerName = localStorage.getItem('scannerName') || '';
+  hideAll(); // verberg alles eerst
+  if(!scannerName){ 
+    $('nameSetupTitle').textContent = "Wat is je naam?";
+    $('nameSetupText').textContent = "Je naam wordt opgeslagen voor deze sessie.";
+    $('nameSetup').classList.remove('hidden');
+  } else {
+    renderMenu();
+  }
 }
 
 // Naam setup
 $('nameContinueBtn').onclick = () => {
   const val = $('nameInput').value.trim();
   if(!val){alert('Vul een naam in!'); return;}
-  if(!scannerName){scannerName=val; localStorage.setItem('scannerName',scannerName);}
-  else{chipOwner=val;}
+  scannerName = val;
+  localStorage.setItem('scannerName', scannerName);
   $('nameInput').value='';
   $('nameSetup').classList.add('hidden');
   renderMenu();
-  // fade-in animatie voor het menu
-  $('mainContent').classList.add('show');
 };
 
 // Menu
 function renderMenu(){
   hideAll();
-  $('menuTitle').textContent = `Wat wil je dat ${chipOwner||'de persoon'} voor je haalt?`;
+  $('menuTitle').textContent = `Wat wil je dat iemand voor je haalt, ${escapeHtml(scannerName)}?`;
   const div = $('drinks'); div.innerHTML='';
   drinks.forEach(d=>{
     const btn=document.createElement('button');
@@ -180,15 +175,16 @@ async function placeOrder(drink){
   showLoading(true,'Verwerken...');
   try{
     await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'addScan',chipId,scanner:scannerName,drink:drink.name,amount:drink.price})});
-    $('confirmText').innerHTML=`${escapeHtml(drink.name)} (€${Number(drink.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner||'de persoon')}.`;
+    $('confirmText').innerHTML=`${escapeHtml(drink.name)} (€${Number(drink.price).toFixed(2)}) is doorgegeven.`;
     hideAll(); $('confirm').classList.remove('hidden'); confettiBurst();
   }catch(e){console.error(e);alert('Fout bij plaatsen order.');}finally{showLoading(false);}
 }
 
-// Add drink inline
+// Inline drink toevoegen
 $('showAddDrinkInlineBtn').onclick=()=>$('addDrinkInline').classList.toggle('hidden');
 $('confirmAddDrink').onclick=()=>{
-  const n=$('newDrinkName').value.trim(); const p=parseFloat($('newDrinkPrice').value);
+  const n=$('newDrinkName').value.trim(); 
+  const p=parseFloat($('newDrinkPrice').value);
   if(!n||isNaN(p)||p<=0){alert('Voer een geldige naam en prijs in!'); return;}
   drinks.push({name:n,price:p});
   $('newDrinkName').value=''; $('newDrinkPrice').value='';
@@ -201,7 +197,7 @@ async function showBestellijst(){
   try{
     const resp=await fetch(`${apiUrl}?action=getScans`);
     const scans=await resp.json();
-    const html = scans.filter(s=>s.owner===chipOwner).map(s=>`<p>${s.scanner} haalde ${s.drink} (€${Number(s.amount).toFixed(2)})</p>`).join('') || '<p>Nog geen bestellingen</p>';
+    const html = scans.filter(s=>s.owner===scannerName).map(s=>`<p>${escapeHtml(s.scanner)} haalde ${escapeHtml(s.drink)} (€${Number(s.amount).toFixed(2)})</p>`).join('') || '<p>Nog geen bestellingen</p>';
     $('bestellijstContent').innerHTML=html;
     hideAll(); $('bestellijst').classList.remove('hidden');
   }catch(e){alert('Fout bij laden bestellijst');}finally{showLoading(false);}
@@ -251,7 +247,6 @@ $('markPaidBtn').onclick=async()=>{
   }catch(e){alert('Fout bij afrekenen');}finally{showLoading(false);}
 };
 
-// Init
 window.addEventListener('DOMContentLoaded', init);
 </script>
 
