@@ -94,19 +94,23 @@
   .nd-primary:hover{
     box-shadow: 0 10px 28px var(--glow);
   }
-/* Donkerpaarse actieknoppen met witte tekst */
+
+/* Lichter paarse actieknoppen met witte tekst en subtiele glow */
 .nd-cta {
-  background: var(--nd-purple);
+  background: #7b57c5; /* iets lichter paars */
   color: #fff !important;
   border: none;
-  box-shadow: 0 6px 16px rgba(75, 0, 143, 0.35);
+  box-shadow: 0 4px 12px rgba(75, 0, 143, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); /* subtiele leesbaarheid */
   transition: all 0.2s ease;
 }
+
 .nd-cta:hover {
-  background: #3a0072;
-  box-shadow: 0 10px 28px rgba(75, 0, 143, 0.45);
+  background: #6b45b4; /* iets donkerder bij hover */
+  box-shadow: 0 8px 20px rgba(75, 0, 143, 0.35);
   transform: translateY(-1px);
 }
+
 .nd-cta:active {
   transform: translateY(0);
 }
