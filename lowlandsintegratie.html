@@ -43,8 +43,16 @@ button:hover { transform: scale(1.05); }
 <section id="menu" class="hidden">
 <h2 id="menuTitle" class="text-lg font-semibold text-lowlands mb-3"></h2>
 <div id="drinks" class="grid grid-cols-2 gap-4 mb-4"></div>
+
+<!-- inline add drink -->
+<div id="addDrinkInline" class="mb-4 hidden">
+<input id="newDrinkName" type="text" placeholder="Naam nieuw drankje" class="w-full py-2 px-3 rounded-lg border border-gray-300 mb-2">
+<input id="newDrinkPrice" type="number" placeholder="Prijs (€)" class="w-full py-2 px-3 rounded-lg border border-gray-300 mb-2">
+<button id="confirmAddDrink" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold hover:bg-yellow-300">Voeg toe</button>
+</div>
+
 <div class="grid grid-cols-1 gap-3">
-<button id="addDrinkBtn" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold shadow hover:bg-yellow-300">+ Drankje toevoegen</button>
+<button id="showAddDrinkInlineBtn" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold shadow hover:bg-yellow-300">+ Drankje toevoegen</button>
 <button id="bestelOverzichtBtn" class="w-full py-3 rounded-xl bg-green-400 text-white font-bold shadow hover:bg-green-300">📝 Bekijk bestellijst</button>
 <div class="flex gap-3 mt-2">
 <button id="scoresBtn" class="flex-1 py-3 rounded-xl bg-pink-400 text-white font-bold shadow hover:bg-pink-300">📊 Tussenstand</button>
@@ -93,7 +101,7 @@ button:hover { transform: scale(1.05); }
 </div>
 </section>
 
-<!-- LOADING OVERLAY -->
+<!-- LOADING -->
 <div id="loadingOverlay" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
 <div class="text-center text-white">
 <div class="inline-block w-16 h-16 rounded-full border-8 border-white/30 border-t-white animate-spin"></div>
@@ -105,15 +113,15 @@ button:hover { transform: scale(1.05); }
 
 <script>
 const $=id=>document.getElementById(id);
-const apiUrl="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // vervang door jouw script
+const apiUrl="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
 let chipId=new URLSearchParams(window.location.search).get('chipId');
 if(!chipId){alert('Geen chipId!'); throw new Error('Geen chipId');}
 let scannerName=localStorage.getItem('scannerName')||'';
 let chipOwner='';
 let drinks=[{name:"Bier",price:3},{name:"Wijn",price:4},{name:"Cocktail",price:5}];
 let settlementPollInterval=null;
-const cacheTTL=10000; // 10 sec caching
 
+// helpers
 function showLoading(show,text='Bezig...'){
   $('loadingOverlay').style.display=show?'flex':'none';
   $('loadingText').textContent=text;
@@ -123,12 +131,8 @@ function hideAll(){['menu','confirm','scores','final','nameSetup','bestellijst']
 function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function confettiBurst(){for(let i=0;i<30;i++){const d=document.createElement('div');d.className='confetti';d.style.left=Math.random()*window.innerWidth+'px';d.style.background=`hsl(${Math.random()*360},80%,60%)`;d.style.animationDuration=(Math.random()*1+1.5)+'s';document.body.appendChild(d);setTimeout(()=>d.remove(),2000);}
 
-// caching
-function cacheGet(key){try{const raw=sessionStorage.getItem(key);if(!raw)return null;const {data,time}=JSON.parse(raw);if(Date.now()-time>cacheTTL)return null;return data;}catch(e){return null;}}
-function cacheSet(key,data){try{sessionStorage.setItem(key,JSON.stringify({data,time:Date.now()}));}catch(e){}}
-
 // INIT
-async function init(){
+function init(){
   let title='',text='';
   if(!scannerName && !chipOwner){ title="Wat is je naam?"; text="Je naam wordt opgeslagen voor deze sessie.";}
   else if(chipOwner && !scannerName){ title=`Je hebt de chip van ${chipOwner} gescand.`; text="Wat is jouw eigen naam?";}
@@ -142,14 +146,14 @@ async function init(){
 $('nameContinueBtn').onclick = () => {
   const val = $('nameInput').value.trim();
   if(!val){alert('Vul een naam in!'); return;}
-  if(!scannerName) {scannerName = val; localStorage.setItem('scannerName',scannerName);}
-  else chipOwner = val;
+  if(!scannerName){scannerName=val; localStorage.setItem('scannerName',scannerName);}
+  else{chipOwner=val;}
   $('nameInput').value='';
   $('nameSetup').classList.add('hidden');
   renderMenu();
 };
 
-// render menu
+// Menu
 function renderMenu(){
   hideAll();
   $('menuTitle').textContent = `Wat wil je dat ${chipOwner||'de persoon'} voor je haalt?`;
@@ -165,32 +169,32 @@ function renderMenu(){
   $('menu').classList.remove('hidden');
 }
 
-// order
+// Place order
 async function placeOrder(drink){
   showLoading(true,'Verwerken...');
   try{
     await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'addScan',chipId,scanner:scannerName,drink:drink.name,amount:drink.price})});
     $('confirmText').innerHTML=`${escapeHtml(drink.name)} (€${Number(drink.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner||'de persoon')}.`;
     hideAll(); $('confirm').classList.remove('hidden'); confettiBurst();
-    cacheSet('scans', null); // clear cache zodat realtime refresh
   }catch(e){console.error(e);alert('Fout bij plaatsen order.');}finally{showLoading(false);}
 }
 
-// Realtime data fetch
-async function fetchCachedData(action){
-  let cached = cacheGet(action);
-  if(cached) return cached;
-  const resp = await fetch(`${apiUrl}?action=${action}`);
-  const data = await resp.json();
-  cacheSet(action,data);
-  return data;
-}
+// Add drink inline
+$('showAddDrinkInlineBtn').onclick=()=>$('addDrinkInline').classList.toggle('hidden');
+$('confirmAddDrink').onclick=()=>{
+  const n=$('newDrinkName').value.trim(); const p=parseFloat($('newDrinkPrice').value);
+  if(!n||isNaN(p)||p<=0){alert('Voer een geldige naam en prijs in!'); return;}
+  drinks.push({name:n,price:p});
+  $('newDrinkName').value=''; $('newDrinkPrice').value='';
+  renderMenu();
+};
 
 // Bestellijst
 async function showBestellijst(){
   showLoading(true);
   try{
-    const scans = await fetchCachedData('getScans');
+    const resp=await fetch(`${apiUrl}?action=getScans`);
+    const scans=await resp.json();
     const html = scans.filter(s=>s.owner===chipOwner).map(s=>`<p>${s.scanner} haalde ${s.drink} (€${Number(s.amount).toFixed(2)})</p>`).join('') || '<p>Nog geen bestellingen</p>';
     $('bestellijstContent').innerHTML=html;
     hideAll(); $('bestellijst').classList.remove('hidden');
@@ -201,58 +205,47 @@ async function showBestellijst(){
 async function showScores(){
   showLoading(true);
   try{
-    const scans = await fetchCachedData('getScans');
+    const resp=await fetch(`${apiUrl}?action=getScans`);
+    const scans=await resp.json();
     const tally={};
     scans.forEach(s=>tally[s.owner]=(tally[s.owner]||0)+1);
-    const html = '<ul>' + Object.entries(tally).map(([n,c])=>`<li>${escapeHtml(n)} — ${c} rondje${c===1?'':'s'}</li>`).join('') + '</ul>';
+    const html='<ul>'+Object.entries(tally).map(([n,c])=>`<li>${escapeHtml(n)} — ${c} rondje${c===1?'':'s'}</li>`).join('')+'</ul>';
     $('scoreList').innerHTML=html;
     hideAll(); $('scores').classList.remove('hidden');
   }catch(e){alert('Fout bij laden scores');}finally{showLoading(false);}
 }
 
-// Eindafrekening
+// Final
 async function showFinal(){
   showLoading(true);
   try{
-    const data = await fetchCachedData('getFinal');
-    const htmlTotals = (data.result||[]).map(t=>`<p>${escapeHtml(t.name)} — €${Number(t.balance).toFixed(2)}</p>`).join('')||'<p>Nog geen data</p>';
-    const htmlSettle = (data.settlements||[]).map(s=>`<p>${escapeHtml(s.from)} betaalt €${Number(s.amount).toFixed(2)} aan ${escapeHtml(s.to)}</p>`).join('')||'<p>Geen verrekeningen</p>';
-    $('finalTotals').innerHTML=htmlTotals;
-    $('finalSettlements').innerHTML=htmlSettle;
+    const resp=await fetch(`${apiUrl}?action=getFinal`);
+    const data=await resp.json();
+    $('finalTotals').innerHTML=(data.result||[]).map(t=>`<p>${escapeHtml(t.name)} — €${Number(t.balance).toFixed(2)}</p>`).join('')||'<p>Nog geen data</p>';
+    $('finalSettlements').innerHTML=(data.settlements||[]).map(s=>`<p>${escapeHtml(s.from)} betaalt €${Number(s.amount).toFixed(2)} aan ${escapeHtml(s.to)}</p>`).join('')||'<p>Geen verrekeningen</p>';
     hideAll(); $('final').classList.remove('hidden');
   }catch(e){alert('Fout bij laden eindafrekening');}finally{showLoading(false);}
 }
 
-// Event bindings
-$('addDrinkBtn').onclick = () => {
-  const name=prompt('Naam van het nieuwe drankje?'); if(!name)return;
-  const price=parseFloat(prompt(`Prijs van "${name}"? (€)`)); if(isNaN(price)||price<=0)return;
-  drinks.push({name:name.trim(),price}); renderMenu();
-};
-$('bestelOverzichtBtn').onclick = showBestellijst;
-$('scoresBtn').onclick = showScores;
-$('finalBtn').onclick = showFinal;
-$('newRoundBtn').onclick = renderMenu;
-$('confirmScoresBtn').onclick = showScores;
-$('backToMenuFromScores').onclick = renderMenu;
-$('backToMenuFromBestel').onclick = renderMenu;
-$('backToMenuFromFinal').onclick = renderMenu;
-$('markPaidBtn').onclick = async ()=>{
+// Events
+$('bestelOverzichtBtn').onclick=showBestellijst;
+$('scoresBtn').onclick=showScores;
+$('finalBtn').onclick=showFinal;
+$('newRoundBtn').onclick=renderMenu;
+$('confirmScoresBtn').onclick=showScores;
+$('backToMenuFromScores').onclick=renderMenu;
+$('backToMenuFromBestel').onclick=renderMenu;
+$('backToMenuFromFinal').onclick=renderMenu;
+$('markPaidBtn').onclick=async()=>{
   showLoading(true);
-  try{ await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'markAsPaid',name:scannerName})});
-        alert('Afrekening bevestigd!'); showFinal();
+  try{
+    await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'markAsPaid',name:scannerName})});
+    alert('Afrekening bevestigd!');
+    showFinal();
   }catch(e){alert('Fout bij afrekenen');}finally{showLoading(false);}
 };
 
-// Auto-refresh intervals
-setInterval(()=>{
-  if(!$('menu').classList.contains('hidden')) return; // only refresh when not in menu
-  cacheSet('getScans', null); // clear cache
-  if(!$('bestellijst').classList.contains('hidden')) showBestellijst();
-  if(!$('scores').classList.contains('hidden')) showScores();
-  if(!$('final').classList.contains('hidden')) showFinal();
-}, 5000); // elke 5 sec
-
+// Init
 window.addEventListener('DOMContentLoaded', init);
 </script>
 
