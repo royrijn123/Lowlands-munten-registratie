@@ -94,15 +94,22 @@
   .nd-primary:hover{
     box-shadow: 0 10px 28px var(--glow);
   }
-  .nd-cta{
-    background: linear-gradient(180deg, rgba(123,74,255,0.18), rgba(75,0,143,0.22));
-    color: #fff;
-    border-color: rgba(255,255,255,0.45);
-  }
-  .nd-cta:hover{
-    box-shadow: 0 10px 32px var(--glow);
-    background: linear-gradient(180deg, rgba(123,74,255,0.22), rgba(75,0,143,0.26));
-  }
+/* Donkerpaarse actieknoppen met witte tekst */
+.nd-cta {
+  background: var(--nd-purple);
+  color: #fff !important;
+  border: none;
+  box-shadow: 0 6px 16px rgba(75, 0, 143, 0.35);
+  transition: all 0.2s ease;
+}
+.nd-cta:hover {
+  background: #3a0072;
+  box-shadow: 0 10px 28px rgba(75, 0, 143, 0.45);
+  transform: translateY(-1px);
+}
+.nd-cta:active {
+  transform: translateY(0);
+}
 
   /* Drank-tegeltjes */
   .tile{ transition: transform .1s ease, background-color .2s ease, box-shadow .2s ease; }
