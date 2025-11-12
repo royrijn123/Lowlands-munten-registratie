@@ -323,7 +323,7 @@ $('markPaidBtn').onclick = async () => {
   showLoading(true,'Bezig met registreren...');
   try {
     await fetch(apiUrl, { method:'POST', body:new URLSearchParams({action:'markAsPaid', name:scannerName}) });
-    $('finalSettlementStatus').textContent = '✅ Betaald geregistreerd!';
+    $('finalSettlementStatus').textContent = '✅ Verzoek om af te rekenen verstuurd!';
   } catch(e){ console.error(e); alert('Fout bij afrekenen'); }
   finally{ showLoading(false); }
 };
