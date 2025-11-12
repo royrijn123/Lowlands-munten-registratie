@@ -27,14 +27,12 @@ button:hover { transform: scale(1.03); }
 </div>
 </header>
 
-<!-- NAME INPUT SECTION -->
-<section id="nameSection" class="text-center hidden">
-<h3 id="nameTitle" class="text-xl font-bold text-lowlands mb-2"></h3>
-<p id="nameText" class="text-purple-700 mb-3"></p>
-<div class="mt-3">
-<input id="nameInput" type="text" placeholder="Voer naam in" class="w-full py-2 px-3 rounded-lg border border-gray-300 mb-2 text-gray-700">
-<button id="nameSubmitBtn" class="w-full py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-500">Verder</button>
-</div>
+<!-- FIRST TIME / SET NAMES -->
+<section id="firstTime" class="text-center hidden">
+<h3 class="text-xl font-bold text-lowlands mb-2">Welkom!</h3>
+<p class="text-purple-700 mb-3">Voer je naam in om te starten:</p>
+<input id="firstTimeNameInput" type="text" placeholder="Jouw naam" class="w-full p-3 rounded-xl border border-gray-300 mb-3">
+<button id="firstTimeContinueBtn" class="w-full py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-500">Verder</button>
 </section>
 
 <!-- MENU -->
@@ -42,7 +40,11 @@ button:hover { transform: scale(1.03); }
 <h2 id="menuTitle" class="text-lg font-semibold text-lowlands mb-3"></h2>
 <div id="drinks" class="grid grid-cols-2 gap-4 mb-4"></div>
 <div class="grid grid-cols-1 gap-3">
-<button id="addDrinkBtn" class="w-full py-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold shadow hover:bg-yellow-300">+ Drankje toevoegen</button>
+<div class="flex gap-2">
+<input id="newDrinkName" type="text" placeholder="Naam nieuw drankje" class="flex-1 p-2 rounded-xl border border-gray-300">
+<input id="newDrinkPrice" type="number" step="0.01" placeholder="Prijs (€)" class="w-20 p-2 rounded-xl border border-gray-300">
+<button id="addDrinkBtn" class="py-2 px-3 rounded-xl bg-yellow-400 text-purple-800 font-semibold shadow hover:bg-yellow-300">+ Toevoegen</button>
+</div>
 <button id="bestelOverzichtBtn" class="w-full py-3 rounded-xl bg-green-400 text-white font-bold shadow hover:bg-green-300">📝 Bekijk bestellijst</button>
 <div class="flex gap-3 mt-2">
 <button id="scoresBtn" class="flex-1 py-3 rounded-xl bg-pink-400 text-white font-bold shadow hover:bg-pink-300">📊 Tussenstand</button>
@@ -91,7 +93,7 @@ button:hover { transform: scale(1.03); }
 </div>
 </section>
 
-<!-- LOADING -->
+<!-- LOADING OVERLAY -->
 <div id="loadingOverlay" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
 <div class="text-center text-white">
 <div class="inline-block w-16 h-16 rounded-full border-8 border-white/30 border-t-white animate-spin"></div>
@@ -102,137 +104,166 @@ button:hover { transform: scale(1.03); }
 </main>
 
 <script>
-const $ = id => document.getElementById(id);
-const apiUrl = "https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
-let chipId = new URLSearchParams(window.location.search).get('chipId');
+const $=id=>document.getElementById(id);
+const apiUrl="https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
+const cacheTTL=30000;
+let chipId=new URLSearchParams(window.location.search).get('chipId');
 if(!chipId){alert('Geen chipId in URL!'); throw new Error('Geen chipId');}
+let scannerName=localStorage.getItem('scannerName')||'';
+let chipOwner='';
+let drinks=[];
 
-let scannerName = localStorage.getItem('scannerName') || '';
-let chipOwner = '';
-let drinks = [];
-
-// ---------------- HELPERS ----------------
+// ---------- HELPERS ----------
 function showLoading(show,text='Bezig...'){
-  $('loadingOverlay').style.display = show?'flex':'none';
-  $('loadingText').textContent = text;
+  $('loadingOverlay').style.display=show?'flex':'none';
+  $('loadingText').textContent=text;
   document.querySelectorAll('button').forEach(b=>b.disabled=show);
 }
-function hideAll(){
-  ['menu','confirm','scores','final','nameSection','bestellijst'].forEach(id=>{
-    const el=$(id);
-    if(el) el.classList.add('hidden');
-  });
+async function fetchWithTimeout(url,options={},timeout=5000){
+  const controller=new AbortController();
+  const id=setTimeout(()=>controller.abort(),timeout);
+  try{const res=await fetch(url,{...options,signal:controller.signal}); clearTimeout(id); return res;}catch(err){clearTimeout(id); throw err;}
 }
+function hideAll(){['menu','confirm','scores','final','firstTime','bestellijst'].forEach(id=>$(id)?.classList.add('hidden'));}
 function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ---------------- INIT ----------------
+// ---------- INIT ----------
 async function init(){
   showLoading(true,'Initialiseren...');
   try{
-    // chipOwner ophalen
-    const ownerResp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-    chipOwner = (await ownerResp.text()).trim();
+    const ownerResp=await fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
+    chipOwner=(await ownerResp.text()).trim();
+    const drinksResp=await fetchWithTimeout(`${apiUrl}?action=getDrinks`);
+    drinks=await drinksResp.json();
+    if(!drinks?.length) drinks=[{name:'Kleine bier',price:4.4},{name:'Grote bier',price:8},{name:'Desperados',price:6.5},{name:'Wijn',price:6},{name:'0.0 bier',price:4},{name:'Frisdrank',price:4}];
 
-    // drinks ophalen
-    const drinksResp = await fetch(`${apiUrl}?action=getDrinks`);
-    drinks = await drinksResp.json();
-    if(!drinks || !drinks.length) drinks = [{name:'Bier',price:3},{name:'Wijn',price:4},{name:'Cocktail',price:5}];
-
-    // ------------- NAAM INVOER LOGICA ----------------
-    hideAll();
-    $('nameSection').classList.remove('hidden');
-    const nameTitle = $('nameTitle');
-    const nameText = $('nameText');
-    const nameInput = $('nameInput');
-
+    // FIRST TIME LOGIC
     if(!scannerName && !chipOwner){
-      nameTitle.textContent = "Welkom!";
-      nameText.textContent = "Voer hier je naam in om te beginnen.";
-    } else if(chipOwner && !scannerName){
-      nameTitle.textContent = `Je hebt de chip van ${chipOwner} gescand.`;
-      nameText.textContent = "Wat is jouw naam?";
-    } else if(scannerName && !chipOwner){
-      nameTitle.textContent = "Wiens chip heb je gescand?";
-      nameText.textContent = "Voer de naam in van de eigenaar van de chip.";
-    } else {
-      // beide bekend
-      renderMenu();
-      return showLoading(false);
+      hideAll(); $('firstTime').classList.remove('hidden');
+      return;
     }
-
-    $('nameSubmitBtn').onclick = async ()=>{
-      const val = nameInput.value.trim();
-      if(!val){alert('Vul een naam in!'); return;}
-
-      if(!scannerName && !chipOwner){
-        scannerName = val;
-        chipOwner = val;
-        localStorage.setItem('scannerName', scannerName);
-        try{
-          await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setOwner',chipId,owner:chipOwner})});
-        }catch(e){console.warn(e);}
-      } else if(chipOwner && !scannerName){
-        scannerName = val;
-        localStorage.setItem('scannerName', scannerName);
-      } else if(scannerName && !chipOwner){
-        chipOwner = val;
-        try{
-          await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setOwner',chipId,owner:chipOwner})});
-        }catch(e){console.warn(e);}
-      }
-      nameInput.value='';
-      hideAll();
-      renderMenu();
-    }
-
+    renderMenu();
   }catch(err){console.error(err); alert('Fout bij initialiseren.');}
   finally{showLoading(false);}
 }
 
-// ---------------- MENU ----------------
+// ---------- EVENT HANDLERS ----------
+$('firstTimeContinueBtn').onclick=async()=>{
+  const name=$('firstTimeNameInput').value.trim();
+  if(!name){alert('Voer een naam in'); return;}
+  scannerName=chipOwner=name;
+  localStorage.setItem('scannerName',scannerName);
+  try{
+    await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setOwner',chipId,owner:chipOwner})});
+  }catch(e){console.warn(e);}
+  renderMenu();
+};
+
+$('addDrinkBtn').onclick=async()=>{
+  const name=$('newDrinkName').value.trim();
+  const price=parseFloat($('newDrinkPrice').value);
+  if(!name || isNaN(price) || price<=0){alert('Ongeldige naam of prijs'); return;}
+  drinks.push({name,price});
+  $('newDrinkName').value=''; $('newDrinkPrice').value='';
+  try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'setDrinks',drinks:JSON.stringify(drinks)})});}catch(e){console.error(e);}
+  renderMenu();
+};
+
+// ---------- MENU ----------
 function renderMenu(){
   hideAll();
-  $('menuTitle').textContent = `Wat wil je dat ${chipOwner} voor je haalt?`;
-  const div = $('drinks');
-  div.innerHTML = '';
+  $('menuTitle').textContent=`Wat wil je dat ${chipOwner} voor je haalt?`;
+  const div=$('drinks'); div.innerHTML='';
   drinks.forEach(d=>{
-    const btn = document.createElement('button');
-    btn.type='button';
+    const btn=document.createElement('button');
     btn.className='tile block w-full rounded-lg p-3 bg-white shadow-sm ring-1 ring-gray-100 text-left';
-    btn.innerHTML = `<div class="font-semibold text-gray-800">${escapeHtml(d.name)}</div><div class="text-sm text-gray-500 mt-1">€${Number(d.price).toFixed(2)}</div>`;
-    btn.onclick = ()=>placeOrder(d);
+    btn.innerHTML=`<div class="font-semibold text-gray-800">${escapeHtml(d.name)}</div><div class="text-sm text-gray-500 mt-1">€${Number(d.price).toFixed(2)}</div>`;
+    btn.onclick=async()=>{
+      showLoading(true,'Verwerken...');
+      try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'addScan',chipId,scanner:scannerName,drink:d.name,amount:d.price})});
+      $('confirmText').innerHTML=`${escapeHtml(d.name)} (€${Number(d.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner)}.`; hideAll(); $('confirm').classList.remove('hidden');}
+      catch(e){console.error(e); alert('Fout bij plaatsen order');}
+      finally{showLoading(false);}
+    };
     div.appendChild(btn);
   });
   $('menu').classList.remove('hidden');
 }
 
-// ---------------- PLACE ORDER ----------------
-async function placeOrder(drink){
-  showLoading(true,'Verwerken...');
+// ---------- BESTELLIJST ----------
+$('bestelOverzichtBtn').onclick=async()=>{
+  showLoading(true,'Bestellijst laden...');
   try{
-    await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'addScan',chipId,scanner:scannerName,drink:drink.name,amount:drink.price})});
-    hideAll();
-    $('confirmText').innerHTML=`${escapeHtml(drink.name)} (€${Number(drink.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner)}.`;
-    $('confirm').classList.remove('hidden');
-  }catch(e){console.error(e);alert('Fout bij plaatsen order');}
+    const res=await fetch(`${apiUrl}?action=getScans`); const scans=await res.json();
+    const grouped={};
+    scans.filter(s=>s.owner===chipOwner).forEach(s=>{
+      if(!grouped[s.scanner]) grouped[s.scanner]={};
+      grouped[s.scanner][s.drink]=(grouped[s.scanner][s.drink]||0)+1;
+    });
+    let html=`<p class="font-semibold">${escapeHtml(chipOwner)}</p>`;
+    Object.entries(grouped).forEach(([scanner,drinksObj])=>{
+      html+=`<p class="mt-2 font-semibold">${escapeHtml(scanner)}</p><ul class="list-disc ml-5">`;
+      Object.entries(drinksObj).forEach(([drinkName,count])=>html+=`<li>${count} × ${escapeHtml(drinkName)}</li>`);
+      html+='</ul>';
+    });
+    hideAll(); $('bestellijstContent').innerHTML=html; $('bestellijst').classList.remove('hidden');
+  }catch(e){console.error(e); alert('Fout bij laden bestellijst');}
+  finally{showLoading(false);}
+};
+$('backToMenuFromBestel').onclick=renderMenu;
+$('backToMenuFromScores').onclick=renderMenu;
+$('newRoundBtn').onclick=renderMenu;
+$('confirmScoresBtn').onclick=async()=>{await showScores();};
+$('scoresBtn').onclick=async()=>{await showScores();};
+
+// ---------- SCORES ----------
+async function showScores(){
+  showLoading(true,'Tussenstand laden...');
+  try{
+    const res=await fetch(`${apiUrl}?action=getScores`);
+    const scores=await res.json();
+    let html='<ul class="list-disc ml-5">';
+    if(!scores.length) html+='<li>Nog geen data</li>';
+    else scores.forEach(s=>{html+=`<li><strong>${escapeHtml(s.owner)}</strong> — ${s.rounds} rondje${s.rounds===1?'':'s'}</li>`;});
+    html+='</ul>';
+    hideAll(); $('scoreList').innerHTML=html; $('scores').classList.remove('hidden');
+  }catch(e){console.error(e); alert('Fout bij laden tussenstand');}
   finally{showLoading(false);}
 }
 
-// ---------------- EVENT LISTENERS ----------------
-window.addEventListener('DOMContentLoaded',init);
-$('addDrinkBtn').onclick = async ()=>{
-  const name = prompt('Naam nieuw drankje?'); if(!name) return;
-  const price = parseFloat(prompt(`Prijs van ${name}? (€)`));
-  if(isNaN(price)||price<=0) return alert('Ongeldige prijs!');
-  drinks.push({name:name, price});
-  renderMenu();
+// ---------- FINAL ----------
+$('finalBtn').onclick=async()=>{await showFinal();};
+$('backToMenuFromFinal').onclick=renderMenu;
+$('markPaidBtn').onclick=async()=>{
+  showLoading(true,'Bezig met registreren...');
+  try{await fetch(apiUrl,{method:'POST',body:new URLSearchParams({action:'markAsPaid',name:scannerName})});
+  $('finalSettlementStatus').textContent='✅ Betaald geregistreerd!';}
+  catch(e){console.error(e); alert('Fout bij afrekenen');}
+  finally{showLoading(false);}
 };
-$('bestelOverzichtBtn').onclick = ()=>alert('Bestellijst nog niet geïmplementeerd in dit voorbeeld');
-$('scoresBtn').onclick = ()=>alert('Tussenstand nog niet geïmplementeerd in dit voorbeeld');
-$('finalBtn').onclick = ()=>alert('Eindafrekening nog niet geïmplementeerd in dit voorbeeld');
-$('newRoundBtn').onclick = renderMenu;
-$('confirmScoresBtn').onclick = ()=>alert('Tussenstand nog niet geïmplementeerd in dit voorbeeld');
+async function showFinal(){
+  showLoading(true,'Eindafrekening laden...');
+  try{
+    const res=await fetch(`${apiUrl}?action=getFinal`);
+    const data=await res.json();
+    let htmlTotals=''; if(!data.result?.length) htmlTotals='<p>Nog geen data</p>';
+    else{
+      htmlTotals+='<div class="font-semibold mb-2">Totaal uitgegeven per persoon:</div><ul class="list-disc ml-5">';
+      data.result.forEach(t=>{htmlTotals+=`<li><strong>${escapeHtml(t.name)}</strong> — €${Number(t.balance).toFixed(2)}</li>`;});
+      htmlTotals+='</ul>';
+    }
+    let htmlSettle=''; if(!data.settlements?.length) htmlSettle='<p>Geen verrekeningen nodig.</p>';
+    else{htmlSettle+='<div class="font-semibold mt-2">Verrekeningen</div><ul class="list-disc ml-5">';
+      data.settlements.forEach(s=>{htmlSettle+=`<li>${escapeHtml(s.from)} betaalt €${Number(s.amount).toFixed(2)} aan ${escapeHtml(s.to)}</li>`;});
+      htmlSettle+='</ul>';
+    }
+    hideAll(); $('finalTotals').innerHTML=htmlTotals; $('finalSettlements').innerHTML=htmlSettle; $('final').classList.remove('hidden');
+  }catch(e){console.error(e); alert('Fout bij laden eindafrekening');}
+  finally{showLoading(false);}
+}
 
+// ---------- START ----------
+window.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
 </html>
