@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>LLET'S SPLIT – Intro</title>
 
@@ -12,109 +12,81 @@
   @font-face {
     font-family: 'Baukasten';
     src: url('fonts/Baukasten Six Regular.otf') format('opentype');
-    font-weight: normal;
-    font-style: normal;
   }
 
   body {
     background: #A54EFF;
     color: #FFF685;
-    text-transform: uppercase;
     font-family: 'Baukasten', sans-serif;
+    text-transform: uppercase;
     letter-spacing: 1px;
+    padding: 32px 24px;
   }
 
   .btn {
-    display: block;
-    width: 100%;
-    text-align: center;
-    padding: 16px;
-    border-radius: 12px;
     background: #FFF685;
     color: #A54EFF;
-    font-family: 'Baukasten', sans-serif;
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin-top: 24px;
-  }
-
-  .btn:active {
-    transform: scale(0.97);
+    padding: 16px;
+    width: 100%;
+    border-radius: 14px;
+    text-align: center;
+    font-size: 1.3rem;
+    margin-top: 30px;
   }
 </style>
 
 </head>
-<body class="min-h-screen flex flex-col px-6 pt-10">
+<body>
 
-<!-- HEADER -->
-<div class="text-center text-3xl mb-10">LLET'S SPLIT</div>
+<div class="text-center text-4xl mb-10">LLET'S SPLIT</div>
 
-<!-- UITLEG -->
-<div class="text-center text-lg leading-7 mb-10">
-  MET LLET'S SPLIT KUN JE <br>
-  RONDES MET JE VRIENDEN <br>
-  EERLIJK VERDELEN. <br><br>
-  JE HEBT HIERVOOR DE <br>
-  NFC-STICKER NODIG DIE JE <br>
-  BIJ DE INGANG HEBT GEKREGEN.
+<div id="info" class="text-center text-lg leading-7 mb-10">
+  MET LLET'S SPLIT KUN JE RONDJES <br>
+  EERLIJK VERDELEN MET JE VRIENDEN.<br><br>
+  HOUD JE NFC-STICKER TEGEN JE TELEFOON <br>
+  OF SCAN DE QR-CODE.
 </div>
 
-<!-- BUTTON -->
-<button id="scanBtn" class="btn">
-  SCAN MIJN CHIP
+<button id="retryBtn" class="btn hidden">
+  OPNIEUW PROBEREN
 </button>
 
-<!-- LOADING -->
-<div id="loading" class="hidden text-center mt-6 text-xl">
-  BEZIG...
-</div>
-
 <script>
-  // ——— AUTO-SKIP ALS NAAM AL BEKEND IS ———
-  const localName = localStorage.getItem("scannerName");
-  if (localName && localName.trim() !== "") {
-    window.location.href = "lowlandsintegratie.html";
-  }
+// ———————————————————————————————
+// 1. chipId uit URL halen
+// ———————————————————————————————
+const params = new URLSearchParams(window.location.search);
+const chipId = params.get("chipId");
 
-  const scanBtn = document.getElementById("scanBtn");
-  const loading = document.getElementById("loading");
+// ———————————————————————————————
+// 2. Als naam al in localStorage → direct door
+// ———————————————————————————————
+const savedName = localStorage.getItem("scannerName");
+if (savedName && savedName.trim() !== "" && chipId) {
+  window.location.href = `lowlandsintegratie.html?chipId=${encodeURIComponent(chipId)}`;
+}
 
-  scanBtn.onclick = async () => {
-    if (!("NDEFReader" in window)) {
-      alert("JE TELEFOON ONDERSTEUNT GEEN NFC.");
-      return;
-    }
+// ———————————————————————————————
+// 3. Als chipId aanwezig → direct naar integratie
+// ———————————————————————————————
+if (chipId) {
+  window.location.href = `lowlandsintegratie.html?chipId=${encodeURIComponent(chipId)}`;
+}
 
-    loading.classList.remove("hidden");
-    scanBtn.classList.add("hidden");
+// ———————————————————————————————
+// 4. Geen chipId → fallback
+// ———————————————————————————————
+document.getElementById("info").innerHTML = `
+  KON GEEN CHIP VINDEN.<br><br>
+  HOUD JE NFC-STICKER OPNIEUW TEGEN JE TELEFOON<br>
+  OF SCAN DE QR-CODE OP DE STICKER.
+`;
 
-    try {
-      const reader = new NDEFReader();
-      await reader.scan();
-
-      reader.onreading = event => {
-        const chipId = event.serialNumber || "";
-
-        if (!chipId) {
-          alert("GEEN CHIP GEVONDEN. PROBEER OPNIEUW.");
-          loading.classList.add("hidden");
-          scanBtn.classList.remove("hidden");
-          return;
-        }
-
-        // Redirect naar integratie
-        window.location.href = `lowlandsintegratie.html?chipId=${encodeURIComponent(chipId)}`;
-      };
-
-    } catch (error) {
-      console.error(error);
-      alert("SCAN MISLUKT. PROBEER NOGMAALS.");
-      loading.classList.add("hidden");
-      scanBtn.classList.remove("hidden");
-    }
-  };
+document.getElementById("retryBtn").classList.remove("hidden");
+document.getElementById("retryBtn").onclick = () => {
+  window.location.href = "intro.html";
+};
 </script>
 
 </body>
 </html>
-
