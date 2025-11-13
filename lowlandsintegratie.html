@@ -1,618 +1,789 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Lowlands x NextDrink</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lowlands x NextDrink</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
-<style>
-  :root{
-    --nd-purple: #4B008F;
-    --nd-purple-weak: rgba(75, 0, 143, 0.08);
-    --card-bg: rgba(255,255,255,0.85);
-    --card-border: rgba(255,255,255,0.35);
-    --glow: rgba(75,0,143,0.45);
-    --overlay: rgba(75,0,143,0.12);
-  }
+  <style>
+    :root{
+      --nd-purple: #4B008F;
+      --nd-purple-weak: rgba(75, 0, 143, 0.08);
+      --card-bg: rgba(255,255,255,0.88);
+      --card-border: rgba(255,255,255,0.35);
+      --glow: rgba(75,0,143,0.45);
+      --overlay: rgba(75,0,143,0.12);
+    }
 
-  @font-face{
-    font-family: 'Baukasten';
-    src: url('fonts/Baukasten Six Regular.otf') format('opentype');
-    font-display: swap;
-  }
+    @font-face{
+      font-family: 'Baukasten';
+      src: url('fonts/Baukasten Six Regular.otf') format('opentype');
+      font-display: swap;
+    }
 
-  html, body { height: 100%; }
-  body{
-    font-family: 'Poppins', sans-serif;
-    color: #1f1140;
-    background-image: url('images/lowlands2025-bg.PNG');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    position: relative;
-  }
-  body::before{
-    content:"";
-    position: fixed; inset: 0;
-    background: linear-gradient(180deg, var(--overlay), transparent 30%, var(--overlay) 70%, transparent);
-    pointer-events: none;
-    z-index: 0;
-  }
+    html, body { height: 100%; }
 
-  main{
-    position: relative;
-    z-index: 1;
-    background: var(--card-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--card-border);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.35) inset;
-  }
+    body{
+      font-family: 'Poppins', sans-serif;
+      color: #1f1140;
+      background-image: url('images/lowlands2025-bg.PNG');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      position: relative;
+    }
+    body::before{
+      content:"";
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg, var(--overlay), transparent 30%, var(--overlay) 70%, transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
 
-  .nd-heading,
-  h1,h2,h3,
-  .nd-btn,.logo-x {
-    font-family: 'Baukasten', system-ui, sans-serif !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--nd-purple);
-  }
+    main{
+      position: relative;
+      z-index: 1;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      box-shadow:
+        0 10px 30px rgba(0,0,0,0.15),
+        0 1px 0 rgba(255,255,255,0.35) inset;
+    }
 
-  /* Buttons */
-  .nd-btn{
-    transition: all .2s ease;
-    border: 1px solid rgba(255,255,255,0.35);
-  }
-  .nd-btn:hover{ transform: translateY(-1px); }
-  .nd-btn:active{ transform: translateY(0); }
+    .nd-heading,
+    h1,h2,h3,
+    .nd-btn,.logo-x {
+      font-family: 'Baukasten', system-ui, sans-serif !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--nd-purple);
+    }
 
-  .nd-primary{
-    background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.45));
-    color: var(--nd-purple);
-  }
+    /* Header met grote logo's naast elkaar */
+    #headerRoot{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:1.2rem;
+      margin-bottom:1.75rem;
+    }
+    #headerRoot img{
+      border-radius:0.9rem;
+      object-fit:cover;
+      width:12rem;
+      height:12rem;
+    }
+    #headerRoot .logo-x{
+      font-size:4.8rem;
+      line-height:1;
+      color:var(--nd-purple);
+    }
 
-  .nd-cta{
-    background: #a68af0;
-    color:white !important;
-  }
+    /* Buttons */
+    .nd-btn{
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .12s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease, opacity .2s ease;
+      box-shadow:
+        0 0 0 rgba(0,0,0,0),
+        0 1px 0 rgba(255,255,255,0.15) inset;
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+    .nd-btn:hover{ transform: translateY(-1px); }
+    .nd-btn:active{ transform: translateY(0); }
 
-  .tile:hover{
-    background: rgba(255,255,255,0.9);
-    transform: scale(1.02);
-  }
+    .nd-primary{
+      background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.45));
+      color: var(--nd-purple);
+    }
 
-  /* Orders */
-  .orders-wrap{ display:grid; gap:12px; }
-  .order-panel{
-    background: rgba(255,255,255,0.88);
-    border: 1px solid var(--card-border);
-    border-radius:14px;
-    padding:12px 14px;
-  }
-  .order-row{
-    display:grid; grid-template-columns:46px 1fr;
-    align-items:center;
-    padding:6px 0;
-    border-bottom:1px dashed rgba(0,0,0,0.08);
-  }
-  .order-row:last-child{ border-bottom:none; }
+    .nd-cta{
+      background: #a68af0;
+      color: #fff !important;
+      border: none;
+      box-shadow: 0 4px 10px rgba(120, 70, 200, 0.25);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
 
-  #loadingOverlay{
-    background: rgba(10,10,20,0.55);
-    backdrop-filter: blur(2px);
-  }
-</style>
+    .tile{
+      transition: transform .1s ease, background-color .2s ease, box-shadow .2s ease;
+    }
+    .tile:hover{
+      background: rgba(255,255,255,0.9);
+      transform: scale(1.02);
+      box-shadow: 0 8px 20px var(--nd-purple-weak);
+    }
+
+    .nd-input{
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid #d1d5db;
+      background: rgba(255,255,255,0.95);
+    }
+
+    /* Orders */
+    .orders-wrap{
+      display: grid;
+      gap: 12px;
+    }
+    .order-panel{
+      background: rgba(255,255,255,0.94);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+    .order-panel h4{
+      font-family: 'Baukasten', system-ui, sans-serif;
+      text-transform: uppercase;
+      color: var(--nd-purple);
+      font-size: 0.9rem;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .order-row{
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(0,0,0,0.08);
+    }
+    .order-row:last-child{ border-bottom: none; }
+    .order-qty{
+      font-family: 'Baukasten', system-ui, sans-serif;
+      text-transform: uppercase;
+      color: var(--nd-purple);
+      font-size: 0.95rem;
+      text-align: right;
+    }
+    .order-name{ color: #2d2352; }
+
+    #loadingOverlay{
+      background: rgba(10,10,20,0.55);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    .text-lowlands{ color: var(--nd-purple); }
+
+    #ownChipExplanation{
+      font-family:'Poppins',sans-serif;
+      font-size:0.9rem;
+      color:#3a2768;
+    }
+  </style>
 </head>
 
 <body class="min-h-screen flex items-start justify-center p-6">
-<main class="w-full max-w-md rounded-3xl shadow-2xl p-6">
 
-<!-- HEADER -->
-<header class="flex items-center justify-center gap-3 mb-5">
-  <img src="images/logo-ll26.PNG" class="w-12 h-12 rounded-lg"/>
-  <span class="logo-x">×</span>
-  <img src="images/nextdrink-logo.png" class="w-12 h-12 rounded-lg"/>
-</header>
-<!-- SECTIONS -->
-<section id="firstTime" class="text-center hidden">
-  <h3 class="nd-heading text-xl font-bold mb-2">Welkom!</h3>
-  <p class="text-purple-800 mb-3">Voer je naam in om te starten:</p>
-  <input id="firstTimeNameInput" type="text" placeholder="Jouw naam" class="nd-input mb-3">
-  <button id="firstTimeContinueBtn" class="nd-btn nd-cta w-full py-3 rounded-xl font-bold">Verder</button>
-</section>
+  <!-- MAIN CARD (hidden tijdens init) -->
+  <main id="mainCard" class="w-full max-w-md rounded-3xl shadow-2xl p-6 min-h-[calc(100vh-3rem)] flex flex-col hidden">
 
-<section id="postName" class="hidden text-center">
-  <h3 class="nd-heading text-lg font-semibold mb-2">Je bent klaar!</h3>
-  <p class="text-purple-900">
-    Haal de <strong>QR-code</strong> van je sticker en plak het andere deel <strong>onderin op de achterkant</strong> van je telefoon.
-  </p>
-  <button id="postNameContinueBtn" class="nd-btn nd-cta mt-4 w-full py-3 rounded-xl font-bold">Verder</button>
-</section>
+    <!-- HEADER: grote LL26-logo × X × NextDrink-logo -->
+    <header id="headerRoot">
+      <img src="images/logo-ll26.PNG" alt="LL26" id="logoLl"/>
+      <span class="logo-x" id="logoX" aria-hidden="true">×</span>
+      <img src="images/nextdrink-logo.png" alt="NextDrink" id="logoNd"/>
+    </header>
 
-<section id="menu" class="hidden">
-  <h2 id="menuTitle" class="nd-heading text-lg font-semibold mb-3"></h2>
-  <div id="drinks" class="grid grid-cols-2 gap-4 mb-4"></div>
+    <!-- FIRST TIME / SET NAME -->
+    <section id="firstTime" class="text-center hidden flex-1 flex flex-col justify-center">
+      <h3 class="nd-heading text-xl font-bold mb-3">Welkom!</h3>
+      <p class="text-purple-800 mb-3">
+        Dit is jouw eigen sticker.<br/>
+        Vul je naam in om hem te personaliseren.
+      </p>
+      <input id="firstTimeNameInput" type="text" placeholder="Jouw naam" class="nd-input mb-3">
+      <button id="firstTimeContinueBtn" class="nd-btn nd-cta w-full py-3 rounded-xl font-bold">
+        Verder
+      </button>
+    </section>
 
-  <div class="grid grid-cols-1 gap-3">
+    <!-- POST-NAME INSTRUCTIONS -->
+    <section id="postName" class="hidden text-center flex-1 flex flex-col justify-center">
+      <h3 class="nd-heading text-lg font-semibold mb-2">Je bent klaar!</h3>
+      <p class="text-purple-900 mb-3">
+        Haal de <strong>QR-code</strong> van je sticker en plak het andere deel
+        <strong>onderin op de achterkant</strong> van je telefoon.
+      </p>
+      <button id="postNameContinueBtn" class="nd-btn nd-cta mt-4 w-full py-3 rounded-xl font-bold">
+        Verder
+      </button>
+    </section>
 
-    <!-- Inzicht-modus verbergt deze twee -->
-    <button id="newDrinkScreenBtn" class="nd-btn nd-primary w-full py-3 rounded-xl font-semibold">+ Nieuw drankje</button>
+    <!-- MENU -->
+    <section id="menu" class="hidden flex-1 flex flex-col">
+      <h2 id="menuTitle" class="nd-heading text-lg font-semibold mb-3"></h2>
 
-    <button id="bestelOverzichtBtn" class="nd-btn nd-cta w-full py-3 rounded-xl font-bold">Bekijk bestellijst</button>
+      <!-- Uitlegblok voor EIGEN STICKER -->
+      <div id="ownChipExplanation" class="hidden mb-4">
+        <p class="mb-2">
+          Dit is jouw <strong>eigen sticker</strong>. LLET'S SPLIT houdt bij
+          wie welk rondje voor wie haalt.
+        </p>
+        <p class="mb-2">
+          <strong>Als jij een rondje gaat halen</strong>, laat je je vrienden
+          <strong>jouw sticker</strong> scannen.
+        </p>
+        <p class="mb-2">
+          <strong>Als een vriend voor jou een drankje haalt</strong>, scan jij
+          <strong>zijn sticker</strong>.
+        </p>
+        <p>
+          Zo ontstaat er automatisch een eerlijk overzicht van alle rondjes,
+          bestellingen en wat iedereen nog moet verrekenen.
+        </p>
+      </div>
 
-    <div class="flex gap-3 mt-2">
-      <button id="scoresBtn" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">Tussenstand</button>
-      <button id="finalBtn" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">Eindafrekening</button>
+      <!-- Drankjes-grid (alleen bij andermans sticker) -->
+      <div id="drinks" class="grid grid-cols-2 gap-4 mb-4"></div>
+
+      <!-- Knoppen -->
+      <div class="grid grid-cols-1 gap-3 mt-auto">
+        <button id="newDrinkScreenBtn" class="nd-btn nd-primary w-full py-3 rounded-xl font-semibold">
+          + Nieuw drankje
+        </button>
+        <button id="bestelOverzichtBtn" class="nd-btn nd-cta w-full py-3 rounded-xl font-bold text-white">
+          Bekijk bestellijst
+        </button>
+        <div class="flex gap-3 mt-2">
+          <button id="scoresBtn" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">
+            Tussenstand
+          </button>
+          <button id="finalBtn" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">
+            Eindafrekening
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEW DRINK SCREEN -->
+    <section id="newDrink" class="hidden flex-1 flex flex-col">
+      <h3 class="nd-heading font-bold mb-3">Nieuw drankje toevoegen</h3>
+      <div class="flex flex-col gap-3 mb-3">
+        <input id="newDrinkName" type="text" placeholder="Naam nieuw drankje" class="nd-input">
+        <input id="newDrinkPrice" type="number" step="0.01" placeholder="Prijs (€)" class="nd-input">
+      </div>
+      <div class="flex gap-2 mt-auto">
+        <button id="addDrinkBtn" class="nd-btn nd-cta flex-1 py-3 rounded-xl font-bold text-white">Opslaan</button>
+        <button id="cancelNewDrinkBtn" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">Annuleren</button>
+      </div>
+    </section>
+
+    <!-- CONFIRM -->
+    <section id="confirm" class="hidden text-center flex-1 flex flex-col justify-center">
+      <div class="text-5xl">✅</div>
+      <div id="confirmText" class="mt-3 font-semibold text-lowlands"></div>
+      <div class="mt-4 flex gap-3">
+        <button id="newRoundBtn" class="nd-btn nd-cta flex-1 py-3 rounded-xl font-bold text-white">Nieuw rondje</button>
+        <button id="confirmScoresBtn" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">Tussenstand</button>
+      </div>
+    </section>
+
+    <!-- SCORES -->
+    <section id="scores" class="hidden flex-1 flex flex-col">
+      <h3 class="nd-heading font-bold mb-2">Tussenstand</h3>
+      <div id="scoreList" class="text-purple-900 flex-1"></div>
+      <div class="mt-4">
+        <button id="backToMenuFromScores" class="nd-btn nd-primary w-full py-3 rounded-xl font-bold">Terug</button>
+      </div>
+    </section>
+
+    <!-- BESTELLIJST -->
+    <section id="bestellijst" class="hidden flex-1 flex flex-col">
+      <h3 class="nd-heading font-bold mb-2">Bestellijst (laatste 30 min)</h3>
+      <div id="bestellijstContent" class="orders-wrap flex-1"></div>
+      <div class="mt-4">
+        <button id="backToMenuFromBestel" class="nd-btn nd-primary w-full py-3 rounded-xl font-bold">Terug</button>
+      </div>
+    </section>
+
+    <!-- FINAL -->
+    <section id="final" class="hidden flex-1 flex flex-col">
+      <h3 class="nd-heading font-bold mb-2">Eindafrekening</h3>
+      <div id="finalTotals" class="text-purple-900"></div>
+      <div id="finalSettlements" class="text-purple-900 mt-2"></div>
+      <div id="finalSettlementStatus" class="text-purple-900 mt-2"></div>
+      <div class="mt-4 flex gap-2">
+        <button id="markPaidBtn" class="nd-btn nd-cta flex-1 py-3 rounded-xl font-bold text-white">Ik wil afrekenen</button>
+        <button id="backToMenuFromFinal" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">Terug</button>
+      </div>
+    </section>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loadingOverlay" class="fixed inset-0 z-50 hidden items-center justify-center">
+      <div class="text-center text-white">
+        <div class="inline-block w-16 h-16 rounded-full border-8 border-white/30 border-t-white animate-spin"></div>
+        <div id="loadingText" class="mt-3">Bezig met laden...</div>
+      </div>
     </div>
-  </div>
-</section>
 
-<section id="newDrink" class="hidden">
-  <h3 class="nd-heading font-bold mb-3">Nieuw drankje toevoegen</h3>
-  <div class="flex flex-col gap-3 mb-3">
-    <input id="newDrinkName" type="text" placeholder="Naam nieuw drankje" class="nd-input">
-    <input id="newDrinkPrice" type="number" step="0.01" placeholder="Prijs (€)" class="nd-input">
-  </div>
-  <div class="flex gap-2">
-    <button id="addDrinkBtn" class="nd-btn nd-cta flex-1 py-3 rounded-xl font-bold text-white">Opslaan</button>
-    <button id="cancelNewDrinkBtn" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">Annuleren</button>
-  </div>
-</section>
+  </main>
 
-<section id="confirm" class="hidden text-center">
-  <div class="text-5xl">✅</div>
-  <div id="confirmText" class="mt-3 font-semibold text-lowlands"></div>
-  <div class="mt-4 flex gap-3">
-    <button id="newRoundBtn" class="nd-btn nd-cta flex-1 py-3 rounded-xl font-bold text-white">Nieuw rondje</button>
-    <button id="confirmScoresBtn" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">Tussenstand</button>
-  </div>
-</section>
+  <script>
+    const $ = id => document.getElementById(id);
+    const apiUrl = "https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
 
-<section id="scores" class="hidden">
-  <h3 class="nd-heading font-bold mb-2">Tussenstand</h3>
-  <div id="scoreList" class="text-purple-900"></div>
-  <div class="mt-4">
-    <button id="backToMenuFromScores" class="nd-btn nd-primary w-full py-3 rounded-xl font-bold">Terug</button>
-  </div>
-</section>
+    const chipId = new URLSearchParams(window.location.search).get('chipId');
+    const noChipMode = !chipId; // insight-modus
 
-<section id="bestellijst" class="hidden">
-  <h3 class="nd-heading font-bold mb-2">Bestellijst (laatste 30 min)</h3>
-  <div id="bestellijstContent" class="orders-wrap"></div>
-  <div class="mt-4">
-    <button id="backToMenuFromBestel" class="nd-btn nd-primary w-full py-3 rounded-xl font-bold">Terug</button>
-  </div>
-</section>
+    let scannerName = (localStorage.getItem('scannerName') || '').trim();
+    let chipOwner = '';
+    let drinks = [];
+    let isOwnChip = false;
+    let myChipId = localStorage.getItem('myChipId') || null;
 
-<section id="final" class="hidden">
-  <h3 class="nd-heading font-bold mb-2">Eindafrekening</h3>
-  <div id="finalTotals" class="text-purple-900"></div>
-  <div id="finalSettlements" class="text-purple-900 mt-2"></div>
-  <div id="finalSettlementStatus" class="text-purple-900 mt-2"></div>
-  <div class="mt-4 flex gap-2">
-    <button id="markPaidBtn" class="nd-btn nd-cta flex-1 py-3 rounded-xl font-bold text-white">Ik wil afrekenen</button>
-    <button id="backToMenuFromFinal" class="nd-btn nd-primary flex-1 py-3 rounded-xl font-bold">Terug</button>
-  </div>
-</section>
-
-<!-- LOADING -->
-<div id="loadingOverlay" class="fixed inset-0 z-50 hidden items-center justify-center">
-  <div class="text-center text-white">
-    <div class="inline-block w-16 h-16 rounded-full border-8 border-white/30 border-t-white animate-spin"></div>
-    <div id="loadingText" class="mt-3">Bezig met laden...</div>
-  </div>
-</div>
-
-</main>
-
-<script>
-const $ = id => document.getElementById(id);
-const apiUrl = "https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
-
-/* —— CHIPID LOGICA ——————————————— */
-const chipId = new URLSearchParams(window.location.search).get("chipId");
-const noChipMode = !chipId;   // ⭐ INSIGHT MODUS ALS GEEN CHIPID
-
-let scannerName = localStorage.getItem("scannerName") || "";
-let chipOwner = "";
-let drinks = [];
-
-/* UTILITIES */
-function showLoading(show, text='Bezig...') {
-  $("loadingOverlay").style.display = show ? "flex" : "none";
-  $("loadingText").textContent = text;
-  document.querySelectorAll("button").forEach(b => b.disabled = show);
-}
-
-function hideAll() {
-  ["menu","confirm","scores","final","firstTime","bestellijst","newDrink","postName"]
-    .forEach(id => $(id)?.classList.add("hidden"));
-}
-
-function escapeHtml(str){
-  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-/* —— INIT —— */
-async function init(){
-  showLoading(true,"Initialiseren...");
-
-  try {
-    // ⭐ INSIGHT-MODUS — GEEN CHIP
-    if (noChipMode) {
-      chipOwner = scannerName; // eigen naam als referentie
-      await loadDrinks();      // drankmenu geladen voor bestellijst/tussenstand/eindafrekening
-      hideAll();
-      renderMenu();            // toont inzicht-versie
-      showLoading(false);
-      return;
+    function showMain(){
+      $("mainCard").classList.remove("hidden");
     }
 
-    // ⭐ SCAN-MODUS — NORMAAL GEDRAG
-    const ownerResp = await fetch(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`);
-    chipOwner = (await ownerResp.text()).trim();
-
-    await loadDrinks();
-
-    // FIRST TIME?
-    if(!scannerName && !chipOwner){
-      hideAll();
-      $("firstTime").classList.remove("hidden");
-      return;
+    function showLoading(show, text='Bezig...') {
+      $('loadingOverlay').style.display = show ? 'flex' : 'none';
+      $('loadingText').textContent = text;
+      document.querySelectorAll('button').forEach(b => b.disabled = show);
     }
 
-    renderMenu();
-  
-  } catch(e){
-    console.error(e);
-    alert("Fout bij initialiseren.");
-  } finally {
-    showLoading(false);
-  }
-}
+    async function fetchWithTimeout(url, options={}, timeout=8000) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return res;
+      } catch (err) {
+        clearTimeout(id);
+        throw err;
+      }
+    }
 
-/* DRINKS LADEN */
-async function loadDrinks(){
-  const resp = await fetch(`${apiUrl}?action=getDrinks`);
-  drinks = await resp.json();
-  if(!drinks?.length){
-    drinks = [
-      {name:"Kleine bier",price:4.4},
-      {name:"Grote bier",price:8},
-      {name:"Desperados",price:6.5},
-      {name:"Wijn",price:6},
-      {name:"0.0 bier",price:4},
-      {name:"Frisdrank",price:4}
-    ];
-  }
-}
-/* —— MENU RENDER —— */
-function renderMenu(){
-  hideAll();
+    function hideAll() {
+      ['menu','confirm','scores','final','firstTime','bestellijst','newDrink','postName']
+        .forEach(id => $(id)?.classList.add('hidden'));
+    }
 
-  // —— TITEL —— //
-  if (noChipMode) {
-    $("menuTitle").textContent = "JOUW OVERZICHT";
-  } else {
-    const title = chipOwner
-      ? `WAT WIL JE DAT ${chipOwner.toUpperCase()} VOOR JE HAALT?`
-      : "KIES JE DRANKJE";
+    function escapeHtml(str){
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
-    $("menuTitle").textContent = title;
-  }
+    async function loadDrinks(){
+      const resp = await fetchWithTimeout(`${apiUrl}?action=getDrinks`);
+      drinks = await resp.json();
+      if(!drinks?.length){
+        drinks = [
+          {name:'Kleine bier',price:4.4},
+          {name:'Grote bier',price:8},
+          {name:'Desperados',price:6.5},
+          {name:'Wijn',price:6},
+          {name:'0.0 bier',price:4},
+          {name:'Frisdrank',price:4}
+        ];
+      }
+    }
 
-  // —— DRANKEN —— //
-  const div = $("drinks");
-  div.innerHTML = "";
+    function updateOwnChipFlag(){
+      if (chipId && myChipId && myChipId === chipId){
+        isOwnChip = true;
+      }
+      if (scannerName && chipOwner && scannerName === chipOwner){
+        isOwnChip = true;
+        if (chipId) {
+          localStorage.setItem('myChipId', chipId);
+          myChipId = chipId;
+        }
+      }
+    }
 
-  drinks.forEach(d => {
-    const btn = document.createElement("button");
-    btn.className = "tile block w-full rounded-lg p-3 bg-white/90 shadow-sm ring-1 ring-white/60 text-left";
+    async function handleNameLogic(){
+      const hasScanner = !!scannerName;
+      const hasOwner   = !!chipOwner;
 
-    btn.innerHTML = `
-      <div class="font-semibold text-gray-900">${escapeHtml(d.name)}</div>
-      <div class="text-sm text-gray-600 mt-1">€${Number(d.price).toFixed(2)}</div>
-    `;
+      // SCENARIO 1: beiden bekend -> niets vragen
+      if (hasScanner && hasOwner){
+        updateOwnChipFlag();
+        return "menu";
+      }
 
-    // INSIGHT-MODUS → drukken op drankjes mag NIET
-    if (!noChipMode) {
-      btn.onclick = async () => {
-        showLoading(true,"Verwerken...");
-        try{
+      // SCENARIO 2: owner bekend, scanner niet -> "Wat is jouw naam?"
+      if (hasOwner && !hasScanner){
+        const name = prompt("Wat is jouw naam?");
+        if (name && name.trim() !== ""){
+          scannerName = name.trim();
+          localStorage.setItem("scannerName", scannerName);
+          updateOwnChipFlag();
+        }
+        return "menu";
+      }
+
+      // SCENARIO 3: scanner bekend, owner niet -> "Van wie is deze sticker?"
+      if (!hasOwner && hasScanner){
+        const owner = prompt("Van wie is deze sticker?");
+        if (owner && owner.trim() !== ""){
+          chipOwner = owner.trim();
+          try{
+            await fetch(apiUrl, {
+              method:"POST",
+              body:new URLSearchParams({action:"setOwner", chipId, owner:chipOwner})
+            });
+          }catch(e){ console.error(e); }
+          updateOwnChipFlag();
+        }
+        return "menu";
+      }
+
+      // SCENARIO 4: beiden onbekend -> firstTime-flow
+      if (!hasOwner && !hasScanner){
+        hideAll();
+        $('firstTime').classList.remove('hidden');
+        return "firstTime";
+      }
+
+      return "menu";
+    }
+
+    async function init(){
+      showLoading(true,'Initialiseren...');
+      try{
+        await loadDrinks();
+
+        // INSIGHT-MODUS: geen chipId → geen naamvragen, geen drankmenu
+        if (noChipMode){
+          chipOwner = scannerName || '';
+          isOwnChip = false;
+          showMain();
+          hideAll();
+          renderMenu();
+          return;
+        }
+
+        // Met chip: owner ophalen
+        const ownerResp = await fetchWithTimeout(
+          `${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`
+        );
+        chipOwner = (await ownerResp.text()).trim();
+
+        if (chipId && myChipId && myChipId === chipId){
+          isOwnChip = true;
+        }
+
+        const state = await handleNameLogic();
+        showMain();
+
+        if (state === "menu"){
+          hideAll();
+          renderMenu();
+        } else if (state === "firstTime"){
+          // firstTime is al in beeld gezet
+        }
+
+      }catch(err){
+        console.error(err);
+        alert('Fout bij initialiseren.');
+        showMain();
+      }finally{
+        showLoading(false);
+      }
+    }
+
+    // FIRST TIME CONTINUE
+    $('firstTimeContinueBtn').onclick = async ()=>{
+      const name = $('firstTimeNameInput').value.trim();
+      if(!name){
+        alert('Voer een naam in');
+        return;
+      }
+      showLoading(true,'Verwerken...');
+
+      scannerName = name;
+      chipOwner   = name;
+      localStorage.setItem('scannerName', scannerName);
+
+      try{
+        if (chipId){
           await fetch(apiUrl, {
-            method:"POST",
-            body:new URLSearchParams({
-              action:"addScan",
-              chipId,
-              scanner: scannerName,
-              drink: d.name,
-              amount: d.price
-            })
+            method:'POST',
+            body:new URLSearchParams({action:'setOwner', chipId, owner:chipOwner})
+          });
+          localStorage.setItem('myChipId', chipId);
+          myChipId = chipId;
+          isOwnChip = true;
+        }
+      }catch(e){
+        console.error(e);
+      }finally{
+        showLoading(false);
+      }
+
+      hideAll();
+      $('postName').classList.remove('hidden');
+    };
+
+    $('postNameContinueBtn').onclick = ()=>{
+      hideAll();
+      renderMenu();
+    };
+
+    // RENDER MENU
+    function renderMenu(){
+      hideAll();
+
+      const titleEl = $('menuTitle');
+      const drinksDiv = $('drinks');
+      const ownExpl   = $('ownChipExplanation');
+      const newDrinkBtn = $('newDrinkScreenBtn');
+
+      const inInsight = noChipMode;
+      const showOwnExplanation = !inInsight && isOwnChip;
+
+      if (inInsight){
+        titleEl.textContent = "JOUW OVERZICHT";
+        ownExpl.classList.add("hidden");
+        drinksDiv.style.display = "none";
+        newDrinkBtn.style.display = "none";
+      } else if (showOwnExplanation){
+        titleEl.textContent = "JOUW STICKER IS KLAAR";
+        ownExpl.classList.remove("hidden");
+        drinksDiv.style.display = "none";
+        newDrinkBtn.style.display = "none";
+      } else {
+        ownExpl.classList.add("hidden");
+        drinksDiv.style.display = "grid";
+        newDrinkBtn.style.display = "block";
+
+        const title = chipOwner
+          ? `WAT WIL JE DAT ${chipOwner.toUpperCase()} VOOR JE HAALT?`
+          : 'KIES JE DRANKJE';
+        titleEl.textContent = title;
+      }
+
+      // Drankknoppen alleen bij andermans sticker (niet bij eigen / insight)
+      drinksDiv.innerHTML = "";
+      if (!inInsight && !showOwnExplanation){
+        drinks.forEach(d=>{
+          const btn = document.createElement('button');
+          btn.className = 'tile block w-full rounded-lg p-3 bg-white/90 shadow-sm ring-1 ring-white/60 text-left';
+          btn.innerHTML = `
+            <div class="font-semibold text-gray-900">${escapeHtml(d.name)}</div>
+            <div class="text-sm text-gray-600 mt-1">€${Number(d.price).toFixed(2)}</div>
+          `;
+          btn.onclick = async ()=>{
+            showLoading(true,'Verwerken...');
+            try{
+              await fetch(apiUrl, {
+                method:'POST',
+                body:new URLSearchParams({
+                  action:'addScan',
+                  chipId,
+                  scanner: scannerName,
+                  drink: d.name,
+                  amount: d.price
+                })
+              });
+              $('confirmText').innerHTML =
+                `${escapeHtml(d.name)} (€${Number(d.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner)}.`;
+              hideAll();
+              $('confirm').classList.remove('hidden');
+            }catch(e){
+              console.error(e);
+              alert('Fout bij plaatsen order');
+            }finally{
+              showLoading(false);
+            }
+          };
+          drinksDiv.appendChild(btn);
+        });
+      }
+
+      $('menu').classList.remove('hidden');
+    }
+
+    // NEW DRINK SCREEN
+    $('newDrinkScreenBtn').onclick = ()=>{
+      hideAll();
+      $('newDrink').classList.remove('hidden');
+    };
+    $('cancelNewDrinkBtn').onclick = ()=>{ renderMenu(); };
+    $('addDrinkBtn').onclick = async ()=>{
+      const name = $('newDrinkName').value.trim();
+      const price = parseFloat($('newDrinkPrice').value);
+      if(!name || isNaN(price) || price<=0){
+        alert('Ongeldige naam of prijs');
+        return;
+      }
+      showLoading(true,'Opslaan...');
+      drinks.push({name, price});
+      $('newDrinkName').value=''; $('newDrinkPrice').value='';
+      try{
+        await fetch(apiUrl, {
+          method:'POST',
+          body:new URLSearchParams({action:'setDrinks', drinks:JSON.stringify(drinks)})
+        });
+        renderMenu();
+      }catch(e){
+        console.error(e);
+        alert('Fout bij opslaan drankje');
+      }finally{
+        showLoading(false);
+      }
+    };
+
+    // BESTELLIJST
+    $('bestelOverzichtBtn').onclick = async ()=>{
+      showLoading(true,'Bestellijst laden...');
+      try{
+        const res = await fetch(`${apiUrl}?action=getScans`);
+        const scans = await res.json();
+        const now = Date.now();
+        const THIRTY_MIN = 30*60*1000;
+
+        const recent = scans.filter(s=>{
+          if(s.owner !== chipOwner) return false;
+          const t = new Date(s.timestamp || s.time || s.date || 0).getTime();
+          return isFinite(t) ? (now - t) <= THIRTY_MIN : false;
+        });
+
+        let html = '';
+        if(recent.length===0){
+          html = `<div class="order-panel"><p>Geen recente bestellingen (laatste 30 minuten) voor <strong>${escapeHtml(chipOwner || "deze sticker")}</strong>.</p></div>`;
+        }else{
+          const grouped = {};
+          recent.forEach(s=>{
+            const sc = s.scanner || 'Onbekend';
+            const dr = s.drink || 'Onbekend drankje';
+            if(!grouped[sc]) grouped[sc] = {};
+            grouped[sc][dr] = (grouped[sc][dr] || 0) + 1;
           });
 
-          $("confirmText").innerHTML =
-            `${escapeHtml(d.name)} (€${Number(d.price).toFixed(2)}) is doorgegeven aan ${escapeHtml(chipOwner)}.`;
-
-          hideAll();
-          $("confirm").classList.remove("hidden");
-
-        } catch(e){
-          console.error(e);
-          alert("Fout bij plaatsen order");
-        } finally {
-          showLoading(false);
+          Object.entries(grouped).forEach(([scanner, drinksObj])=>{
+            html += `<div class="order-panel"><h4>${escapeHtml(scanner)}</h4><div>`;
+            Object.entries(drinksObj).forEach(([drinkName, count])=>{
+              html += `
+                <div class="order-row">
+                  <div class="order-qty">${count}×</div>
+                  <div class="order-name">${escapeHtml(drinkName)}</div>
+                </div>`;
+            });
+            html += `</div></div>`;
+          });
         }
-      };
+
+        hideAll();
+        $('bestellijstContent').innerHTML = html;
+        $('bestellijst').classList.remove('hidden');
+
+      }catch(e){
+        console.error(e);
+        alert('Fout bij laden bestellijst');
+      }finally{
+        showLoading(false);
+      }
+    };
+
+    $('backToMenuFromBestel').onclick = renderMenu;
+
+    // SCORES
+    $('scoresBtn').onclick = showScores;
+    $('confirmScoresBtn').onclick = showScores;
+    $('newRoundBtn').onclick = renderMenu;
+    $('backToMenuFromScores').onclick = renderMenu;
+
+    async function showScores(){
+      showLoading(true,'Tussenstand laden...');
+      try{
+        const res = await fetch(`${apiUrl}?action=getScores`);
+        const scores = await res.json();
+        let html = "<ul class='list-disc ml-5'>";
+        if(!scores.length){
+          html += "<li>Nog geen data</li>";
+        }else{
+          scores.forEach(s=>{
+            html += `<li><strong>${escapeHtml(s.owner)}</strong> — ${s.rounds} rondje${s.rounds===1?'':'s'}</li>`;
+          });
+        }
+        html += "</ul>";
+        hideAll();
+        $('scoreList').innerHTML = html;
+        $('scores').classList.remove('hidden');
+      }catch(e){
+        console.error(e);
+        alert('Fout bij laden tussenstand');
+      }finally{
+        showLoading(false);
+      }
     }
 
-    div.appendChild(btn);
-  });
+    // FINAL
+    $('finalBtn').onclick = showFinal;
+    $('backToMenuFromFinal').onclick = renderMenu;
 
-  // —— INSIGHT-MODUS EINSTELLUNGEN —— //
-  if (noChipMode) {
-    $("newDrinkScreenBtn").style.display = "none";    // geen nieuwe drankjes
-    $("drinks").style.display = "none";               // geen drankmenu
-  } else {
-    $("newDrinkScreenBtn").style.display = "block";
-    $("drinks").style.display = "grid";
-  }
-
-  $("menu").classList.remove("hidden");
-}
-
-
-/* —— FIRST TIME —— */
-$("firstTimeContinueBtn").onclick = async () => {
-  const name = $("firstTimeNameInput").value.trim();
-  if (!name) {
-    alert("Voer een naam in");
-    return;
-  }
-
-  showLoading(true,"Verwerken...");
-
-  scannerName = chipOwner = name;
-  localStorage.setItem("scannerName", scannerName);
-
-  try{
-    await fetch(apiUrl, {
-      method:"POST",
-      body:new URLSearchParams({
-        action:"setOwner",
-        chipId,
-        owner:chipOwner
-      })
-    });
-
-    hideAll();
-    $("postName").classList.remove("hidden");
-
-  } catch(e){
-    console.warn(e);
-    renderMenu();
-  } finally {
-    showLoading(false);
-  }
-};
-
-$("postNameContinueBtn").onclick = () => renderMenu();
-
-
-/* —— NIEUW DRANKJE —— */
-$("newDrinkScreenBtn").onclick = () => {
-  hideAll();
-  $("newDrink").classList.remove("hidden");
-};
-
-$("cancelNewDrinkBtn").onclick = () => renderMenu();
-
-$("addDrinkBtn").onclick = async () => {
-  const name = $("newDrinkName").value.trim();
-  const price = parseFloat($("newDrinkPrice").value);
-
-  if (!name || isNaN(price) || price <= 0) {
-    alert("Ongeldige naam of prijs");
-    return;
-  }
-
-  showLoading(true,"Opslaan...");
-
-  drinks.push({name, price});
-
-  $("newDrinkName").value = "";
-  $("newDrinkPrice").value = "";
-
-  try{
-    await fetch(apiUrl, {
-      method:"POST",
-      body:new URLSearchParams({
-        action:"setDrinks",
-        drinks: JSON.stringify(drinks)
-      })
-    });
-
-    renderMenu();
-
-  } catch(e){
-    console.error(e);
-    alert("Fout bij opslaan drankje");
-  } finally {
-    showLoading(false);
-  }
-};
-
-
-/* —— BESTELLIJST —— */
-$("bestelOverzichtBtn").onclick = async () => {
-  showLoading(true,"Bestellijst laden...");
-
-  try{
-    const res = await fetch(`${apiUrl}?action=getScans`);
-    const scans = await res.json();
-
-    const now = Date.now();
-    const THIRTY = 30 * 60 * 1000;
-
-    const recent = scans.filter(s => {
-      if (s.owner !== chipOwner) return false;
-      const t = new Date(s.timestamp || s.time || s.date || 0).getTime();
-      return isFinite(t) && (now - t <= THIRTY);
-    });
-
-    let html = "";
-
-    if (recent.length === 0) {
-      html = `
-        <div class="order-panel">
-          <p>Geen recente bestellingen (laatste 30 minuten) voor <strong>${escapeHtml(chipOwner)}</strong>.</p>
-        </div>`;
-    } else {
-      const grouped = {};
-      recent.forEach(s => {
-        if (!grouped[s.scanner]) grouped[s.scanner] = {};
-        grouped[s.scanner][s.drink] = (grouped[s.scanner][s.drink] || 0) + 1;
-      });
-
-      Object.entries(grouped).forEach(([scanner, drinks]) => {
-        html += `<div class="order-panel"><h4>${escapeHtml(scanner)}</h4><div>`;
-        Object.entries(drinks).forEach(([drinkName, count]) => {
-          html += `
-            <div class="order-row">
-              <div class="order-qty">${count}×</div>
-              <div class="order-name">${escapeHtml(drinkName)}</div>
-            </div>`;
+    $('markPaidBtn').onclick = async ()=>{
+      if(!scannerName){
+        alert("Je naam is niet bekend, dus we kunnen je verzoek niet koppelen.");
+        return;
+      }
+      showLoading(true,'Bezig met registreren...');
+      try{
+        await fetch(apiUrl, {
+          method:'POST',
+          body:new URLSearchParams({action:'markAsPaid', name:scannerName})
         });
-        html += `</div></div>`;
-      });
+        $('finalSettlementStatus').textContent = '✅ Je verzoek is ingediend!';
+      }catch(e){
+        console.error(e);
+        alert('Fout bij afrekenen');
+      }finally{
+        showLoading(false);
+      }
+    };
+
+    async function showFinal(){
+      showLoading(true,'Eindafrekening laden...');
+      try{
+        const res = await fetch(`${apiUrl}?action=getFinal`);
+        const data = await res.json();
+
+        let htmlTotals = '';
+        if(!data.result?.length){
+          htmlTotals = '<p>Nog geen data</p>';
+        }else{
+          htmlTotals += '<div class="font-semibold mb-2">Totaal uitgegeven per persoon:</div><ul class="list-disc ml-5">';
+          data.result.forEach(t=>{
+            htmlTotals += `<li><strong>${escapeHtml(t.name)}</strong> — €${Number(t.balance).toFixed(2)}</li>`;
+          });
+          htmlTotals += '</ul>';
+        }
+
+        let htmlSettle = '';
+        if(!data.settlements?.length){
+          htmlSettle = '<p>Geen verrekeningen nodig.</p>';
+        }else{
+          htmlSettle += '<div class="font-semibold mt-2">Verrekeningen</div><ul class="list-disc ml-5">';
+          data.settlements.forEach(s=>{
+            htmlSettle += `<li>${escapeHtml(s.from)} betaalt €${Number(s.amount).toFixed(2)} aan ${escapeHtml(s.to)}</li>`;
+          });
+          htmlSettle += '</ul>';
+        }
+
+        hideAll();
+        $('finalTotals').innerHTML = htmlTotals;
+        $('finalSettlements').innerHTML = htmlSettle;
+        $('final').classList.remove('hidden');
+      }catch(e){
+        console.error(e);
+        alert('Fout bij laden eindafrekening');
+      }finally{
+        showLoading(false);
+      }
     }
 
-    hideAll();
-    $("bestellijstContent").innerHTML = html;
-    $("bestellijst").classList.remove("hidden");
-
-  } catch(e){
-    console.error(e);
-    alert("Fout bij laden bestellijst");
-  } finally {
-    showLoading(false);
-  }
-};
-
-$("backToMenuFromBestel").onclick = renderMenu;
-
-
-/* —— SCORES —— */
-$("scoresBtn").onclick = showScores;
-$("confirmScoresBtn").onclick = showScores;
-$("newRoundBtn").onclick = renderMenu;
-$("backToMenuFromScores").onclick = renderMenu;
-
-async function showScores(){
-  showLoading(true,"Tussenstand laden...");
-
-  try{
-    const res = await fetch(`${apiUrl}?action=getScores`);
-    const scores = await res.json();
-
-    let html = "<ul class='list-disc ml-5'>";
-
-    if (!scores.length) {
-      html += "<li>Nog geen data</li>";
-    } else {
-      scores.forEach(s => {
-        html += `<li><strong>${escapeHtml(s.owner)}</strong> — ${s.rounds} rondje${s.rounds===1?'':'s'}</li>`;
-      });
-    }
-    html += "</ul>";
-
-    hideAll();
-    $("scoreList").innerHTML = html;
-    $("scores").classList.remove("hidden");
-
-  } catch(e){
-    console.error(e);
-    alert("Fout bij laden tussenstand");
-  } finally {
-    showLoading(false);
-  }
-}
-
-
-/* —— EINDAFREKENING —— */
-$("finalBtn").onclick = showFinal;
-$("backToMenuFromFinal").onclick = renderMenu;
-
-$("markPaidBtn").onclick = async () => {
-  showLoading(true, "Bezig met registreren...");
-
-  try{
-    await fetch(apiUrl, {
-      method:"POST",
-      body:new URLSearchParams({
-        action:"markAsPaid",
-        name: scannerName
-      })
-    });
-
-    $("finalSettlementStatus").textContent = "✅ Je verzoek is ingediend!";
-
-  } catch(e){
-    console.error(e);
-    alert("Fout bij afrekenen");
-  } finally {
-    showLoading(false);
-  }
-};
-
-async function showFinal(){
-  showLoading(true,"Eindafrekening laden...");
-
-  try{
-    const res = await fetch(`${apiUrl}?action=getFinal`);
-    const data = await res.json();
-
-    let htmlTotals = "";
-    if (!data.result?.length) {
-      htmlTotals = "<p>Nog geen data</p>";
-    } else {
-      htmlTotals = "<div class='font-semibold mb-2'>Totaal uitgegeven per persoon:</div><ul class='list-disc ml-5'>";
-      data.result.forEach(t => {
-        htmlTotals += `<li><strong>${escapeHtml(t.name)}</strong> — €${Number(t.balance).toFixed(2)}</li>`;
-      });
-      htmlTotals += "</ul>";
-    }
-
-    let htmlSettle = "";
-    if (!data.settlements?.length) {
-      htmlSettle = "<p>Geen verrekeningen nodig.</p>";
-    } else {
-      htmlSettle = "<div class='font-semibold mt-2'>Verrekeningen</div><ul class='list-disc ml-5'>";
-      data.settlements.forEach(s => {
-        htmlSettle += `<li>${escapeHtml(s.from)} betaalt €${Number(s.amount).toFixed(2)} aan ${escapeHtml(s.to)}</li>`;
-      });
-      htmlSettle += "</ul>";
-    }
-
-    hideAll();
-    $("finalTotals").innerHTML = htmlTotals;
-    $("finalSettlements").innerHTML = htmlSettle;
-    $("final").classList.remove("hidden");
-
-  } catch(e){
-    console.error(e);
-    alert("Fout bij laden eindafrekening");
-  } finally {
-    showLoading(false);
-  }
-}
-
-
-/* —— START —— */
-window.addEventListener("DOMContentLoaded", init);
-</script>
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
 
 </body>
 </html>
