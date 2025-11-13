@@ -33,17 +33,16 @@
     font-size: 1.3rem;
     margin-top: 30px;
   }
-
-  .btn:active {
-    transform: scale(0.97);
-  }
 </style>
 </head>
+
 <body>
 
+<!-- HEADER -->
 <div class="text-center text-4xl mb-10">LLET'S SPLIT</div>
 
-<div id="info" class="text-center text-lg leading-7 mb-10">
+<!-- FIRST STATE -->
+<div id="introText" class="text-center text-lg leading-7 mb-10">
   MET LLET'S SPLIT HOUD JE BIJ<br>
   WIE WELK RONDJE HAALT.<br><br>
   JE HEBT HIERVOOR DE NFC-STICKER<br>
@@ -54,64 +53,62 @@
   NFC-STICKER SCANNEN
 </button>
 
+<!-- SECOND STATE (HIDDEN INITIALLY) -->
+<div id="scanState" class="hidden text-center">
+  <div class="text-xl leading-7 mb-6">
+    HOUD JE NFC-STICKER<br>
+    TEGEN DE BOVENKANT VAN JE TELEFOON.
+  </div>
+
+  <img 
+    src="images/hand-nfc.png" 
+    alt="NFC instructie" 
+    class="mx-auto mt-4 w-64 opacity-90"
+  >
+</div>
+
+
 <script>
   const params = new URLSearchParams(window.location.search);
   const chipId = params.get("chipId");
-  const savedName = localStorage.getItem("scannerName");
 
-  // 1. Als er al een chipId in de URL zit → direct door naar integratie
+  // DIRECT door naar integratie als chipId al bekend is
   if (chipId) {
-    // Als naam al bekend is of niet: in beide gevallen gewoon naar integratie
     window.location.href = `lowlandsintegratie.html?chipId=${encodeURIComponent(chipId)}`;
   }
 
-  const infoEl = document.getElementById("info");
+  const introText = document.getElementById("introText");
   const scanBtn = document.getElementById("scanBtn");
+  const scanState = document.getElementById("scanState");
 
-  scanBtn.onclick = async () => {
-    // ANDROID: WebNFC beschikbaar
+  // --- USER CLICKS "NFC-STICKER SCANNEN" ---
+  scanBtn.onclick = () => {
+
+    // Verberg eerste scherm, toon scan-instructie
+    introText.classList.add("hidden");
+    scanBtn.classList.add("hidden");
+    scanState.classList.remove("hidden");
+
+    // 1. ANDROID → WebNFC scannen
     if ("NDEFReader" in window) {
       try {
         const reader = new NDEFReader();
-        await reader.scan();
-
-        infoEl.innerHTML = `
-          HOUD JE NFC-STICKER<br>
-          TEGEN DE BOVENKANT VAN JE TELEFOON.
-        `;
+        reader.scan();
 
         reader.onreading = event => {
           const serial = event.serialNumber || "";
-          // Als je op Android de UID wilt gebruiken als chipId:
           if (serial) {
             window.location.href =
               `lowlandsintegratie.html?chipId=${encodeURIComponent(serial)}`;
-          } else {
-            infoEl.innerHTML = `
-              KON GEEN CHIP LEZEN.<br><br>
-              PROBEER HET NOG EEN KEER<br>
-              OF SCAN DE QR-CODE OP JE STICKER.
-            `;
           }
         };
+
       } catch (e) {
         console.error(e);
-        infoEl.innerHTML = `
-          SCANNEN IS MISLUKT.<br><br>
-          PROBEER HET OPNIEUW<br>
-          OF SCAN DE QR-CODE OP JE STICKER.
-        `;
       }
-    } else {
-      // iOS (ook iPhone 7/8/X): geen WebNFC → duidelijk uitleg, GEEN foutpop-up
-      infoEl.innerHTML = `
-        HOUD JE NFC-STICKER<br>
-        TEGEN DE BOVENKANT VAN JE TELEFOON.<br><br>
-        WERKT HET NIET DIRECT?<br>
-        OPEN DAN DE CAMERA EN SCAN DE QR-CODE<br>
-        OP JE STICKER OM VERDER TE GAAN.
-      `;
     }
+
+    // 2. iPHONE → iOS scant via OS (wij hoeven niks te doen)
   };
 </script>
 
