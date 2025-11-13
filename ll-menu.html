@@ -1,127 +1,279 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meer - Lowlands Style</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
+<title>MEER – Lowlands Menu</title>
 
-  <!-- Custom Font -->
-  <style>
-    @font-face {
-      font-family: 'BaukastenSix';
-      src: url('fonts/Baukasten Six Regular.otf') format('opentype');
-      font-weight: normal;
-      font-style: normal;
-    }
+<!-- TailwindCSS -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-    .menu-font {
-      font-family: 'BaukastenSix', sans-serif;
-      font-size: 1.35rem;
-      letter-spacing: 2px;
-    }
-  </style>
+<style>
+  /* ——— FONTS ——— */
+  @font-face {
+    font-family: 'Baukasten';
+    src: url('fonts/Baukasten Six Regular.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  body {
+    background: #A54EFF;
+    margin: 0;
+    padding: 0;
+    font-family: 'Baukasten', sans-serif;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: #FFF685;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 6px;
+    font-size: 1.25rem;
+    border-bottom: 1px solid rgba(255, 246, 133, 0.25);
+  }
+
+  .menu-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .icon {
+    width: 32px;
+    height: 32px;
+    stroke: #FFF685;
+    fill: none;
+  }
+
+  /* Onderbalk */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    color: #A54EFF;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 22px 10px 22px;
+    border-top: 2px solid #000000;
+  }
+
+  .bottom-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Baukasten', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #000;
+  }
+
+  .bottom-icon {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 3px;
+    stroke: #000;
+  }
+</style>
 </head>
 
-<body class="min-h-screen flex flex-col bg-[#A54EFF]">
+<body>
 
-  <!-- Header -->
-  <div class="w-full text-center py-6 text-yellow-300 menu-font text-3xl">
+<!-- HEADER -->
+<div class="text-center py-6 text-[2rem] font-bold tracking-[2px]">
+  MEER
+</div>
+
+<div class="px-6 pb-32">
+
+  <!-- ITEM 1 -->
+  <div class="menu-item">
+    <div class="menu-left">
+      <!-- wijn glas exact -->
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <path d="M8 2h8v5c0 2.8-2.2 5-5 5s-5-2.2-5-5V2z"></path>
+        <path d="M12 12v9"></path>
+        <path d="M8 21h8"></path>
+      </svg>
+      <span>BIER & WIJN PRE-ORDER</span>
+    </div>
+
+    <!-- arrow launch -->
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+      <path d="M7 17L17 7"></path>
+      <path d="M7 7h10v10"></path>
+    </svg>
+  </div>
+
+  <!-- ITEM 2 -->
+  <div class="menu-item">
+    <div class="menu-left">
+      <!-- bag icon -->
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <path d="M6 7h12l-1 14H7L6 7z"></path>
+        <path d="M9 7V5a3 3 0 016 0v2"></path>
+      </svg>
+      <span>DE BOL FESTIVALWINKEL</span>
+    </div>
+
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+      <path d="M7 17L17 7"></path>
+      <path d="M7 7h10v10"></path>
+    </svg>
+  </div>
+
+  <!-- ⭐ LLET'S SPLIT -->
+  <a href="intro.html" class="menu-item">
+    <div class="menu-left">
+      <!-- bliksem / split -->
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path>
+      </svg>
+      <span>LLET'S SPLIT</span>
+    </div>
+
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+      <path d="M7 17L17 7"></path>
+      <path d="M7 7h10v10"></path>
+    </svg>
+  </a>
+
+  <!-- ITEM 3 -->
+  <div class="menu-item">
+    <div class="menu-left">
+      <!-- headphones -->
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <path d="M4 12a8 8 0 0116 0"></path>
+        <rect x="3" y="12" width="4" height="8" rx="2"></rect>
+        <rect x="17" y="12" width="4" height="8" rx="2"></rect>
+      </svg>
+      <span>PLAYLISTS</span>
+    </div>
+
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+      <path d="M9 6l6 6-6 6"></path>
+    </svg>
+  </div>
+
+  <!-- ITEM 4 -->
+  <div class="menu-item">
+    <div class="menu-left">
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <rect x="3" y="7" width="18" height="13" rx="2"></rect>
+        <path d="M3 10h18"></path>
+      </svg>
+      <span>PARTNERS</span>
+    </div>
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+  </div>
+
+  <!-- ITEM 5 -->
+  <div class="menu-item">
+    <div class="menu-left">
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 8v4"></path>
+        <circle cx="12" cy="16" r="1"></circle>
+      </svg>
+      <span>FAQ</span>
+    </div>
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+  </div>
+
+  <!-- ITEM 6 -->
+  <div class="menu-item">
+    <div class="menu-left">
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+        <circle cx="12" cy="10" r="3"></circle>
+        <path d="M4 16c3-3 13-3 16 0"></path>
+      </svg>
+      <span>CONTACT</span>
+    </div>
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+  </div>
+
+  <!-- ITEM 7 -->
+  <div class="menu-item">
+    <div class="menu-left">
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+      </svg>
+      <span>FAVORITES LLINE-UP</span>
+    </div>
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+  </div>
+
+  <!-- ITEM 8 -->
+  <div class="menu-item">
+    <div class="menu-left">
+      <svg class="icon" viewBox="0 0 24 24" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 6v6l4 2"></path>
+      </svg>
+      <span>INSTELLINGEN</span>
+    </div>
+    <svg class="icon" viewBox="0 0 24 24" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg>
+  </div>
+
+</div>
+
+<!-- ONDERBALK -->
+<div class="bottom-nav">
+
+  <div class="bottom-item">
+    <svg class="bottom-icon" viewBox="0 0 24 24" stroke-width="2">
+      <path d="M3 12l9-9 9 9"></path>
+      <path d="M4 10v10h6V16h4v4h6V10"></path>
+    </svg>
+    HOME
+  </div>
+
+  <div class="bottom-item">
+    <svg class="bottom-icon" viewBox="0 0 24 24" stroke-width="2">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M4 10h16"></path>
+      <path d="M4 14h16"></path>
+    </svg>
+    FEED
+  </div>
+
+  <div class="bottom-item">
+    <svg class="bottom-icon" viewBox="0 0 24 24" stroke-width="2">
+      <circle cx="12" cy="8" r="4"></circle>
+      <path d="M4 20c1-5 7-7 8-7s7 2 8 7"></path>
+    </svg>
+    MIJN LOWLANDS
+  </div>
+
+  <div class="bottom-item">
+    <svg class="bottom-icon" viewBox="0 0 24 24" stroke-width="2">
+      <rect x="7" y="3" width="10" height="18" rx="2"></rect>
+      <rect x="10" y="16" width="4" height="2"></rect>
+    </svg>
+    TICKETS
+  </div>
+
+  <div class="bottom-item" style="color:#A54EFF;">
+    <svg class="bottom-icon" viewBox="0 0 24 24" stroke="#A54EFF" stroke-width="2">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M8 12h8"></path>
+      <path d="M12 8v8"></path>
+    </svg>
     MEER
   </div>
 
-  <!-- Menu content -->
-  <div class="px-6 space-y-8 text-yellow-300">
-
-    <!-- Bier & wijn pre-order -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">🍷</span>
-        <span class="menu-font">BIER & WIJN PRE-ORDER</span>
-      </div>
-      <span class="text-2xl">↗</span>
-    </div>
-
-    <!-- De Bol Festivalwinkel -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">👜</span>
-        <span class="menu-font">DE BOL FESTIVALWINKEL</span>
-      </div>
-      <span class="text-2xl">↗</span>
-    </div>
-
-    <!-- ⭐ LLET'S SPLIT (link werkt) -->
-    <a href="lowlandsintegratie.html" class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">⚡</span>
-        <span class="menu-font">LLET’S SPLIT</span>
-      </div>
-      <span class="text-2xl">›</span>
-    </a>
-
-    <!-- Playlists -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">🎧</span>
-        <span class="menu-font">PLAYLISTS</span>
-      </div>
-      <span class="text-2xl">›</span>
-    </div>
-
-    <!-- Partners -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">💼</span>
-        <span class="menu-font">PARTNERS</span>
-      </div>
-      <span class="text-2xl">›</span>
-    </div>
-
-    <!-- FAQ -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">ℹ️</span>
-        <span class="menu-font">FAQ</span>
-      </div>
-      <span class="text-2xl">›</span>
-    </div>
-
-    <!-- Contact -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">📟</span>
-        <span class="menu-font">CONTACT</span>
-      </div>
-      <span class="text-2xl">↗</span>
-    </div>
-
-    <!-- Favorites Line-up -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">🔲</span>
-        <span class="menu-font">FAVORITES LLINE-UP</span>
-      </div>
-      <span class="text-2xl">›</span>
-    </div>
-
-    <!-- Instellingen -->
-    <div class="flex items-center justify-between pb-10">
-      <div class="flex items-center gap-4">
-        <span class="text-3xl">⚙️</span>
-        <span class="menu-font">INSTELLINGEN</span>
-      </div>
-      <span class="text-2xl">›</span>
-    </div>
-
-  </div>
-
-  <!-- Bottom wave -->
-  <div class="mt-auto">
-    <img src="lowlands2025-bg.PNG" class="w-full" alt="">
-  </div>
+</div>
 
 </body>
 </html>
+
