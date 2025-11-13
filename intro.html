@@ -33,59 +33,86 @@
     font-size: 1.3rem;
     margin-top: 30px;
   }
-</style>
 
+  .btn:active {
+    transform: scale(0.97);
+  }
+</style>
 </head>
 <body>
 
 <div class="text-center text-4xl mb-10">LLET'S SPLIT</div>
 
 <div id="info" class="text-center text-lg leading-7 mb-10">
-  MET LLET'S SPLIT KUN JE RONDJES <br>
-  EERLIJK VERDELEN MET JE VRIENDEN.<br><br>
-  HOUD JE NFC-STICKER TEGEN JE TELEFOON <br>
-  OF SCAN DE QR-CODE.
+  MET LLET'S SPLIT HOUD JE BIJ<br>
+  WIE WELK RONDJE HAALT.<br><br>
+  JE HEBT HIERVOOR DE NFC-STICKER<br>
+  NODIG DIE JE BIJ DE INGANG HEBT GEKREGEN.
 </div>
 
-<button id="retryBtn" class="btn hidden">
-  OPNIEUW PROBEREN
+<button id="scanBtn" class="btn">
+  NFC-STICKER SCANNEN
 </button>
 
 <script>
-// ———————————————————————————————
-// 1. chipId uit URL halen
-// ———————————————————————————————
-const params = new URLSearchParams(window.location.search);
-const chipId = params.get("chipId");
+  const params = new URLSearchParams(window.location.search);
+  const chipId = params.get("chipId");
+  const savedName = localStorage.getItem("scannerName");
 
-// ———————————————————————————————
-// 2. Als naam al in localStorage → direct door
-// ———————————————————————————————
-const savedName = localStorage.getItem("scannerName");
-if (savedName && savedName.trim() !== "" && chipId) {
-  window.location.href = `lowlandsintegratie.html?chipId=${encodeURIComponent(chipId)}`;
-}
+  // 1. Als er al een chipId in de URL zit → direct door naar integratie
+  if (chipId) {
+    // Als naam al bekend is of niet: in beide gevallen gewoon naar integratie
+    window.location.href = `lowlandsintegratie.html?chipId=${encodeURIComponent(chipId)}`;
+  }
 
-// ———————————————————————————————
-// 3. Als chipId aanwezig → direct naar integratie
-// ———————————————————————————————
-if (chipId) {
-  window.location.href = `lowlandsintegratie.html?chipId=${encodeURIComponent(chipId)}`;
-}
+  const infoEl = document.getElementById("info");
+  const scanBtn = document.getElementById("scanBtn");
 
-// ———————————————————————————————
-// 4. Geen chipId → fallback
-// ———————————————————————————————
-document.getElementById("info").innerHTML = `
-  KON GEEN CHIP VINDEN.<br><br>
-  HOUD JE NFC-STICKER OPNIEUW TEGEN JE TELEFOON<br>
-  OF SCAN DE QR-CODE OP DE STICKER.
-`;
+  scanBtn.onclick = async () => {
+    // ANDROID: WebNFC beschikbaar
+    if ("NDEFReader" in window) {
+      try {
+        const reader = new NDEFReader();
+        await reader.scan();
 
-document.getElementById("retryBtn").classList.remove("hidden");
-document.getElementById("retryBtn").onclick = () => {
-  window.location.href = "intro.html";
-};
+        infoEl.innerHTML = `
+          HOUD JE NFC-STICKER<br>
+          TEGEN DE BOVENKANT VAN JE TELEFOON.
+        `;
+
+        reader.onreading = event => {
+          const serial = event.serialNumber || "";
+          // Als je op Android de UID wilt gebruiken als chipId:
+          if (serial) {
+            window.location.href =
+              `lowlandsintegratie.html?chipId=${encodeURIComponent(serial)}`;
+          } else {
+            infoEl.innerHTML = `
+              KON GEEN CHIP LEZEN.<br><br>
+              PROBEER HET NOG EEN KEER<br>
+              OF SCAN DE QR-CODE OP JE STICKER.
+            `;
+          }
+        };
+      } catch (e) {
+        console.error(e);
+        infoEl.innerHTML = `
+          SCANNEN IS MISLUKT.<br><br>
+          PROBEER HET OPNIEUW<br>
+          OF SCAN DE QR-CODE OP JE STICKER.
+        `;
+      }
+    } else {
+      // iOS (ook iPhone 7/8/X): geen WebNFC → duidelijk uitleg, GEEN foutpop-up
+      infoEl.innerHTML = `
+        HOUD JE NFC-STICKER<br>
+        TEGEN DE BOVENKANT VAN JE TELEFOON.<br><br>
+        WERKT HET NIET DIRECT?<br>
+        OPEN DAN DE CAMERA EN SCAN DE QR-CODE<br>
+        OP JE STICKER OM VERDER TE GAAN.
+      `;
+    }
+  };
 </script>
 
 </body>
