@@ -465,28 +465,10 @@
       }
     }
 
-    // OWNER OPHALEN MET CACHE
-    async function getOwnerForChip(id){
-      if (!id) return "";
-      if (chipCache[id]) return chipCache[id];
-      try{
-        const r = await fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(id)}`,{},800);
-        const owner = (await r.text()).trim();
-        if (owner){
-          chipCache[id] = owner;
-          localStorage.setItem("chipCache", JSON.stringify(chipCache));
-        }
-        return owner;
-      }catch(e){
-        console.error("Fout bij owner ophalen:", e);
-        return chipCache[id] || "";
-      }
-    }
-
     // PERIODIEKE REFRESH: SHEET → CACHE (sheet leidend)
     async function refreshCaches(){
       try{
-        // DRINKS
+        // DRANKJES
         const rD = await fetchWithTimeout(`${apiUrl}?action=getDrinks`,{},1500);
         const newDrinks = await rD.json();
         drinksCache = newDrinks;
@@ -494,7 +476,7 @@
         localStorage.setItem("drinksCache", JSON.stringify(newDrinks));
         localStorage.setItem("drinksCacheTime", drinksCacheTime.toString());
 
-        // OWNERS (vergt backend actie=getAllOwners die JSON {chipId: owner} teruggeeft)
+        // OWNERS (vergt getAllOwners in Apps Script)
         const rO = await fetchWithTimeout(`${apiUrl}?action=getAllOwners`,{},1500);
         const owners = await rO.json();
         chipCache = owners;
@@ -515,6 +497,48 @@
           localStorage.setItem('myChipId', chipId);
           myChipId = chipId;
         }
+      }
+    }
+
+    // AUTO-SYNC OWNER LOGIC: sheet vs cache
+    async function resolveOwnerWithAutoSync(){
+      if (!chipId) {
+        chipOwner = "";
+        return;
+      }
+
+      const cachedOwner = chipCache[chipId] || "";
+      let sheetOwner = "";
+
+      try{
+        const resp = await fetchWithTimeout(
+          `${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`,
+          {},
+          800
+        );
+        sheetOwner = (await resp.text()).trim();
+      }catch(e){
+        console.error("Fout bij getOwner:", e);
+        sheetOwner = "";
+      }
+
+      if (sheetOwner){
+        chipOwner = sheetOwner;
+        chipCache[chipId] = sheetOwner;
+        localStorage.setItem("chipCache", JSON.stringify(chipCache));
+      } else if (cachedOwner){
+        chipOwner = cachedOwner;
+        // AUTO-SYNC: cache weet iets wat sheet nog niet weet
+        fetch(apiUrl, {
+          method:'POST',
+          body:new URLSearchParams({
+            action:'setOwner',
+            chipId,
+            owner: cachedOwner
+          })
+        }).catch(err => console.error("Auto-sync setOwner fail:", err));
+      } else {
+        chipOwner = "";
       }
     }
 
@@ -578,7 +602,7 @@
           return;
         }
 
-        chipOwner = await getOwnerForChip(chipId);
+        await resolveOwnerWithAutoSync();
 
         if (chipId && myChipId && myChipId === chipId){
           isOwnChip = true;
@@ -658,9 +682,11 @@
 
       try{
         if (nameQuestionMode === 'askScanner'){
+          // eigen naam van scanner
           scannerName = val;
           localStorage.setItem('scannerName', scannerName);
         } else if (nameQuestionMode === 'askOwner'){
+          // eigenaar van deze sticker
           chipOwner = val;
           if (chipId){
             await fetch(apiUrl, {
