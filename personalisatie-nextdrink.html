@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NextDrink – Lowlands muntregistratie</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0d0d0d;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+      padding: 0 2rem;
+    }
+
+    #logo {
+      width: 180px;
+      max-width: 70%;
+      margin-bottom: 2rem;
+      animation: fadeIn 1.5s ease;
+    }
+
+    h2 {
+      font-size: 1.6rem;
+      line-height: 1.5;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      max-width: 600px;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: #cccccc;
+      max-width: 550px;
+    }
+
+    #status {
+      margin-top: 1rem;
+      background: rgba(255, 77, 0, 0.1);
+      border: 1px solid rgba(255, 77, 0, 0.5);
+      color: #ff4d00;
+      padding: 1rem 1.5rem;
+      border-radius: 1rem;
+      backdrop-filter: blur(8px);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      h2 { font-size: 1.3rem; }
+      p { font-size: 1rem; }
+      #logo { width: 140px; }
+    }
+  </style>
+</head>
+<body>
+  <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink Logo" />
+  
+  <h2>Welkom bij NextDrink<br>
+  De makkelijkste manier om met je vrienden bij te houden wie welk rondje heeft gehaald.<br>
+  Na afloop verreken je eenvoudig het verschil met elkaar!</h2>
+
+  <p id="status">Houd deze sticker tegen de bovenkant van je telefoon om de volgende stap te zien.</p>
+</body>
+</html>
