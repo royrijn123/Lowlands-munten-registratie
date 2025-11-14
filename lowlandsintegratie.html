@@ -63,7 +63,7 @@
       color: var(--nd-purple);
     }
 
-    /* Header met logo's naast elkaar - HELFT KLEINER */
+    /* Header met logo's naast elkaar - helft kleiner */
     #headerRoot{
       display:flex;
       align-items:center;
@@ -187,7 +187,7 @@
 
 <body class="min-h-screen flex items-start justify-center p-6">
 
-  <!-- GLOBALE LOADING OVERLAY (BUITEN MAIN) -->
+  <!-- GLOBALE LOADING OVERLAY -->
   <div id="loadingOverlay"
        class="fixed inset-0 z-50 flex items-center justify-center"
        style="display:none;">
@@ -197,10 +197,10 @@
     </div>
   </div>
 
-  <!-- MAIN CARD (hidden tijdens init) -->
+  <!-- MAIN CARD -->
   <main id="mainCard" class="w-full max-w-md rounded-3xl shadow-2xl p-6 min-h-[calc(100vh-3rem)] flex flex-col hidden">
 
-    <!-- HEADER: LL26-logo × X × NextDrink-logo -->
+    <!-- HEADER -->
     <header id="headerRoot">
       <img src="images/logo-ll26.PNG" alt="LL26" id="logoLl"/>
       <span class="logo-x" id="logoX" aria-hidden="true">×</span>
@@ -214,7 +214,7 @@
       <span id="errorBannerText">Er ging iets mis, probeer opnieuw.</span>
     </div>
 
-    <!-- FIRST TIME / SET NAME (beide onbekend) -->
+    <!-- FIRST TIME / SET NAME (beiden onbekend) -->
     <section id="firstTime" class="text-center hidden flex-1 flex flex-col justify-center">
       <h3 class="nd-heading text-xl font-bold mb-3">Welkom!</h3>
       <p class="text-purple-800 mb-3">
@@ -237,7 +237,7 @@
       </button>
     </section>
 
-    <!-- POST-NAME INSTRUCTIONS (alleen eigen sticker aanmaken) -->
+    <!-- POST-NAME INSTRUCTIONS (eigen sticker) -->
     <section id="postName" class="hidden text-center flex-1 flex flex-col justify-center">
       <h3 class="nd-heading text-lg font-semibold mb-2">Je bent klaar!</h3>
       <p class="text-purple-900 mb-3">
@@ -253,7 +253,7 @@
     <section id="menu" class="hidden flex-1 flex flex-col">
       <h2 id="menuTitle" class="nd-heading text-lg font-semibold mb-3"></h2>
 
-      <!-- Uitlegblok voor EIGEN STICKER -->
+      <!-- Uitlegblok eigen sticker -->
       <div id="ownChipExplanation" class="hidden mb-4">
         <p class="mb-2">
           Dit is jouw <strong>eigen sticker</strong>. LLET'S SPLIT houdt bij
@@ -352,12 +352,12 @@
 
   <script>
     const $ = id => document.getElementById(id);
-    const apiUrl = "https://script.google.com/macros/s/AKfycbwW8-QL2zxIBhyy5NQGvmnhbX3Tm0cr7_71JJMfwy1Cad0jWCYyWyt18Qkny9gpksZG4w/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxJaneXzY7PiSVMNSGnNDWnkYxh_4c45arWzxqrC9k6_MGV3o4mpRZv9ZZNiTdWoqEn/exec";
 
-    // chipId robuuster uitlezen: 'null' of 'undefined' → treated as geen chip
+    // chipId uitlezen
     const chipIdRaw = new URLSearchParams(window.location.search).get('chipId');
     const chipId = (chipIdRaw && chipIdRaw !== 'null' && chipIdRaw !== 'undefined') ? chipIdRaw : null;
-    const noChipMode = !chipId; // insight-modus
+    const noChipMode = !chipId;
 
     let scannerName = (localStorage.getItem('scannerName') || '').trim();
     let chipOwner = '';
@@ -365,12 +365,14 @@
     let isOwnChip = false;
     let myChipId = localStorage.getItem('myChipId') || null;
 
-    // LOCAL CACHE
+    // CACHE
     let chipCache = JSON.parse(localStorage.getItem("chipCache") || "{}");
     let drinksCache = JSON.parse(localStorage.getItem("drinksCache") || "null");
-    let drinksCacheTime = parseInt(localStorage.getItem("drinksCacheTime") || "0");
+    let drinksCacheTime = parseInt(localStorage.getItem("drinksCacheTime") || "0", 10) || 0;
 
-    // mode voor geïntegreerde naamvraag: 'askScanner' of 'askOwner'
+    const CACHE_DRINKS_MAX_AGE = 24*60*60*1000; // 24u
+    const CACHE_REFRESH_INTERVAL = 5*60*1000;   // 5 min
+
     let nameQuestionMode = null;
     let errorTimeout = null;
 
@@ -405,7 +407,7 @@
       }, 3000);
     }
 
-    async function fetchWithTimeout(url, options={}, timeout=8000) {
+    async function fetchWithTimeout(url, options={}, timeout=1200) {
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), timeout);
       try {
@@ -431,45 +433,77 @@
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // DRANKEN LADEN MET CACHE (24 uur)
+    // DRANKEN LADEN MET CACHE
     async function loadDrinks(){
       const NOW = Date.now();
-
-      // gebruik cache als die jonger dan 24 uur is
-      if (drinksCache && (NOW - drinksCacheTime) < 24*60*60*1000){
+      if (drinksCache && (NOW - drinksCacheTime) < CACHE_DRINKS_MAX_AGE){
         drinks = drinksCache;
         return;
       }
-
-      try {
-        const resp = await fetchWithTimeout(`${apiUrl}?action=getDrinks`, {}, 1200);
-        drinks = await resp.json();
-
-        // cache opslaan
-        localStorage.setItem("drinksCache", JSON.stringify(drinks));
-        localStorage.setItem("drinksCacheTime", NOW.toString());
-        drinksCache = drinks;
+      try{
+        const resp = await fetchWithTimeout(`${apiUrl}?action=getDrinks`, {}, 1500);
+        const list = await resp.json();
+        drinks = list;
+        drinksCache = list;
         drinksCacheTime = NOW;
-      } catch(e){
+        localStorage.setItem("drinksCache", JSON.stringify(list));
+        localStorage.setItem("drinksCacheTime", NOW.toString());
+      }catch(e){
         console.error("Fout bij drinks laden:", e);
-
-        // fallback: laatste cache gebruiken
         if (drinksCache){
           drinks = drinksCache;
-          return;
+        } else {
+          drinks = [
+            {name:'Kleine bier',price:4.4},
+            {name:'Grote bier',price:8},
+            {name:'Desperados',price:6.5},
+            {name:'Wijn',price:6},
+            {name:'0.0 bier',price:4},
+            {name:'Frisdrank',price:4}
+          ];
         }
-
-        // fallback 2: vaste lijst
-        drinks = [
-          {name:'Kleine bier',price:4.4},
-          {name:'Grote bier',price:8},
-          {name:'Desperados',price:6.5},
-          {name:'Wijn',price:6},
-          {name:'0.0 bier',price:4},
-          {name:'Frisdrank',price:4}
-        ];
       }
     }
+
+    // OWNER OPHALEN MET CACHE
+    async function getOwnerForChip(id){
+      if (!id) return "";
+      if (chipCache[id]) return chipCache[id];
+      try{
+        const r = await fetchWithTimeout(`${apiUrl}?action=getOwner&chipId=${encodeURIComponent(id)}`,{},800);
+        const owner = (await r.text()).trim();
+        if (owner){
+          chipCache[id] = owner;
+          localStorage.setItem("chipCache", JSON.stringify(chipCache));
+        }
+        return owner;
+      }catch(e){
+        console.error("Fout bij owner ophalen:", e);
+        return chipCache[id] || "";
+      }
+    }
+
+    // PERIODIEKE REFRESH: SHEET → CACHE (sheet leidend)
+    async function refreshCaches(){
+      try{
+        // DRINKS
+        const rD = await fetchWithTimeout(`${apiUrl}?action=getDrinks`,{},1500);
+        const newDrinks = await rD.json();
+        drinksCache = newDrinks;
+        drinksCacheTime = Date.now();
+        localStorage.setItem("drinksCache", JSON.stringify(newDrinks));
+        localStorage.setItem("drinksCacheTime", drinksCacheTime.toString());
+
+        // OWNERS (vergt backend actie=getAllOwners die JSON {chipId: owner} teruggeeft)
+        const rO = await fetchWithTimeout(`${apiUrl}?action=getAllOwners`,{},1500);
+        const owners = await rO.json();
+        chipCache = owners;
+        localStorage.setItem("chipCache", JSON.stringify(owners));
+      }catch(e){
+        console.warn("Periodic sync failed", e);
+      }
+    }
+    setInterval(refreshCaches, CACHE_REFRESH_INTERVAL);
 
     function updateOwnChipFlag(){
       if (chipId && myChipId && myChipId === chipId){
@@ -485,7 +519,6 @@
     }
 
     async function handleNameLogic(){
-      // INSIGHT-MODUS: geen chipId → geen naamvragen
       if (noChipMode) {
         updateOwnChipFlag();
         return "menu";
@@ -494,39 +527,34 @@
       const hasScanner = !!scannerName;
       const hasOwner   = !!chipOwner;
 
-      // SCENARIO 1: beiden bekend -> niets vragen
       if (hasScanner && hasOwner){
         updateOwnChipFlag();
         return "menu";
       }
 
-      // SCENARIO 2: owner bekend, scanner niet
+      // owner bekend, scanner niet
       if (hasOwner && !hasScanner){
         nameQuestionMode = 'askScanner';
         hideAll();
-        const titleEl = $('nameQuestionTitle');
-        const bodyEl = $('nameQuestionBody');
-        titleEl.textContent = 'Wie ben jij?';
-        bodyEl.innerHTML = `Je hebt de sticker van <strong>${escapeHtml(chipOwner)}</strong> gescand. Wat is jouw eigen naam?`;
+        $('nameQuestionTitle').textContent = 'Wie ben jij?';
+        $('nameQuestionBody').innerHTML = `Je hebt de sticker van <strong>${escapeHtml(chipOwner)}</strong> gescand. Wat is jouw eigen naam?`;
         $('nameQuestionInput').value = '';
         $('nameQuestion').classList.remove('hidden');
         return "nameQuestion";
       }
 
-      // SCENARIO 3: scanner bekend, owner niet
+      // scanner bekend, owner niet
       if (!hasOwner && hasScanner){
         nameQuestionMode = 'askOwner';
         hideAll();
-        const titleEl = $('nameQuestionTitle');
-        const bodyEl = $('nameQuestionBody');
-        titleEl.textContent = 'Van wie is deze sticker?';
-        bodyEl.textContent  = 'Van wie is de sticker die je gescand hebt?';
+        $('nameQuestionTitle').textContent = 'Van wie is deze sticker?';
+        $('nameQuestionBody').textContent  = 'Van wie is de sticker die je gescand hebt?';
         $('nameQuestionInput').value = '';
         $('nameQuestion').classList.remove('hidden');
         return "nameQuestion";
       }
 
-      // SCENARIO 4: beiden onbekend -> firstTime-flow (eigen sticker)
+      // beiden onbekend
       if (!hasOwner && !hasScanner){
         hideAll();
         $('firstTime').classList.remove('hidden');
@@ -539,10 +567,8 @@
     async function init(){
       showLoading(true,'Initialiseren...');
       try{
-        // eerst drankjes (met cache)
         await loadDrinks();
 
-        // INSIGHT-MODUS: geen chipId → geen naamvragen, geen drankmenu
         if (noChipMode){
           chipOwner = scannerName || '';
           isOwnChip = false;
@@ -552,33 +578,7 @@
           return;
         }
 
-        // OWNER OPHALEN MET CACHE
-        if (chipCache[chipId]) {
-          chipOwner = chipCache[chipId];
-        } else {
-          try {
-            const ownerResp = await fetchWithTimeout(
-              `${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`,
-              {},
-              800
-            );
-            chipOwner = (await ownerResp.text()).trim();
-
-            if (chipOwner && chipOwner.length > 0){
-              chipCache[chipId] = chipOwner;
-              localStorage.setItem("chipCache", JSON.stringify(chipCache));
-            }
-          } catch(e){
-            console.error("Fout bij owner ophalen:", e);
-
-            // fallback: als eerder opgeslagen
-            if (chipCache[chipId]){
-              chipOwner = chipCache[chipId];
-            } else {
-              chipOwner = "";
-            }
-          }
-        }
+        chipOwner = await getOwnerForChip(chipId);
 
         if (chipId && myChipId && myChipId === chipId){
           isOwnChip = true;
@@ -623,7 +623,7 @@
             body:new URLSearchParams({action:'setOwner', chipId, owner:chipOwner})
           });
 
-          // ook in cache zetten
+          // ook in cache (sheet + cache in sync)
           chipCache[chipId] = chipOwner;
           localStorage.setItem("chipCache", JSON.stringify(chipCache));
 
@@ -647,7 +647,7 @@
       renderMenu();
     };
 
-    // GEÏNTEGREERD NAAM-VELD HANDLER (1 van de 2 onbekend)
+    // GEÏNTEGREERD NAAM-VELD HANDLER
     $('nameQuestionBtn').onclick = async ()=>{
       const val = $('nameQuestionInput').value.trim();
       if(!val){
@@ -658,19 +658,15 @@
 
       try{
         if (nameQuestionMode === 'askScanner'){
-          // "Je hebt de sticker van [naam chipid] gescand. Wat is jouw eigen naam?"
           scannerName = val;
           localStorage.setItem('scannerName', scannerName);
         } else if (nameQuestionMode === 'askOwner'){
-          // "Van wie is de sticker die je gescand hebt?"
           chipOwner = val;
           if (chipId){
             await fetch(apiUrl, {
               method:"POST",
               body:new URLSearchParams({action:"setOwner", chipId, owner:chipOwner})
             });
-
-            // opslaan in cache
             chipCache[chipId] = chipOwner;
             localStorage.setItem("chipCache", JSON.stringify(chipCache));
           }
@@ -721,7 +717,6 @@
         titleEl.textContent = title;
       }
 
-      // Drankknoppen alleen bij andermans sticker (niet bij eigen / insight)
       drinksDiv.innerHTML = "";
       if (!inInsight && !showOwnExplanation){
         drinks.forEach(d=>{
@@ -732,6 +727,10 @@
             <div class="text-sm text-gray-600 mt-1">€${Number(d.price).toFixed(2)}</div>
           `;
           btn.onclick = async ()=>{
+            if(!scannerName){
+              showError("Je naam is niet bekend, vul eerst je naam in.");
+              return;
+            }
             showLoading(true,'Verwerken...');
             try{
               await fetch(apiUrl, {
@@ -768,6 +767,7 @@
       $('newDrink').classList.remove('hidden');
     };
     $('cancelNewDrinkBtn').onclick = ()=>{ renderMenu(); };
+
     $('addDrinkBtn').onclick = async ()=>{
       const name = $('newDrinkName').value.trim();
       const price = parseFloat($('newDrinkPrice').value);
@@ -777,19 +777,18 @@
       }
       showLoading(true,'Opslaan...');
       drinks.push({name, price});
-      $('newDrinkName').value=''; $('newDrinkPrice').value='';
+      $('newDrinkName').value='';
+      $('newDrinkPrice').value='';
       try{
         await fetch(apiUrl, {
           method:'POST',
           body:new URLSearchParams({action:'setDrinks', drinks:JSON.stringify(drinks)})
         });
-
-        // nieuwe lijst ook in cache
-        localStorage.setItem("drinksCache", JSON.stringify(drinks));
+        // ook cache updaten
         drinksCache = drinks;
         drinksCacheTime = Date.now();
+        localStorage.setItem("drinksCache", JSON.stringify(drinks));
         localStorage.setItem("drinksCacheTime", drinksCacheTime.toString());
-
         renderMenu();
       }catch(e){
         console.error(e);
