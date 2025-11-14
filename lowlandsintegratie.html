@@ -69,18 +69,23 @@
       align-items:center;
       justify-content:center;
       gap:1.2rem;
-      margin-bottom:1.75rem;
+      margin-bottom:1.25rem;
     }
     #headerRoot img{
       border-radius:0.9rem;
       object-fit:cover;
-      width:6rem;    /* 12rem → 6rem */
-      height:6rem;   /* 12rem → 6rem */
+      width:6rem;
+      height:6rem;
     }
     #headerRoot .logo-x{
-      font-size:2.4rem; /* 4.8rem → 2.4rem */
+      font-size:2.4rem;
       line-height:1;
       color:var(--nd-purple);
+    }
+
+    /* Error banner */
+    #errorBanner{
+      transition: opacity .25s ease;
     }
 
     /* Buttons */
@@ -182,7 +187,7 @@
 
 <body class="min-h-screen flex items-start justify-center p-6">
 
-  <!-- GLOBALE LOADING OVERLAY (BUITEN MAIN + GEEN 'hidden') -->
+  <!-- GLOBALE LOADING OVERLAY (BUITEN MAIN) -->
   <div id="loadingOverlay"
        class="fixed inset-0 z-50 flex items-center justify-center"
        style="display:none;">
@@ -202,7 +207,14 @@
       <img src="images/nextdrink-logo.png" alt="NextDrink" id="logoNd"/>
     </header>
 
-    <!-- FIRST TIME / SET NAME -->
+    <!-- ERROR BANNER -->
+    <div id="errorBanner"
+         class="hidden opacity-0 mb-3 rounded-2xl px-3 py-2 flex items-center gap-2 bg-[rgba(75,0,143,0.08)] border border-[rgba(75,0,143,0.25)] text-sm text-[var(--nd-purple)]">
+      <span>⚠</span>
+      <span id="errorBannerText">Er ging iets mis, probeer opnieuw.</span>
+    </div>
+
+    <!-- FIRST TIME / SET NAME (beide onbekend) -->
     <section id="firstTime" class="text-center hidden flex-1 flex flex-col justify-center">
       <h3 class="nd-heading text-xl font-bold mb-3">Welkom!</h3>
       <p class="text-purple-800 mb-3">
@@ -215,7 +227,17 @@
       </button>
     </section>
 
-    <!-- POST-NAME INSTRUCTIONS -->
+    <!-- GEÏNTEGREERD NAAM-VELD voor 1 van de 2 onbekend -->
+    <section id="nameQuestion" class="hidden text-center flex-1 flex flex-col justify-center">
+      <h3 id="nameQuestionTitle" class="nd-heading text-xl font-bold mb-3"></h3>
+      <p id="nameQuestionBody" class="text-purple-800 mb-3"></p>
+      <input id="nameQuestionInput" type="text" placeholder="Naam" class="nd-input mb-3">
+      <button id="nameQuestionBtn" class="nd-btn nd-cta w-full py-3 rounded-xl font-bold">
+        Verder
+      </button>
+    </section>
+
+    <!-- POST-NAME INSTRUCTIONS (alleen eigen sticker aanmaken) -->
     <section id="postName" class="hidden text-center flex-1 flex flex-col justify-center">
       <h3 class="nd-heading text-lg font-semibold mb-2">Je bent klaar!</h3>
       <p class="text-purple-900 mb-3">
@@ -343,6 +365,10 @@
     let isOwnChip = false;
     let myChipId = localStorage.getItem('myChipId') || null;
 
+    // mode voor geïntegreerde naamvraag: 'askScanner' of 'askOwner'
+    let nameQuestionMode = null;
+    let errorTimeout = null;
+
     function showMain(){
       $("mainCard").classList.remove("hidden");
     }
@@ -352,6 +378,26 @@
       overlay.style.display = show ? 'flex' : 'none';
       $('loadingText').textContent = text;
       document.querySelectorAll('button').forEach(b => b.disabled = show);
+    }
+
+    function showError(message){
+      const banner = $('errorBanner');
+      const textEl = $('errorBannerText');
+      if (!banner || !textEl) return;
+
+      textEl.textContent = message || 'Er ging iets mis, probeer opnieuw.';
+      banner.classList.remove('hidden');
+      banner.classList.remove('opacity-0');
+      banner.classList.add('opacity-100');
+
+      if (errorTimeout) clearTimeout(errorTimeout);
+      errorTimeout = setTimeout(() => {
+        banner.classList.remove('opacity-100');
+        banner.classList.add('opacity-0');
+        setTimeout(() => {
+          banner.classList.add('hidden');
+        }, 250);
+      }, 3000);
     }
 
     async function fetchWithTimeout(url, options={}, timeout=8000) {
@@ -368,8 +414,11 @@
     }
 
     function hideAll() {
-      ['menu','confirm','scores','final','firstTime','bestellijst','newDrink','postName']
-        .forEach(id => $(id)?.classList.add('hidden'));
+      [
+        'menu','confirm','scores','final',
+        'firstTime','bestellijst','newDrink',
+        'postName','nameQuestion'
+      ].forEach(id => $(id)?.classList.add('hidden'));
     }
 
     function escapeHtml(str){
@@ -406,8 +455,9 @@
     }
 
     async function handleNameLogic(){
-      // EXTRA GUARD: in noChipMode (LL-menu) nooit naamvragen
+      // INSIGHT-MODUS: geen chipId → geen naamvragen
       if (noChipMode) {
+        updateOwnChipFlag();
         return "menu";
       }
 
@@ -420,34 +470,37 @@
         return "menu";
       }
 
-      // SCENARIO 2: owner bekend, scanner niet -> "Wat is jouw naam?"
+      // SCENARIO 2: owner bekend, scanner niet
+      // → geïntegreerd invoerveld:
+      // "Je hebt de sticker van [naam chipid] gescand. Wat is jouw eigen naam?"
       if (hasOwner && !hasScanner){
-        const name = prompt("Wat is jouw naam?");
-        if (name && name.trim() !== ""){
-          scannerName = name.trim();
-          localStorage.setItem("scannerName", scannerName);
-          updateOwnChipFlag();
-        }
-        return "menu";
+        nameQuestionMode = 'askScanner';
+        hideAll();
+        const titleEl = $('nameQuestionTitle');
+        const bodyEl = $('nameQuestionBody');
+        titleEl.textContent = 'Wie ben jij?';
+        bodyEl.innerHTML = `Je hebt de sticker van <strong>${escapeHtml(chipOwner)}</strong> gescand. Wat is jouw eigen naam?`;
+        $('nameQuestionInput').value = '';
+        $('nameQuestion').classList.remove('hidden');
+        return "nameQuestion";
       }
 
-      // SCENARIO 3: scanner bekend, owner niet -> "Van wie is deze sticker?"
+      // SCENARIO 3: scanner bekend, owner niet
+      // → geïntegreerd invoerveld:
+      // "Van wie is de sticker die je gescand hebt?"
       if (!hasOwner && hasScanner){
-        const owner = prompt("Van wie is deze sticker?");
-        if (owner && owner.trim() !== ""){
-          chipOwner = owner.trim();
-          try{
-            await fetch(apiUrl, {
-              method:"POST",
-              body:new URLSearchParams({action:"setOwner", chipId, owner:chipOwner})
-            });
-          }catch(e){ console.error(e); }
-          updateOwnChipFlag();
-        }
-        return "menu";
+        nameQuestionMode = 'askOwner';
+        hideAll();
+        const titleEl = $('nameQuestionTitle');
+        const bodyEl = $('nameQuestionBody');
+        titleEl.textContent = 'Van wie is deze sticker?';
+        bodyEl.textContent  = 'Van wie is de sticker die je gescand hebt?';
+        $('nameQuestionInput').value = '';
+        $('nameQuestion').classList.remove('hidden');
+        return "nameQuestion";
       }
 
-      // SCENARIO 4: beiden onbekend -> firstTime-flow
+      // SCENARIO 4: beiden onbekend -> firstTime-flow (eigen sticker)
       if (!hasOwner && !hasScanner){
         hideAll();
         $('firstTime').classList.remove('hidden');
@@ -488,24 +541,25 @@
         if (state === "menu"){
           hideAll();
           renderMenu();
-        } else if (state === "firstTime"){
-          // firstTime is al in beeld gezet
         }
+        // state === "firstTime" of "nameQuestion" laten gewoon de juiste section staan
 
       }catch(err){
-        console.error(err);
-        alert('Fout bij initialiseren.');
+        console.error('Fout bij initialiseren:', err);
         showMain();
+        hideAll();
+        renderMenu();
+        showError('Er ging iets mis, probeer opnieuw.');
       }finally{
         showLoading(false);
       }
     }
 
-    // FIRST TIME CONTINUE
+    // FIRST TIME CONTINUE (beiden onbekend)
     $('firstTimeContinueBtn').onclick = async ()=>{
       const name = $('firstTimeNameInput').value.trim();
       if(!name){
-        alert('Voer een naam in');
+        showError('Voer een naam in.');
         return;
       }
       showLoading(true,'Verwerken...');
@@ -526,6 +580,7 @@
         }
       }catch(e){
         console.error(e);
+        showError('Er ging iets mis, probeer opnieuw.');
       }finally{
         showLoading(false);
       }
@@ -537,6 +592,43 @@
     $('postNameContinueBtn').onclick = ()=>{
       hideAll();
       renderMenu();
+    };
+
+    // GEÏNTEGREERD NAAM-VELD HANDLER (1 van de 2 onbekend)
+    $('nameQuestionBtn').onclick = async ()=>{
+      const val = $('nameQuestionInput').value.trim();
+      if(!val){
+        showError('Voer een naam in.');
+        return;
+      }
+      showLoading(true,'Verwerken...');
+
+      try{
+        if (nameQuestionMode === 'askScanner'){
+          // "Je hebt de sticker van [naam chipid] gescand. Wat is jouw eigen naam?"
+          scannerName = val;
+          localStorage.setItem('scannerName', scannerName);
+        } else if (nameQuestionMode === 'askOwner'){
+          // "Van wie is de sticker die je gescand hebt?"
+          chipOwner = val;
+          if (chipId){
+            await fetch(apiUrl, {
+              method:"POST",
+              body:new URLSearchParams({action:"setOwner", chipId, owner:chipOwner})
+            });
+          }
+        }
+        updateOwnChipFlag();
+        hideAll();
+        renderMenu();
+      }catch(e){
+        console.error('Fout bij verwerken naamvraag:', e);
+        showError('Er ging iets mis, probeer opnieuw.');
+        hideAll();
+        renderMenu();
+      }finally{
+        showLoading(false);
+      }
     };
 
     // RENDER MENU
@@ -601,7 +693,7 @@
               $('confirm').classList.remove('hidden');
             }catch(e){
               console.error(e);
-              alert('Fout bij plaatsen order');
+              showError('Er ging iets mis, probeer opnieuw.');
             }finally{
               showLoading(false);
             }
@@ -623,7 +715,7 @@
       const name = $('newDrinkName').value.trim();
       const price = parseFloat($('newDrinkPrice').value);
       if(!name || isNaN(price) || price<=0){
-        alert('Ongeldige naam of prijs');
+        showError('Ongeldige naam of prijs.');
         return;
       }
       showLoading(true,'Opslaan...');
@@ -637,7 +729,7 @@
         renderMenu();
       }catch(e){
         console.error(e);
-        alert('Fout bij opslaan drankje');
+        showError('Er ging iets mis, probeer opnieuw.');
       }finally{
         showLoading(false);
       }
@@ -689,7 +781,7 @@
 
       }catch(e){
         console.error(e);
-        alert('Fout bij laden bestellijst');
+        showError('Er ging iets mis, probeer opnieuw.');
       }finally{
         showLoading(false);
       }
@@ -722,7 +814,7 @@
         $('scores').classList.remove('hidden');
       }catch(e){
         console.error(e);
-        alert('Fout bij laden tussenstand');
+        showError('Er ging iets mis, probeer opnieuw.');
       }finally{
         showLoading(false);
       }
@@ -734,7 +826,7 @@
 
     $('markPaidBtn').onclick = async ()=>{
       if(!scannerName){
-        alert("Je naam is niet bekend, dus we kunnen je verzoek niet koppelen.");
+        showError("Je naam is niet bekend, dus we kunnen je verzoek niet koppelen.");
         return;
       }
       showLoading(true,'Bezig met registreren...');
@@ -746,7 +838,7 @@
         $('finalSettlementStatus').textContent = '✅ Je verzoek is ingediend!';
       }catch(e){
         console.error(e);
-        alert('Fout bij afrekenen');
+        showError('Er ging iets mis, probeer opnieuw.');
       }finally{
         showLoading(false);
       }
@@ -786,7 +878,7 @@
         $('final').classList.remove('hidden');
       }catch(e){
         console.error(e);
-        alert('Fout bij laden eindafrekening');
+        showError('Er ging iets mis, probeer opnieuw.');
       }finally{
         showLoading(false);
       }
