@@ -365,6 +365,11 @@
     let isOwnChip = false;
     let myChipId = localStorage.getItem('myChipId') || null;
 
+    // LOCAL CACHE
+    let chipCache = JSON.parse(localStorage.getItem("chipCache") || "{}");
+    let drinksCache = JSON.parse(localStorage.getItem("drinksCache") || "null");
+    let drinksCacheTime = parseInt(localStorage.getItem("drinksCacheTime") || "0");
+
     // mode voor geïntegreerde naamvraag: 'askScanner' of 'askOwner'
     let nameQuestionMode = null;
     let errorTimeout = null;
@@ -426,10 +431,35 @@
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    // DRANKEN LADEN MET CACHE (24 uur)
     async function loadDrinks(){
-      const resp = await fetchWithTimeout(`${apiUrl}?action=getDrinks`);
-      drinks = await resp.json();
-      if(!drinks?.length){
+      const NOW = Date.now();
+
+      // gebruik cache als die jonger dan 24 uur is
+      if (drinksCache && (NOW - drinksCacheTime) < 24*60*60*1000){
+        drinks = drinksCache;
+        return;
+      }
+
+      try {
+        const resp = await fetchWithTimeout(`${apiUrl}?action=getDrinks`, {}, 1200);
+        drinks = await resp.json();
+
+        // cache opslaan
+        localStorage.setItem("drinksCache", JSON.stringify(drinks));
+        localStorage.setItem("drinksCacheTime", NOW.toString());
+        drinksCache = drinks;
+        drinksCacheTime = NOW;
+      } catch(e){
+        console.error("Fout bij drinks laden:", e);
+
+        // fallback: laatste cache gebruiken
+        if (drinksCache){
+          drinks = drinksCache;
+          return;
+        }
+
+        // fallback 2: vaste lijst
         drinks = [
           {name:'Kleine bier',price:4.4},
           {name:'Grote bier',price:8},
@@ -471,8 +501,6 @@
       }
 
       // SCENARIO 2: owner bekend, scanner niet
-      // → geïntegreerd invoerveld:
-      // "Je hebt de sticker van [naam chipid] gescand. Wat is jouw eigen naam?"
       if (hasOwner && !hasScanner){
         nameQuestionMode = 'askScanner';
         hideAll();
@@ -486,8 +514,6 @@
       }
 
       // SCENARIO 3: scanner bekend, owner niet
-      // → geïntegreerd invoerveld:
-      // "Van wie is de sticker die je gescand hebt?"
       if (!hasOwner && hasScanner){
         nameQuestionMode = 'askOwner';
         hideAll();
@@ -513,6 +539,7 @@
     async function init(){
       showLoading(true,'Initialiseren...');
       try{
+        // eerst drankjes (met cache)
         await loadDrinks();
 
         // INSIGHT-MODUS: geen chipId → geen naamvragen, geen drankmenu
@@ -525,11 +552,33 @@
           return;
         }
 
-        // Met chip: owner ophalen
-        const ownerResp = await fetchWithTimeout(
-          `${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`
-        );
-        chipOwner = (await ownerResp.text()).trim();
+        // OWNER OPHALEN MET CACHE
+        if (chipCache[chipId]) {
+          chipOwner = chipCache[chipId];
+        } else {
+          try {
+            const ownerResp = await fetchWithTimeout(
+              `${apiUrl}?action=getOwner&chipId=${encodeURIComponent(chipId)}`,
+              {},
+              800
+            );
+            chipOwner = (await ownerResp.text()).trim();
+
+            if (chipOwner && chipOwner.length > 0){
+              chipCache[chipId] = chipOwner;
+              localStorage.setItem("chipCache", JSON.stringify(chipCache));
+            }
+          } catch(e){
+            console.error("Fout bij owner ophalen:", e);
+
+            // fallback: als eerder opgeslagen
+            if (chipCache[chipId]){
+              chipOwner = chipCache[chipId];
+            } else {
+              chipOwner = "";
+            }
+          }
+        }
 
         if (chipId && myChipId && myChipId === chipId){
           isOwnChip = true;
@@ -542,7 +591,6 @@
           hideAll();
           renderMenu();
         }
-        // state === "firstTime" of "nameQuestion" laten gewoon de juiste section staan
 
       }catch(err){
         console.error('Fout bij initialiseren:', err);
@@ -574,6 +622,11 @@
             method:'POST',
             body:new URLSearchParams({action:'setOwner', chipId, owner:chipOwner})
           });
+
+          // ook in cache zetten
+          chipCache[chipId] = chipOwner;
+          localStorage.setItem("chipCache", JSON.stringify(chipCache));
+
           localStorage.setItem('myChipId', chipId);
           myChipId = chipId;
           isOwnChip = true;
@@ -616,6 +669,10 @@
               method:"POST",
               body:new URLSearchParams({action:"setOwner", chipId, owner:chipOwner})
             });
+
+            // opslaan in cache
+            chipCache[chipId] = chipOwner;
+            localStorage.setItem("chipCache", JSON.stringify(chipCache));
           }
         }
         updateOwnChipFlag();
@@ -726,6 +783,13 @@
           method:'POST',
           body:new URLSearchParams({action:'setDrinks', drinks:JSON.stringify(drinks)})
         });
+
+        // nieuwe lijst ook in cache
+        localStorage.setItem("drinksCache", JSON.stringify(drinks));
+        drinksCache = drinks;
+        drinksCacheTime = Date.now();
+        localStorage.setItem("drinksCacheTime", drinksCacheTime.toString());
+
         renderMenu();
       }catch(e){
         console.error(e);
