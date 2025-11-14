@@ -1,82 +1,117 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NextDrink – Lowlands muntregistratie</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0d0d0d;
-      color: #ffffff;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      text-align: center;
-      padding: 0 2rem;
-    }
+<title>LLET'S SPLIT – Intro</title>
 
-    #logo {
-      width: 180px;
-      max-width: 70%;
-      margin-bottom: 2rem;
-      animation: fadeIn 1.5s ease;
-    }
+<script src="https://cdn.tailwindcss.com"></script>
 
-    h2 {
-      font-size: 1.6rem;
-      line-height: 1.5;
-      font-weight: 600;
-      margin-bottom: 1.5rem;
-      max-width: 600px;
-    }
+<style>
+  @font-face {
+    font-family: 'Baukasten';
+    src: url('fonts/Baukasten Six Regular.otf') format('opentype');
+  }
 
-    p {
-      font-size: 1.1rem;
-      color: #cccccc;
-      max-width: 550px;
-    }
+  body {
+    background: #A54EFF;
+    color: #FFF685;
+    font-family: 'Baukasten', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 32px 24px;
+  }
 
-    #status {
-      margin-top: 1rem;
-      background: rgba(255, 77, 0, 0.1);
-      border: 1px solid rgba(255, 77, 0, 0.5);
-      color: #ff4d00;
-      padding: 1rem 1.5rem;
-      border-radius: 1rem;
-      backdrop-filter: blur(8px);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 600px) {
-      h2 { font-size: 1.3rem; }
-      p { font-size: 1rem; }
-      #logo { width: 140px; }
-    }
-  </style>
+  .btn {
+    background: #FFF685;
+    color: #A54EFF;
+    padding: 16px;
+    width: 100%;
+    border-radius: 14px;
+    text-align: center;
+    font-size: 1.3rem;
+    margin-top: 30px;
+  }
+</style>
 </head>
-<body>
-  <img id="logo" src="images/nextdrink-logo.png" alt="NextDrink Logo" />
-  
-  <h2>Welkom bij NextDrink<br>
-  De makkelijkste manier om met je vrienden bij te houden wie welk rondje heeft gehaald.<br>
-  Na afloop verreken je eenvoudig het verschil met elkaar!</h2>
 
-  <p id="status">Houd deze sticker tegen de bovenkant van je telefoon om de volgende stap te zien.</p>
+<body>
+
+<!-- HEADER -->
+<div class="text-center text-4xl mb-10">LLET'S SPLIT</div>
+
+<!-- FIRST STATE -->
+<div id="introText" class="text-center text-lg leading-7 mb-10">
+  MET LLET’S SPLIT GEEF JE EENVOUDIG EEN DIGITALE TOKEN<br>
+  AAN DE PERSOON DIE JULLIE RONDJE GAAT HALEN.<br>
+  AAN HET EIND REKEN JE GEMAKKELIJK MET ELKAAR AF.<br><br>
+  JE HEBT HIERVOOR DE NFC-STICKER<br>
+  NODIG DIE JE BIJ DE INGANG KAN AFHALEN.
+</div>
+
+<button id="scanBtn" class="btn">
+  NFC-STICKER SCANNEN
+</button>
+
+<!-- SECOND STATE (HIDDEN INITIALLY) -->
+<div id="scanState" class="hidden text-center">
+  <div class="text-xl leading-7 mb-6">
+    HOUD JE NFC-STICKER TEGEN DE ACHTERKANT<br>
+    VAN JE TELEFOON, IN DE BUURT VAN DE CAMERA.<br>
+  </div>
+
+  <img 
+    src="images/hand-nfc.png" 
+    alt="NFC instructie" 
+    class="mx-auto mt-4 w-64 opacity-90"
+  >
+</div>
+
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const chipId = params.get("chipId");
+
+  // DIRECT door naar integratie als chipId al bekend is
+  if (chipId) {
+    window.location.href = `lowlandsintegratie.html?chipId=${encodeURIComponent(chipId)}`;
+  }
+
+  const introText = document.getElementById("introText");
+  const scanBtn = document.getElementById("scanBtn");
+  const scanState = document.getElementById("scanState");
+
+  // --- USER CLICKS "NFC-STICKER SCANNEN" ---
+  scanBtn.onclick = () => {
+
+    // Verberg eerste scherm, toon scan-instructie
+    introText.classList.add("hidden");
+    scanBtn.classList.add("hidden");
+    scanState.classList.remove("hidden");
+
+    // 1. ANDROID → WebNFC scannen
+    if ("NDEFReader" in window) {
+      try {
+        const reader = new NDEFReader();
+        reader.scan();
+
+        reader.onreading = event => {
+          const serial = event.serialNumber || "";
+          if (serial) {
+            window.location.href =
+              `lowlandsintegratie.html?chipId=${encodeURIComponent(serial)}`;
+          }
+        };
+
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 2. iPHONE → iOS scant via OS (wij hoeven niks te doen)
+  };
+</script>
+
 </body>
 </html>
